@@ -1,0 +1,10 @@
+---
+nick: showboat
+altnick: showb0at
+servers:
+  - server: diemen.nl.eu.undernet.org
+    port: 6667
+    ssl: no
+  - server: hamburg.de.eu.undernet.org
+    port: 6669
+    ssl: no

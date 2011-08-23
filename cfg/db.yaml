@@ -1,0 +1,7 @@
+---
+driver: dbi:SQLite
+hostname: localhost
+port: 34555
+user: mediabot
+pass: mediapass@#!
+name: data/mediabot.sqlite3

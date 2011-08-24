@@ -63,7 +63,7 @@ sub create {
     my $time  = time;
     my $query = <<SQL;
 		INSERT INTO sessions (nick, ident, host, first_request, flood_start, flood_end, flood_numcmd, ignore)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 SQL
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
@@ -91,8 +91,8 @@ sub update_newrequest {
         $Session->flood_end($time + 60);
         $Session->flood_numcmd(0);
     } else {
-        if ($Session->flood_numcmd > 20 ) {
-            print "Flood detected ignore user 5mn!";
+        if ($Session->flood_numcmd > 5 ) {
+            print "Flood detected ignore user 5mn!\n";
             $Session->ignore($time + 300);
         } else {
             $Session->flood_numcmd($Session->flood_numcmd + 1);
@@ -106,7 +106,7 @@ SQL
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
     $sth->execute( $Session->flood_start, $Session->flood_end, 
-    $Session->flood_numcmd, $Session->ignore)
+    $Session->flood_numcmd, $Session->ignore, $Session->id)
       or die "Cannot execute query '$query' (" . $h->errstr . ")";
     return 0 if $Session->ignore;
     return 1;
@@ -117,7 +117,7 @@ sub delete_idle {
     my $tlimit = time - 600;
     my $h      = $s->_parent->handle;
     my $query  = <<SQL;
-	   DELETE FROM sessions WHERE firs_request < ? AND ignore IS NULL
+	   DELETE FROM sessions WHERE first_request < ? AND ignore IS NULL
 SQL
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";

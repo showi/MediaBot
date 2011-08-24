@@ -8,6 +8,9 @@ use POE::Session;
 
 use lib qw(../../);
 use MediaBot::Class qw(AUTOLOAD DESTROY LOG _get_root);
+use MediaBot::Constants;
+use MediaBot::IRC::Commands::Plugins;
+use MediaBot::IRC::Commands::Object;
 use MediaBot::String;
 
 our @ISA    = qw(Exporter);
@@ -18,6 +21,7 @@ our $AUTOLOAD;
 our %fields = ( 
     _parent => undef,
     cmd_prefix => undef,
+    Plugins => undef,
 );
 
 # Constructor
@@ -33,6 +37,7 @@ sub new {
     };
     bless( $s, $class );
     $s->_parent($parent);
+    $s->Plugins(new MediaBot::IRC::Commands::Plugins($s));
     my $cmd_prefix = $s->_get_root->Config->bot->{cmd_prefix};
     croak "Unconfigured or bad cmd_prefix in bot.yaml config" 
         unless $cmd_prefix =~ /^[!.]$/;
@@ -52,8 +57,7 @@ sub dispatch {
     
     my $cmd_prefix = $s->cmd_prefix;
     return unless $_[ARG2] =~ /^$cmd_prefix[a-z0-9_-]+/;
-    my $what = substr($_[ARG2], 1);
-    print " what: $what\n";
+
     my ($who) = $_[ARG0];
     my ( $nick,  $idhost ) = split /!/, $who;
     my ( $ident, $host )   = split /@/, $idhost;
@@ -70,7 +74,22 @@ sub dispatch {
         print "Ignored user\n";
         return 2;
     }
-    print "Dispatching command\n";
+    my $args = substr($_[ARG2], 1);
+    $args =~ s/^([a-zA-Z0-9_-]+)\s*(.*)\s*$/$2/;
+    my $cmd = $1;
+    print "Dispatching command: '$cmd' ($args)\n";
+    unless($s->Plugins->exists($cmd)) {
+        print "Unknown command '$cmd\n";
+        return 3;
+    }
+    my $co = new MediaBot::IRC::Commands::Object;
+    $co->type($type);
+    $co->ident($ident);
+    $co->host($host);
+    $co->cmd($host);
+    $co->cmd_parameters($args);
+    $co->parse_parameters($_);
+    $s->Plugins->$cmd->run($co);
     return 0;
 }
 

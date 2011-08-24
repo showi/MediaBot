@@ -18,6 +18,10 @@ our %fields = (
 	type    => undef,
 	channel => undef,
 	nick    => undef,
+	ident   => undef,
+	host    => undef,
+	cmd     => undef,
+	cmd_parameters => undef,
 	msg     => undef,
 	args    => undef,
 	object  => undef,
@@ -25,6 +29,7 @@ our %fields = (
 	heap    => undef,
 	state   => undef,
 	sender  => undef,
+	session => undef,
 );
 
 # Constructor

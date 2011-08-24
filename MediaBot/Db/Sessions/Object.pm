@@ -1,4 +1,4 @@
-package MediaBot::Db::Session::Object;
+package MediaBot::Db::Sessions::Object;
 
 use strict;
 use warnings;
@@ -12,7 +12,14 @@ our $AUTOLOAD;
 
 our %fields = (
 	id => undef,
-	name => undef,
+	nick => undef,
+	ident => undef,
+	host => undef,
+	first_request => undef,
+	flood_start => undef,
+	flood_end => undef,
+	flood_numcmd => undef,
+	ignore => undef,
 );
 
 # Constructor

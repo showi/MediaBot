@@ -7,7 +7,7 @@ use Exporter;
 use POE::Session;
 
 use lib qw(../../);
-use MediaBot::Class qw(AUTOLOAD DESTROY LOG);
+use MediaBot::Class qw(AUTOLOAD DESTROY LOG _get_root);
 use MediaBot::String;
 
 our @ISA    = qw(Exporter);
@@ -15,7 +15,10 @@ our @EXPORT = qw(irc_botcmd_version irc_botcmd_register);
 
 our $AUTOLOAD;
 
-our %fields = ( _parent => undef, );
+our %fields = ( 
+    _parent => undef,
+    cmd_prefix => undef,
+);
 
 # Constructor
 #############
@@ -30,6 +33,10 @@ sub new {
     };
     bless( $s, $class );
     $s->_parent($parent);
+    my $cmd_prefix = $s->_get_root->Config->bot->{cmd_prefix};
+    croak "Unconfigured or bad cmd_prefix in bot.yaml config" 
+        unless $cmd_prefix =~ /^[!.]$/;
+    $s->cmd_prefix($cmd_prefix);
     return $s;
 }
 
@@ -42,6 +49,11 @@ sub _cleanstr {
 sub dispatch {
     my $s     = shift;
     my $type  = shift;
+    
+    my $cmd_prefix = $s->cmd_prefix;
+    return unless $_[ARG2] =~ /^$cmd_prefix[a-z0-9_-]+/;
+    my $what = substr($_[ARG2], 1);
+    print " what: $what\n";
     my ($who) = $_[ARG0];
     my ( $nick,  $idhost ) = split /!/, $who;
     my ( $ident, $host )   = split /@/, $idhost;
@@ -50,8 +62,16 @@ sub dispatch {
     $host  = _cleanstr($host);
     print "Dispatching $type command for user: $nick [$ident] @ $host\n";
     my $US = $s->_parent->Sessions->add( $nick, $ident, $host );
-    return unless $US;
-
+    unless ($US) {
+        print "Cannot create user session, returning!\n";
+        return 1;
+    } 
+    if ($US->ignore) {
+        print "Ignored user\n";
+        return 2;
+    }
+    print "Dispatching command\n";
+    return 0;
 }
 
 #

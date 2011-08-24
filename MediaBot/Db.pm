@@ -11,6 +11,7 @@ use MediaBot::Class qw(AUTOLOAD DESTROY LOG _get_root);
 use MediaBot::Db::Users;
 use MediaBot::Db::Networks;
 use MediaBot::Db::Channels;
+use MediaBot::Db::Sessions;
 
 our $AUTOLOAD;
 
@@ -20,6 +21,7 @@ our %fields = (
 	_parent => undef,
 	Users   => undef,
 	Networks => undef,
+	Sessions => undef,
 );
 
 # Constructor
@@ -37,6 +39,7 @@ sub new {
 	$s->_parent($parent);
 	$s->Users( new MediaBot::Db::Users($s) );
 	$s->Networks( new MediaBot::Db::Networks($s) );
+	$s->Sessions( new MediaBot::Db::Sessions($s) );
 	$s->init();
 	return $s;
 }

@@ -1,2 +1,3 @@
 ---
 password_salt: $6$4fdF$SaQwN?m.DzA
+cmd_prefix: '!'

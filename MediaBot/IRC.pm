@@ -6,7 +6,7 @@ use warnings;
 use Carp;
 
 use lib qw(..);
-use MediaBot::Class qw(AUTOLOAD DESTROY);
+use MediaBot::Class qw(AUTOLOAD DESTROY _get_root);
 use MediaBot::Constants;
 use MediaBot::IRC::Sessions; 
 use MediaBot::IRC::Commands; 
@@ -31,10 +31,13 @@ my %fields   = (
 	Commands => undef,
 	Sessions => undef,
 );
-my $nickname = 'ShoBoat';
+my $nickname = 'OlumZ';
 my $ircname  = 'A futur capsule?';
+
 my %channels = ( '#teuk' => '', );
 my @servers  = ( 'shake.mine.nu' );
+#my %channels = ( '#quebec' => '', );
+#my @servers  = ( 'diemen.nl.eu.undernet.org' );
 
 sub new {
 	my ( $proto, $parent ) = @_;
@@ -57,6 +60,7 @@ sub new {
 		],
 
 	);
+	$s->_parent($parent);
 	$s->Commands(new MediaBot::IRC::Commands($s));
 	$s->Sessions(new MediaBot::IRC::Sessions($s));
 	return $s;
@@ -128,7 +132,6 @@ sub _default {
 
 sub irc_msg {
 	my $s = $_[0];
-	print "User: " . $_[ARG0] . "\n";
 	$s->Commands->dispatch(IRCCMD_TYPE_PRV, @_);
 	return 0;
 }

@@ -52,7 +52,7 @@ sub read {
 	  unless defined $y;
 	$s->$name($y);
 
-	#print Dumper $s->$name;
+	print Dumper $s->$name;
 	return 0;
 }
 

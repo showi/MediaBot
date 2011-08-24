@@ -7,12 +7,18 @@ use Carp;
 
 use lib qw(../../../../);
 use MediaBot::Class qw(AUTOLOAD DESTROY LOG);
+use MediaBot::Constants;
+
+use POE::Session;
 
 our $AUTOLOAD;
 
 our %fields = (
     _parent => undef,
     cmd => undef,
+    lvl => undef,
+    description => undef,
+    on => undef,
 );
 
 # Constructor
@@ -34,6 +40,16 @@ sub new {
 
 sub run {
     my ($s, $CO) = @_;
-    print "Running plugin " . __PACKAGE__ . ": " . $CO->cmd. "\n";
+ 	my ($who, $where, $what ) = @{$CO->args}[ARG0 .. ARG2];
+	my $nick     = ( split /!/, $who )[0];
+	my $channel  = $where;
+	$where = $channel;
+	$where = $nick if ($CO->type == IRCCMD_TYPE_PRV); 
+	my $irc = $CO->sender->get_heap();
+	$irc->yield( privmsg => $where => "I'm $MediaBot::PROGRAMNAME ($MediaBot::VERSION)" );
+    $irc->yield( notice => $where => "I'm $MediaBot::PROGRAMNAME ($MediaBot::VERSION)" );
+	$irc->yield( ctcp => $where => "ACTION I'm $MediaBot::PROGRAMNAME ($MediaBot::VERSION)" );
+	return 0;
 }
+
 1;

@@ -48,7 +48,7 @@ sub new {
 
 sub parse_parameters {
 	my ($s, @args) = @_;	
-	$s->args(@args[ARG0..$#_]);
+	$s->args(\@args);
 	$s->object($args[OBJECT]);
 	$s->session($args[SESSION]);
 	$s->kernel($args[KERNEL]);

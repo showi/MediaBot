@@ -88,7 +88,7 @@ sub dispatch {
     $co->host($host);
     $co->cmd($host);
     $co->cmd_parameters($args);
-    $co->parse_parameters($_);
+    $co->parse_parameters(@_);
     $s->Plugins->$cmd->run($co);
     return 0;
 }

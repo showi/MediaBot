@@ -2,4 +2,7 @@
 password_salt: $6$4fdF$SaQwN?m.DzA
 cmd_prefix: '!'
 cmd_plugins:
-  - version : 1000
+  - name: version
+    lvl: 1000
+    on: pv,pub
+    description: Simple version command

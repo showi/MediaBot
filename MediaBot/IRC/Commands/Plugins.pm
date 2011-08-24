@@ -36,8 +36,8 @@ sub new {
 }
 
 sub load {
-    my ($s, $name) = @_;  
-    $name = str_chomp($name);
+    my ($s, $h) = @_;  
+    my $name = str_chomp($h->{name});
     $name = lc($name);  
     if (defined $s->{$name}) {
         print "Plugin with same name present ($name)!";
@@ -47,6 +47,9 @@ sub load {
     my $pname = "MediaBot::IRC::Commands::Plugins::".ucfirst($name);
     eval "require $pname";
     $s->$name($pname->new($s));
+    $s->$name->lvl($h->{lvl});
+    $s->$name->description($h->{description});
+    $s->$name->on($h->{on});
     print "Plugin $pname loaded\n";
     return 0;
 }

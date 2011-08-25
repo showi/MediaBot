@@ -21,7 +21,7 @@ our %fields = (
 #############
 sub new {
     my ( $proto, $parent ) = @_;
-    DEBUG("Creating new " . __PACKAGE__);
+    DEBUG( "Creating new " . __PACKAGE__ );
     croak "No parent specified" unless ref $parent;
     my $class = ref($proto) || $proto;
     my $s = {
@@ -68,35 +68,37 @@ sub create {
 SQL
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute( $nick, $ident, $host, $time, $time, $time + 60,
-        1, 0)
+    $sth->execute( $nick, $ident, $host, $time, $time, $time + 60, 1, 0 )
       or die "Cannot execute query '$query' (" . $h->errstr . ")";
     return 0;
 }
 
 sub update_newrequest {
     my ( $s, $Session ) = @_;
-    my $h     = $s->_parent->handle;
+    my $h    = $s->_parent->handle;
     my $time = time;
-    if ($Session->ignore) {
-        if ($Session->ignore < $time) {
+    if ( $Session->ignore ) {
+        if ( $Session->ignore < $time ) {
             $Session->ignore(undef);
-        } else {
+        }
+        else {
             print "Ignored user!\n";
             return 0;
         }
     }
-    if ($Session->flood_end < $time) {
+    if ( $Session->flood_end < $time ) {
         print "Reseting flood!\n";
         $Session->flood_start($time);
-        $Session->flood_end($time + 60);
+        $Session->flood_end( $time + 60 );
         $Session->flood_numcmd(0);
-    } else {
-        if ($Session->flood_numcmd > 5 ) {
+    }
+    else {
+        if ( $Session->flood_numcmd > 5 ) {
             print "Flood detected ignore user 5mn!\n";
-            $Session->ignore($time + 300);
-        } else {
-            $Session->flood_numcmd($Session->flood_numcmd + 1);
+            $Session->ignore( $time + 300 );
+        }
+        else {
+            $Session->flood_numcmd( $Session->flood_numcmd + 1 );
         }
     }
     my $query = <<SQL;
@@ -106,9 +108,10 @@ sub update_newrequest {
 SQL
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute( $Session->flood_start, $Session->flood_end, 
-    $Session->flood_numcmd, $Session->ignore, $Session->id)
-      or die "Cannot execute query '$query' (" . $h->errstr . ")";
+    $sth->execute(
+        $Session->flood_start, $Session->flood_end, $Session->flood_numcmd,
+        $Session->ignore,      $Session->id
+    ) or die "Cannot execute query '$query' (" . $h->errstr . ")";
     return 0 if $Session->ignore;
     return 1;
 }

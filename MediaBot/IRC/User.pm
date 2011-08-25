@@ -13,18 +13,19 @@ use MediaBot::Log;
 
 our $AUTOLOAD;
 
-our %fields = ( 
-    _parent => undef, 
-    nick => undef,
-    ident => undef,
-    host => undef,
+our %fields = (
+    _parent => undef,
+    nick    => undef,
+    ident   => undef,
+    host    => undef,
 );
 
 # Constructor
 #############
 sub new {
-    my ( $proto) = @_;
-    DEBUG("Creating new " . __PACKAGE__);
+    my ($proto) = @_;
+    DEBUG( "Creating new " . __PACKAGE__ );
+
     #croak "No parent specified" unless ref $parent;
     my $class = ref($proto) || $proto;
     my $s = {
@@ -32,6 +33,7 @@ sub new {
         %fields,
     };
     bless( $s, $class );
+
     #$s->_parent($parent);
     return $s;
 }
@@ -45,14 +47,14 @@ sub parse_event {
     my ($who) = $_[ARG0];
     my ( $nick,  $idhost ) = split /!/, $who;
     my ( $ident, $host )   = split /@/, $idhost;
-    $s->nick(_cleanstr($nick));
-    $s->ident(_cleanstr($ident));
-    $s->host(_cleanstr($host));
+    $s->nick( _cleanstr($nick) );
+    $s->ident( _cleanstr($ident) );
+    $s->host( _cleanstr($host) );
 }
 
 sub pretty_print {
     my $s = shift;
-    return $s->nick . " " . $s->ident . "@" . $s->host;    
+    return $s->nick . " " . $s->ident . "@" . $s->host;
 }
 
 1;

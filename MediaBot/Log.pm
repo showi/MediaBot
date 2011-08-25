@@ -19,9 +19,10 @@ sub LOG {
       or die "Cannot open logfile $logfile";
     my $prefix = $type || "LOG";
     $msg = time . " [$prefix] $msg\n";
-    if ($prefix eq "LOG") {
+    if ( $prefix eq "LOG" ) {
         print $msg;
-    } else {
+    }
+    else {
         print STDERR $msg;
     }
     print $wh $msg;
@@ -37,6 +38,6 @@ sub flush {
     my $logfile = $MediaBot::Log::logfile;
     open( $wh, ">$logfile" )
       or die "Cannot open logfile $logfile";
-    print $wh '-'x80 . "\n";
+    print $wh '-' x 80 . "\n";
 }
 1;

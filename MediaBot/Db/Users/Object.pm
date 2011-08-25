@@ -13,10 +13,15 @@ our $AUTOLOAD;
 
 our %fields = (
     id       => undef,
-    name     => undef,
+    nick    => undef,
+    name => undef,
     password => undef,
     lvl      => undef,
     pending  => undef,
+    ident => undef,
+    host => undef,
+    last_access => undef,
+    logged_on => undef,
 );
 # Constructor
 #############

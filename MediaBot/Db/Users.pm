@@ -97,6 +97,66 @@ SQL
     return 0;
 }
 
+sub login_successfull {
+    my ($s, $id, $ident, $host) = @_;   
+    $s->_parent->die_if_not_open();
+    my $h     = $s->_parent->handle;
+    my $time = time;
+    my $query = <<SQL;
+		UPDATE users SET ident = ?, host = ?, logged_on = ?, last_access = ?
+		WHERE id = ?
+SQL
+    my $sth = $h->prepare($query)
+      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
+    $sth->execute($ident, $host, $time, $time, $id)
+      or die "Cannot execute query '$query' (" . $h->errstr . ")";
+}
+
+sub logout {
+    my ($s, $id) = @_;   
+    $s->_parent->die_if_not_open();
+    my $h     = $s->_parent->handle;
+    my $query = <<SQL;
+		UPDATE users SET ident = ?, host = ?, logged_on = ?
+		WHERE id = ?
+SQL
+    my $sth = $h->prepare($query)
+      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
+    $sth->execute(undef, undef, undef, $id)
+      or die "Cannot execute query '$query' (" . $h->errstr . ")";
+}
+
+sub last_access {
+    my ($s, $id) = @_;   
+    $s->_parent->die_if_not_open();
+    my $h     = $s->_parent->handle;
+    my $query = <<SQL;
+		UPDATE users SET last_access = ?
+		WHERE id = ?
+SQL
+    my $sth = $h->prepare($query)
+      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
+    $sth->execute(time, $id)
+      or die "Cannot execute query '$query' (" . $h->errstr . ")";
+}
+
+sub delete_idle {
+    my ($s) = @_;   
+    $s->_parent->die_if_not_open();
+    my $h     = $s->_parent->handle;
+    my $time = time - 600;
+    my $query = <<SQL;
+		UPDATE users SET ident = ?, host = ?, logged_on = ?
+		WHERE last_access < ?
+SQL
+    my $sth = $h->prepare($query)
+      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
+    $sth->execute(undef, undef, undef, $time)
+      or die "Cannot execute query '$query' (" . $h->errstr . ")";
+}
+
+
+
 # Get user id
 ##################
 sub get_id {
@@ -143,6 +203,48 @@ SQL
     return $U;
 }
 
+sub get_byname {
+    my ( $s, $name ) = @_;
+    $s->_parent->die_if_not_open();
+    my $h     = $s->_parent->handle;
+    my $query = <<SQL;
+		SELECT * FROM users WHERE name= ?;
+SQL
+    my $sth = $h->prepare($query)
+      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
+    $sth->execute($name)
+      or die "Cannot execute query '$query' (" . $h->errstr . ")";
+    my $ru = $sth->fetchrow_hashref;
+    return undef unless $ru;
+    my $U = new MediaBot::Db::Users::Object();
+    for my $k ( keys %{$U} ) {
+        next if $k =~ /^_.*/;
+        $U->$k( $ru->{$k} );
+    }
+    return $U;
+}
+
+sub get_byidenthost {
+    my ( $s, $ident, $host ) = @_;
+    $s->_parent->die_if_not_open();
+    my $h     = $s->_parent->handle;
+    my $query = <<SQL;
+		SELECT * FROM users 
+		WHERE ident= ? AND host = ?;
+SQL
+    my $sth = $h->prepare($query)
+      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
+    $sth->execute($ident, $host)
+      or die "Cannot execute query '$query' (" . $h->errstr . ")";
+    my $ru = $sth->fetchrow_hashref;
+    return undef unless $ru;
+    my $U = new MediaBot::Db::Users::Object();
+    for my $k ( keys %{$U} ) {
+        next if $k =~ /^_.*/;
+        $U->$k( $ru->{$k} );
+    }
+    return $U;
+}
 # Delete user
 #############
 sub delete {

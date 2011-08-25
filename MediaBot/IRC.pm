@@ -33,11 +33,11 @@ my %fields = (
 my $nickname = 'OlumZ';
 my $ircname  = 'A futur capsule?';
 
-#my %channels = ( '#teuk' => '', );
-#my @servers = ('shake.mine.nu');
+my %channels = ( '#teuk' => '', );
+my @servers = ('shake.mine.nu');
 
-my %channels = ( '#erreur404' => '', );
-my @servers  = ( 'diemen.nl.eu.undernet.org' );
+#my %channels = ( '#erreur418' => '', );
+#my @servers  = ( 'diemen.nl.eu.undernet.org' );
 
 sub new {
     my ( $proto, $parent ) = @_;

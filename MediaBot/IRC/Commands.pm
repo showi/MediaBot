@@ -77,8 +77,7 @@ sub dispatch {
     $co->cmd_parameters($args);
     $co->args(\@_);
     my $mod = $s->Plugins->plugins->{ $s->Plugins->cmd->{$cmd} };
-    $mod->$cmd($co);
-    return 0;
+    return $mod->$cmd($co);
 }
 
 1;

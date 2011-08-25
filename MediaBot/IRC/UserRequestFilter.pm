@@ -34,19 +34,26 @@ sub new {
 
 sub run {
     my ($s) = shift;
-    my $user = new MediaBot::IRC::User();
-    $user->parse_event(@_);
-    my $US = $s->_parent->Sessions->add( $user->nick, $user->ident, $user->host );
+    my $tmpuser = new MediaBot::IRC::User();
+    $tmpuser->parse_event(@_);
+    my $US = $s->_parent->Sessions->add( $tmpuser->nick, $tmpuser->ident, $tmpuser->host );
     unless ($US) {
         LOG("Cannot create user session, returning!");
         return undef;
     }
+    my $db = $s->_get_root->Db->Users;
+    $db->delete_idle();
     if ( $US->ignore ) {
-        LOG("Ignore user " . $user->pretty_print);
+        LOG("Ignore user " . $tmpuser->pretty_print);
         return undef;
     }
-    LOG("User can communicate with me: " . $user->pretty_print);
-    return $user;
+    my $user = $db->get_byidenthost($US->ident, $US->host);
+    if ($user and $user->logged_on) {
+       $db->last_access($user->id);
+       $user->nick($tmpuser->nick);
+    }
+    LOG("User can communicate with me: " . $tmpuser->pretty_print);
+    return $user || $tmpuser;
 }
 
 1;

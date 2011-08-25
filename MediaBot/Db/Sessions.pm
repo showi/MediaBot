@@ -56,7 +56,7 @@ SQL
 sub create {
     my ( $s, $nick, $ident, $host ) = @_;
     $s->_parent->die_if_not_open();
-    if ( $s->exists( $nick, $ident, $host ) ) {
+    if ( $s->exists( $ident, $host ) ) {
         $s->LOG("DB::Error Sessions '$nick $ident @ $host'  already exists");
         return 1;
     }
@@ -93,7 +93,7 @@ sub update_newrequest {
         $Session->flood_numcmd(0);
     }
     else {
-        if ( $Session->flood_numcmd > 5 ) {
+        if ( $Session->flood_numcmd > 10  ) {
             print "Flood detected ignore user 5mn!\n";
             $Session->ignore( $time + 300 );
         }

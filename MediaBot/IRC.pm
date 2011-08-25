@@ -16,6 +16,7 @@ use lib qw(..);
 use MediaBot::Class qw(AUTOLOAD DESTROY _get_root);
 use MediaBot::Log;
 use MediaBot::Constants;
+use MediaBot::IRC::UserRequestFilter;
 use MediaBot::IRC::Sessions;
 use MediaBot::IRC::Commands;
 use MediaBot::IRC::Commands::Object;
@@ -23,9 +24,10 @@ use MediaBot::IRC::Commands::Object;
 our $AUTOLOAD;
 
 my %fields = (
-    _parent  => undef,
-    Commands => undef,
-    Sessions => undef,
+    _parent           => undef,
+    Commands          => undef,
+    Sessions          => undef,
+    UserRequestFilter => undef,
 );
 
 my $nickname = 'OlumZ';
@@ -62,6 +64,7 @@ sub new {
     $s->_parent($parent);
     $s->Commands( new MediaBot::IRC::Commands($s) );
     $s->Sessions( new MediaBot::IRC::Sessions($s) );
+    $s->UserRequestFilter( new MediaBot::IRC::UserRequestFilter($s) );
     return $s;
 }
 
@@ -115,39 +118,43 @@ sub _default {
             push( @output, "'$arg'" ) if defined $arg;
         }
     }
-    print join ' ', @output, "\n";
+    DEBUG( join ' ', @output );
     return;
 }
 
+
 sub irc_msg {
-    my $s = $_[0];
-    $s->Commands->dispatch( IRCCMD_TYPE_PRV, @_ );
+    my $s = $_[0];   
+    my $user = $s->UserRequestFilter->run(@_);
+    return unless $user;
+    $s->Commands->dispatch( $user, IRCCMD_TYPE_PRV, @_ );
     return 0;
 }
 
 sub irc_public {
-    my $s = $_[0];
-    $s->Commands->dispatch( IRCCMD_TYPE_PUB, @_ );
+    my $s = $_[0]; 
+    my $user = $s->UserRequestFilter->run(@_);
+    return unless $user;
+    $s->Commands->dispatch( $user, IRCCMD_TYPE_PUB, @_ );
     return 0;
 }
 
 sub lag_o_meter {
     my ( $kernel, $heap ) = @_[ KERNEL, HEAP ];
-    print 'Time: ' . time() . ' Lag: ' . $heap->{connector}->lag() . "\n";
+    LOG( 'Time: ' . time() . ' Lag: ' . $heap->{connector}->lag() );
     $kernel->delay( 'lag_o_meter' => 60 );
     return;
 }
 
 sub irc_ctcp_ping {
-
-    #my $s = shift;
-    my ( $kernel, $sender ) = @_[ KERNEL, SENDER ];
-    my ( $who, $where, $what ) = @_[ ARG0 .. ARG2 ];
-    my $nick    = ( split /!/, $who )[0];
+    my $s = $_[0];
+    my $user = $s->UserRequestFilter->run(@_);
+    return unless $user;
+    my ( $sender, $where, $what ) = @_[ SENDER, ARG1 .. ARG2 ];
     my $channel = $where->[0];
     my $irc     = $sender->get_heap();      # obtain the poco's object
-    DEBUG("Receive CTCP PING from $nick");
-    $irc->yield( ctcpreply => $nick => "PING $what" );
+    DEBUG("Receive CTCP PING from " . $user->pretty_print);
+    $irc->yield( ctcpreply => $user->nick => "PING $what" );
 }
 
 sub run {

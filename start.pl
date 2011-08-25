@@ -6,7 +6,8 @@ use warnings;
 use lib qw(.);
 
 use MediaBot;
+use MediaBot::Log;
 
 my $b = new MediaBot("./");
-print "DB USER: " . $b->Config->db->{user} . "\n";
+LOG("--- Starting MediaBot ---");
 $b->Irc->run();

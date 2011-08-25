@@ -36,15 +36,15 @@ sub new {
 # Sessions exists?
 ##############
 sub exists {
-    my ( $s, $nick, $ident, $host ) = @_;
+    my ( $s, $ident, $host ) = @_;
     $s->_parent->die_if_not_open();
     my $h     = $s->_parent->handle;
     my $query = <<SQL;
-		SELECT * FROM sessions WHERE nick = ? AND ident = ? AND host = ?
+		SELECT * FROM sessions WHERE ident = ? AND host = ?
 SQL
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute( $nick, $ident, $host )
+    $sth->execute( $ident, $host )
       or die "Cannot execute query '$query' (" . $h->errstr . ")";
     my $row = $sth->fetch;
     return $row if $row;
@@ -102,13 +102,13 @@ sub update_newrequest {
         }
     }
     my $query = <<SQL;
-    UPDATE sessions SET flood_start = ?, flood_end = ?,
+    UPDATE sessions SET nick = ?, flood_start = ?, flood_end = ?,
     flood_numcmd = ?, ignore = ? 
     WHERE id = ?
 SQL
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute(
+    $sth->execute($Session->nick,
         $Session->flood_start, $Session->flood_end, $Session->flood_numcmd,
         $Session->ignore,      $Session->id
     ) or die "Cannot execute query '$query' (" . $h->errstr . ")";
@@ -134,19 +134,19 @@ SQL
 # Get network by name
 #####################
 sub get {
-    my ( $s, $nick, $ident, $host ) = @_;
+    my ( $s, $ident, $host ) = @_;
     $s->_parent->die_if_not_open();
-    unless ( $s->exists( $nick, $ident, $host ) ) {
-        $s->LOG("DB::Error Network '$nick' doesn't exist");
+    unless ( $s->exists( $ident, $host ) ) {
+        $s->LOG("DB::Error Network '$ident @ $host' doesn't exist");
         return undef;
     }
     my $h     = $s->_parent->handle;
     my $query = <<SQL;
-		SELECT * FROM sessions WHERE nick = ? AND ident = ? AND host = ?;
+		SELECT * FROM sessions WHERE ident = ? AND host = ?;
 SQL
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute( $nick, $ident, $host )
+    $sth->execute( $ident, $host )
       or die "Cannot execute query '$query' (" . $h->errstr . ")";
     my $rn = $sth->fetchrow_hashref;
     return undef unless $rn;
@@ -163,19 +163,19 @@ SQL
 # Delete network by name
 ########################
 sub delete {
-    my ( $s, $nick, $ident, $host ) = @_;
+    my ( $s, $ident, $host ) = @_;
     $s->_parent->die_if_not_open();
-    unless ( $s->exists( $nick, $ident, $host ) ) {
-        $s->LOG("DB::Error Cannot remove non existing network '$nick'");
+    unless ( $s->exists( $ident, $host ) ) {
+        $s->LOG("DB::Error Cannot remove non existing network '$ident @ $host'");
         return 1;
     }
     my $h     = $s->_parent->handle;
     my $query = <<SQL;
-		DELETE FROM sessions WHERE nick = ? AND ident = ? AND host = ? 
+		DELETE FROM sessions WHERE ident = ? AND host = ? 
 SQL
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute( $nick, $ident, $host )
+    $sth->execute(  $ident, $host )
       or die "Cannot execute query '$query' (" . $h->errstr . ")";
     return 0;
 }

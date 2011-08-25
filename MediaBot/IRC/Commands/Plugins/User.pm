@@ -1,4 +1,4 @@
-package MediaBot::IRC::Commands::Plugins::Info;
+package MediaBot::IRC::Commands::Plugins::User;
 
 use strict;
 use warnings;
@@ -37,38 +37,41 @@ sub new {
     bless( $s, $class );
     $s->_parent($parent);
     $s->cmd('version');
-    my @cmds = qw(version test);
+    my @cmds = qw(login logout);
     $s->registered_cmd( \@cmds );
     return $s;
 }
 
-sub version {
+sub login {
     my ( $s, $CO ) = @_;
     my ( $sender, $where, $what ) = @{ $CO->args }[ SENDER, ARG1 .. ARG2 ];
     my $nick = $CO->User->nick;
     my $channel = $where;
-    $where = $channel;
-    $where = $nick if ( $CO->type == IRCCMD_TYPE_PRV );
     my $irc = $sender->get_heap();
-    $irc->yield( ctcp => $where =>
-          "ACTION I'm $MediaBot::PROGRAMNAME ($MediaBot::VERSION)" );
+    
+    if ($CO->type == IRCCMD_TYPE_PUB) {
+          $irc->yield( privmsg => $nick =>
+          "You have issued login command on channel, your credentials may have been compromised!" );
+        return;
+    }
+    $irc->yield( privmsg => $nick =>
+          "You are trying to login!" );
     return;
 }
 
-sub test {
+sub logout {
     my ( $s, $CO ) = @_;
     my ( $sender, $where, $what ) = @{ $CO->args }[ SENDER, ARG1 .. ARG2 ];
     my $nick = $CO->User->nick;
     my $channel = $where;
-    $where = $channel;
-    $where = $nick if ( $CO->type == IRCCMD_TYPE_PRV );
     my $irc = $sender->get_heap();
-    $irc->yield( ctcp => $where => "ACTION Wanna test my kick?" );
+    
+    if ($CO->type == IRCCMD_TYPE_PUB) {
+        return;
+    }
+    $irc->yield( privmsg => $nick =>
+          "You are trying to logout!" );
     return;
 }
-
-
-#$irc->yield( privmsg => $where => "I'm $MediaBot::PROGRAMNAME ($MediaBot::VERSION)" );
-#$irc->yield( notice => $where => "I'm $MediaBot::PROGRAMNAME ($MediaBot::VERSION)" );
 
 1;

@@ -62,19 +62,18 @@ sub load {
     croak "Plugin with same name already loaded '$name'!"
       if defined $s->plugins->{$name};
     $s->plugins->{$name} = $plugin;
-    print "Plugin $pname loaded\n";
-    print "name:  $name\n";
+    #print "Plugin $pname loaded\n";
+    #print "name:  $name\n";
 
     #"s->plugins->{$name}->{name} . "\n";
-    DEBUG( $plugin->registered_cmd );
+    #DEBUG( $plugin->registered_cmd );
     for ( @{ $plugin->registered_cmd } ) {
         croak "Command $_ already registerd by plugin " . $s->cmd->{$_}
           if defined $s->cmd->{$_};
         LOG("Plugin $name registering command: $_");
         $s->cmd->{$_} = $name;
     }
-    print Dumper $s;
-
+    #print Dumper $s;
     #exit 0;
     return 0;
 }

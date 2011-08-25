@@ -56,25 +56,26 @@ sub _cleanstr {
 
 sub dispatch {
     my $s    = shift;
+    my $User = shift;
     my $type = shift;
 
     my $cmd_prefix = $s->cmd_prefix;
     return unless $_[ARG2] =~ /^$cmd_prefix[a-z0-9_-]+/;
 
-    my $user = new MediaBot::IRC::User();
-    $user->parse_event(@_);
-
-    print "Dispatching $type command for user: " . $user->pretty_print . "\n";
-    my $US =
-      $s->_parent->Sessions->add( $user->nick, $user->ident, $user->host );
-    unless ($US) {
-        print "Cannot create user session, returning!\n";
-        return 1;
-    }
-    if ( $US->ignore ) {
-        print "Ignored user\n";
-        return 2;
-    }
+#    my $user = new MediaBot::IRC::User();
+#    $user->parse_event(@_);
+#
+#    print "Dispatching $type command for user: " . $user->pretty_print . "\n";
+#    my $US =
+#      $s->_parent->Sessions->add( $user->nick, $user->ident, $user->host );
+#    unless ($US) {
+#        print "Cannot create user session, returning!\n";
+#        return 1;
+#    }
+#    if ( $US->ignore ) {
+#        print "Ignored user\n";
+#        return 2;
+#    }
     my $args = substr( $_[ARG2], 1 );
     $args =~ s/^([a-zA-Z0-9_-]+)\s*(.*)\s*$/$2/;
     my $cmd = $1;
@@ -85,11 +86,10 @@ sub dispatch {
     }
     my $co = new MediaBot::IRC::Commands::Object;
     $co->type($type);
-    $co->ident( $user->ident );
-    $co->host( $user->host );
-    $co->cmd( $user->host );
+    $co->User($User);
+    $co->cmd( $cmd);
     $co->cmd_parameters($args);
-    $co->parse_parameters(@_);
+    $co->args(\@_);
     my $mod = $s->Plugins->plugins->{ $s->Plugins->cmd->{$cmd} };
     $mod->$cmd($co);
     return 0;

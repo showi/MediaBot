@@ -17,20 +17,11 @@ our $AUTOLOAD;
 
 our %fields = (
     type           => undef,
-    channel        => undef,
-    nick           => undef,
-    ident          => undef,
-    host           => undef,
+    User           => undef,
     cmd            => undef,
     cmd_parameters => undef,
     msg            => undef,
     args           => undef,
-    object         => undef,
-    kernel         => undef,
-    heap           => undef,
-    state          => undef,
-    sender         => undef,
-    session        => undef,
 );
 
 # Constructor
@@ -45,18 +36,6 @@ sub new {
     };
     bless( $s, $class );
     return $s;
-}
-
-sub parse_parameters {
-    my ( $s, @args ) = @_;
-    $s->args( \@args );
-    $s->object( $args[OBJECT] );
-    $s->session( $args[SESSION] );
-    $s->kernel( $args[KERNEL] );
-    $s->sender( $args[SENDER] );
-    $s->state( $args[STATE] );
-    $s->heap( $args[HEAP] );
-    return 0;
 }
 
 sub type {

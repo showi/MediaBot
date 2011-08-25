@@ -35,7 +35,7 @@ sub new {
 
 sub add {
     my ( $s, $nick, $ident, $host ) = @_;
-    print "Session add: $nick $ident@" . "$host\n";
+    LOG("Session add: $nick $ident @ $host");
     my $dbs = $s->_get_root->Db->Sessions;
     $dbs->delete_idle();
     my $err = $dbs->create( $nick, $ident, $host );
@@ -43,7 +43,7 @@ sub add {
     unless ( !$err or $err == 1 ) {
         return 0;
     }
-    $S = $dbs->get( $nick, $ident, $host );
+    $S = $dbs->get($ident, $host );
     $dbs->update_newrequest($S);
     return $S;
 }

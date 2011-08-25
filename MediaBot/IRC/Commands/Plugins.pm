@@ -5,6 +5,8 @@ use warnings;
 use Carp;
 use Exporter;
 
+use Data::Dumper;
+
 use lib qw(../../../);
 use MediaBot::Class qw(AUTOLOAD DESTROY _get_root);
 use MediaBot::String;
@@ -14,7 +16,7 @@ our $AUTOLOAD;
 
 our %fields = ( 
     _parent => undef,
-    cmds => undef,
+    cmd => undef,
     plugins => undef,
 );
 
@@ -31,7 +33,7 @@ sub new {
     };
     bless( $s, $class );
     $s->_parent($parent);
-    $s->cmds({});
+    $s->cmd({});
     $s->plugins({});
     my @plugins = @{$s->_get_root->Config->bot->{cmd_plugins}};
     foreach(@plugins) {
@@ -63,13 +65,21 @@ sub load {
     print "Plugin $pname loaded\n";
     print "name:  $name\n";
     #"s->plugins->{$name}->{name} . "\n";
-    exit;
+    DEBUG($plugin->registered_cmd);
+    for(@{$plugin->registered_cmd}) {
+        croak "Command $_ already registerd by plugin " . $s->cmd->{$_} 
+            if defined $s->cmd->{$_};
+        LOG("Plugin $name registering command: $_");
+        $s->cmd->{$_} = $name;
+    }
+    print Dumper $s;
+    #exit 0;
     return 0;
 }
 
 sub exists {
     my ($s, $name) = @_;
-   return 1 if $s->{_permitted}->{$name};
+   return 1 if $s->{cmd}->{$name};
    return 0; 
 }
 

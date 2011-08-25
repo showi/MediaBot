@@ -8,6 +8,7 @@ use Switch;
 
 use lib qw(../../../);
 use MediaBot::Class qw(AUTOLOAD DESTROY);
+use MediaBot::Log;
 use MediaBot::Constants;
 
 use POE::Session;

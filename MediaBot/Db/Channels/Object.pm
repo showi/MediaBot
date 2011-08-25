@@ -7,6 +7,7 @@ use Carp;
 
 use lib qw(../../../);
 use MediaBot::Class qw(AUTOLOAD DESTROY);
+use MediaBot::Log;
 
 our $AUTOLOAD;
 

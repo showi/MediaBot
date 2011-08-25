@@ -8,6 +8,7 @@ use POE::Session;
 
 use lib qw(../../);
 use MediaBot::Class qw(AUTOLOAD DESTROY _get_root);
+use MediaBot::Log;
 use Data::Dumper;
 
 our @ISA    = qw(Exporter);

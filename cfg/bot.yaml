@@ -2,8 +2,5 @@
 password_salt: $6$4fdF$SaQwN?m.DzA
 cmd_prefix: '!'
 cmd_plugins:
-  - name: version
-    lvl: 1000
-    on: pv,pub
-    description: Simple version command
+  - name: info
 logfile: log/mediabot.log

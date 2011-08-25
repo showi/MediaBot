@@ -1,4 +1,4 @@
-package MediaBot::IRC::Commands::Plugins::Version;
+package MediaBot::IRC::Commands::Plugins::Info;
 
 use strict;
 use warnings;
@@ -20,7 +20,7 @@ our %fields = (
     lvl => undef,
     description => undef,
     on => undef,
-    registered_cmds => undef,
+    registered_cmd => undef,
 );
 
 # Constructor
@@ -37,13 +37,12 @@ sub new {
 	bless( $s, $class );
 	$s->_parent($parent);
     $s->cmd('version');
-    $s->registered_cmds({
-        version => 'version'
-    });
+    my @cmds = qw(version test);
+    $s->registered_cmd(\@cmds);
 	return $s;
 }
 
-sub run {
+sub version {
     my ($s, $CO) = @_;
  	my ($who, $where, $what ) = @{$CO->args}[ARG0 .. ARG2];
 	my $nick     = ( split /!/, $who )[0];
@@ -54,6 +53,18 @@ sub run {
 	#$irc->yield( privmsg => $where => "I'm $MediaBot::PROGRAMNAME ($MediaBot::VERSION)" );
     #$irc->yield( notice => $where => "I'm $MediaBot::PROGRAMNAME ($MediaBot::VERSION)" );
 	$irc->yield( ctcp => $where => "ACTION I'm $MediaBot::PROGRAMNAME ($MediaBot::VERSION)" );
+	return 0;
+}
+
+sub test {
+    my ($s, $CO) = @_;
+ 	my ($who, $where, $what ) = @{$CO->args}[ARG0 .. ARG2];
+	my $nick     = ( split /!/, $who )[0];
+	my $channel  = $where;
+	$where = $channel;
+	$where = $nick if ($CO->type == IRCCMD_TYPE_PRV); 
+	my $irc = $CO->sender->get_heap();
+	$irc->yield( ctcp => $where => "ACTION Wanna test my kick?" );
 	return 0;
 }
 

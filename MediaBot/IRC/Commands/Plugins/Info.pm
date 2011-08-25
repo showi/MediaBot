@@ -51,7 +51,7 @@ sub version {
     $where = $nick if ( $CO->type == IRCCMD_TYPE_PRV );
     my $irc = $sender->get_heap();
     $irc->yield( ctcp => $where =>
-          "ACTION I'm $MediaBot::PROGRAMNAME ($MediaBot::VERSION)" );
+          "ACTION is running $MediaBot::PROGRAMNAME ($MediaBot::VERSION)" );
     return;
 }
 
@@ -63,7 +63,7 @@ sub test {
     $where = $channel;
     $where = $nick if ( $CO->type == IRCCMD_TYPE_PRV );
     my $irc = $sender->get_heap();
-    $irc->yield( ctcp => $where => "ACTION Wanna test my kick?" );
+    $irc->yield( privmsg => $where => "Wanna test my kick?" );
     return;
 }
 

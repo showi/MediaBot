@@ -62,24 +62,10 @@ sub dispatch {
     my $cmd_prefix = $s->cmd_prefix;
     return unless $_[ARG2] =~ /^$cmd_prefix[a-z0-9_-]+/;
 
-#    my $user = new MediaBot::IRC::User();
-#    $user->parse_event(@_);
-#
-#    print "Dispatching $type command for user: " . $user->pretty_print . "\n";
-#    my $US =
-#      $s->_parent->Sessions->add( $user->nick, $user->ident, $user->host );
-#    unless ($US) {
-#        print "Cannot create user session, returning!\n";
-#        return 1;
-#    }
-#    if ( $US->ignore ) {
-#        print "Ignored user\n";
-#        return 2;
-#    }
     my $args = substr( $_[ARG2], 1 );
     $args =~ s/^([a-zA-Z0-9_-]+)\s*(.*)\s*$/$2/;
     my $cmd = $1;
-    print "Dispatching command: '$cmd' ($args)\n";
+    LOG("Dispatching command: '$cmd' ($args)");
     unless ( $s->Plugins->exists($cmd) ) {
         print "Unknown command '$cmd\n";
         return 3;

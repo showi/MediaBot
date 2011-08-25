@@ -12,6 +12,7 @@ our @EXPORT = qw(LOG DEBUG);
 our $logfile = "log/mediabot.log";
 
 sub LOG {
+    return unless $MediaBot::DEBUG;
     my ( $msg, $type ) = @_;
     my $wh;
     my $logfile = $MediaBot::Log::logfile;
@@ -34,6 +35,7 @@ sub DEBUG {
 }
 
 sub flush {
+    return unless $MediaBot::DEBUG;
     my $wh;
     my $logfile = $MediaBot::Log::logfile;
     open( $wh, ">$logfile" )

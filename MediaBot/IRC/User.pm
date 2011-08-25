@@ -47,9 +47,9 @@ sub parse_event {
     my ($who) = $_[ARG0];
     my ( $nick,  $idhost ) = split /!/, $who;
     my ( $ident, $host )   = split /@/, $idhost;
-    $s->nick( _cleanstr($nick) );
-    $s->ident( _cleanstr($ident) );
-    $s->host( _cleanstr($host) );
+    $s->nick( esc_nick($nick) );
+    $s->ident( esc_ident($ident) );
+    $s->host( esc_host($host) );
 }
 
 sub pretty_print {

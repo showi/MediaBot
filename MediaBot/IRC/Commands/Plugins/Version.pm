@@ -6,7 +6,8 @@ use warnings;
 use Carp;
 
 use lib qw(../../../../);
-use MediaBot::Class qw(AUTOLOAD DESTROY LOG);
+use MediaBot::Class qw(AUTOLOAD DESTROY);
+use MediaBot::Log;
 use MediaBot::Constants;
 
 use POE::Session;
@@ -19,13 +20,14 @@ our %fields = (
     lvl => undef,
     description => undef,
     on => undef,
+    registered_cmds => undef,
 );
 
 # Constructor
 #############
 sub new {
 	my ( $proto, $parent) = @_;
-    print "Creating new " . __PACKAGE__ . "\n";
+    DEBUG("Creating new " . __PACKAGE__);
     croak "No parent specified" unless ref $parent;
 	my $class = ref($proto) || $proto;
 	my $s = {
@@ -35,6 +37,9 @@ sub new {
 	bless( $s, $class );
 	$s->_parent($parent);
     $s->cmd('version');
+    $s->registered_cmds({
+        version => 'version'
+    });
 	return $s;
 }
 
@@ -46,8 +51,8 @@ sub run {
 	$where = $channel;
 	$where = $nick if ($CO->type == IRCCMD_TYPE_PRV); 
 	my $irc = $CO->sender->get_heap();
-	$irc->yield( privmsg => $where => "I'm $MediaBot::PROGRAMNAME ($MediaBot::VERSION)" );
-    $irc->yield( notice => $where => "I'm $MediaBot::PROGRAMNAME ($MediaBot::VERSION)" );
+	#$irc->yield( privmsg => $where => "I'm $MediaBot::PROGRAMNAME ($MediaBot::VERSION)" );
+    #$irc->yield( notice => $where => "I'm $MediaBot::PROGRAMNAME ($MediaBot::VERSION)" );
 	$irc->yield( ctcp => $where => "ACTION I'm $MediaBot::PROGRAMNAME ($MediaBot::VERSION)" );
 	return 0;
 }

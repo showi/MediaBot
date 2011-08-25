@@ -7,7 +7,8 @@ use Exporter;
 use POE::Session;
 
 use lib qw(../../);
-use MediaBot::Class qw(AUTOLOAD DESTROY LOG _get_root);
+use MediaBot::Class qw(AUTOLOAD DESTROY _get_root);
+use MediaBot::Log;
 use MediaBot::Constants;
 use MediaBot::IRC::Commands::Plugins;
 use MediaBot::IRC::Commands::Object;
@@ -28,7 +29,7 @@ our %fields = (
 #############
 sub new {
     my ( $proto, $parent ) = @_;
-    print "Creating new " . __PACKAGE__ . "\n";
+    DEBUG("Creating new " . __PACKAGE__);
     croak "No parent specified" unless ref $parent;
     my $class = ref($proto) || $proto;
     my $s = {

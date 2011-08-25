@@ -16,7 +16,7 @@ my %fields = (
 
 sub new {
 	my ($proto) = @_;
-	print "Creating new " . __PACKAGE__ . "\n";
+	DEBUG("Creating new " . __PACKAGE__);
 	my $class = ref($proto) || $proto;
 	my $s = {
 		_permitted => \%fields,

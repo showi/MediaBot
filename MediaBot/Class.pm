@@ -6,9 +6,11 @@ use Carp;
 use lib qw(..);
 use Exporter;
 
+use MediaBot::Log;
+
 our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw(AUTOLOAD DESTROY);
-our @EXPORT    = qw(LOG _get_root);
+our @EXPORT    = qw(_get_root);
 
 our $AUTOLOAD;
 
@@ -30,14 +32,9 @@ sub AUTOLOAD {
 	}
 }
 
-sub LOG {
-	my ( $s, $msg ) = @_;
-	print "LOG: $msg\n";
-}
-
 sub DESTROY {
 	my $s = shift;
-	print "- Detroying object " . ref($s) . "\n" if ref($s);
+	DEBUG("- Detroying object " . ref($s)) if ref($s);
 }
 
 sub _get_root {

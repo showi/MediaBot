@@ -6,3 +6,4 @@ cmd_plugins:
     lvl: 1000
     on: pv,pub
     description: Simple version command
+logfile: log/mediabot.log

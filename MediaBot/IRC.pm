@@ -1,28 +1,25 @@
 package MediaBot::IRC;
 
 use strict;
-use warnings;
 
 use Carp;
+;
+use POE qw(
+  Component
+  Component::IRC
+  Component::IRC::Plugin::AutoJoin
+  Component::IRC::Plugin::CycleEmpty
+  Component::IRC::Plugin::Connector
+);
 
+use warnings;
 use lib qw(..);
 use MediaBot::Class qw(AUTOLOAD DESTROY _get_root);
+use MediaBot::Log;
 use MediaBot::Constants;
 use MediaBot::IRC::Sessions; 
 use MediaBot::IRC::Commands; 
 use MediaBot::IRC::Commands::Object;
-
-use POE qw(
-  Component::IRC
-  Component::IRC::State
-  Component::IRC::Plugin::AutoJoin
-  Component::IRC::Plugin::CycleEmpty
- 
-  Component::IRC::Plugin::Connector
-);
- #Component::IRC::Plugin::BotCommand
- 
-
 
 our $AUTOLOAD;
 
@@ -31,17 +28,18 @@ my %fields   = (
 	Commands => undef,
 	Sessions => undef,
 );
+
 my $nickname = 'OlumZ';
 my $ircname  = 'A futur capsule?';
 
-my %channels = ( '#teuk' => '', );
+my %channels = ( '#test' => '', );
 my @servers  = ( 'shake.mine.nu' );
-#my %channels = ( '#quebec' => '', );
+#my %channels = ( '#erreur404' => '', );
 #my @servers  = ( 'diemen.nl.eu.undernet.org' );
 
 sub new {
 	my ( $proto, $parent ) = @_;
-	print "Creating new " . __PACKAGE__ . "\n";
+	DEBUG("Creating new " . __PACKAGE__);
 	croak "No parent specified" unless ref $parent;
 	my $class = ref($proto) || $proto;
 	my $s = {
@@ -123,7 +121,7 @@ sub _default {
 			push( @output, '[' . join( ', ', @$arg ) . ']' );
 		}
 		else {
-			push( @output, "'$arg'" );
+			push( @output, "'$arg'" ) if defined $arg;
 		}
 	}
 	print join ' ', @output, "\n";

@@ -10,6 +10,7 @@ use Data::Dumper qw(Dumper);
 
 use lib qw(..);
 use MediaBot::Class qw(AUTOLOAD DESTROY);
+use MediaBot::Log;
 
 our $AUTOLOAD;
 
@@ -23,7 +24,7 @@ my %fields = (
 
 sub new {
 	my ( $proto, $parent ) = @_;
-	print "Creating new " . __PACKAGE__ . "\n";
+	DEBUG("Creating new " . __PACKAGE__);
 	my $class = ref($proto) || $proto;
 	my $s = {
 		_permitted => \%fields,
@@ -51,8 +52,7 @@ sub read {
 	croak "Cannot load configuration file '$f' ($!)"
 	  unless defined $y;
 	$s->$name($y);
-
-	print Dumper $s->$name;
+	#print Dumper $s->$name;
 	return 0;
 }
 

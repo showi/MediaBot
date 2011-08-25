@@ -7,7 +7,7 @@ use Carp;
 use Exporter;
 
 use lib qw(..);
-use MediaBot::Class qw(AUTOLOAD DESTROY LOG);
+use MediaBot::Class qw(AUTOLOAD DESTROY);
 
 our @ISA = qw(Exporter);
 our @EXPORT = qw(str_chomp str_asciionly);

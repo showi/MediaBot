@@ -7,11 +7,12 @@ use Carp;
 use DBI;
 
 use lib qw(..);
-use MediaBot::Class qw(AUTOLOAD DESTROY LOG _get_root);
+use MediaBot::Class qw(AUTOLOAD DESTROY _get_root);
 use MediaBot::Db::Users;
 use MediaBot::Db::Networks;
 use MediaBot::Db::Channels;
 use MediaBot::Db::Sessions;
+use MediaBot::Log;
 
 our $AUTOLOAD;
 
@@ -28,7 +29,7 @@ our %fields = (
 # Aggregate other Db modules so we have a kind of OO acces to SQL databases
 sub new {
 	my ( $proto, $parent ) = @_;
-	print "Creating new " . __PACKAGE__ . "\n";
+	DEBUG("Creating new " . __PACKAGE__);
 	croak "No parent specified" unless ref $parent;
 	my $class = ref($proto) || $proto;
 	my $s = {
@@ -55,7 +56,7 @@ sub init {
 	}
 	$s->handle( DBI->connect( $c->{driver} . ":dbname=" . $name, "", "" ) );
 	croak "DB connection failed (" . $c->{name} . ")" unless $s->handle;
-	$s->LOG("DB connection success ($c->{driver}:dbname=$name)");
+	LOG("DB connection success ($c->{driver}:dbname=$name)");
 	$s->is_open(1);
 	return 0;
 }

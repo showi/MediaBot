@@ -7,7 +7,7 @@ use Exporter;
 use POE::Session;
 
 use lib qw(../../);
-use MediaBot::Class qw(AUTOLOAD DESTROY LOG _get_root);
+use MediaBot::Class qw(AUTOLOAD DESTROY _get_root);
 use Data::Dumper;
 
 our @ISA    = qw(Exporter);
@@ -21,7 +21,7 @@ our %fields = ( _parent => undef, );
 #############
 sub new {
     my ( $proto, $parent ) = @_;
-    print "Creating new " . __PACKAGE__ . "\n";
+    DEBUG("Creating new " . __PACKAGE__);
     croak "No parent specified" unless ref $parent;
     my $class = ref($proto) || $proto;
     my $s = {
@@ -33,11 +33,6 @@ sub new {
     return $s;
 }
 
-sub update_last_request {
-    my ($s, $U) = @_;    
-    my $dbs = $s->_get_root->Db->Sessions;
-    $dbs->update_last_request($U->id); 
-}
 
 sub add {
     my ( $s, $nick, $ident, $host ) = @_;

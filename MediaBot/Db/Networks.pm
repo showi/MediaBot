@@ -6,8 +6,9 @@ use warnings;
 use Carp;
 
 use lib qw(../../);
-use MediaBot::Class qw(AUTOLOAD DESTROY LOG _get_root);
+use MediaBot::Class qw(AUTOLOAD DESTROY _get_root);
 use MediaBot::Db::Networks::Object qw();
+use MediaBot::Log;
 
 our $AUTOLOAD;
 
@@ -20,7 +21,7 @@ our %fields = (
 #############
 sub new {
 	my ( $proto, $parent ) = @_;
-	print "Creating new " . __PACKAGE__ . "\n";
+	DEBUG("Creating new " . __PACKAGE__);
 	croak "No parent specified" unless ref $parent;
 	my $class = ref($proto) || $proto;
 	my $s = {

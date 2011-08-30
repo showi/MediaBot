@@ -36,62 +36,78 @@ sub new {
 # Channels exists?
 ##############
 sub exists {
-    my ( $s, $name ) = @_;
+    my ( $s, $type, $name ) = @_;
     $s->_parent->die_if_not_open();
     my $h     = $s->_parent->handle;
     my $query = <<SQL;
-		SELECT * FROM networks WHERE name= ?
+		SELECT * FROM channels WHERE type =? AND name= ?
 SQL
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute($name)
+    $sth->execute( $type, $name )
       or die "Cannot execute query '$query' (" . $h->errstr . ")";
     my $row = $sth->fetch;
     return $row if $row;
     return 0;
 }
 
-# Create network
+# Create channel
 #############
 sub create {
-    my ( $s, $name, $description ) = @_;
+    my ( $s, $type, $name, $user_id ) = @_;
     $s->_parent->die_if_not_open();
-    if ( $s->exists($name) ) {
+    if ( $s->exists( $type, $name ) ) {
         $s->LOG("DB::Error Network '$name' already exists");
         return 1;
     }
     my $h     = $s->_parent->handle;
     my $query = <<SQL;
-		INSERT INTO networks (name, description)
-		VALUES (?, ?)
+		INSERT INTO channels (type, name, active, created_by, created_on)
+		VALUES (?, ?, ?, ?, ?)
 SQL
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute( $name, $description )
+    $sth->execute( $type, $name, 1, $user_id, time )
       or die "Cannot execute query '$query' (" . $h->errstr . ")";
-    return 0;
+    return $sth->rows;
 }
 
-# Get network by name
+# Create channel
+#############
+sub set {
+    my ( $s, $id, $field, $value ) = @_;
+    $s->_parent->die_if_not_open();
+    my $h     = $s->_parent->handle;
+    my $query = <<SQL;
+        UPDATE channels SET $field = ? WHERE id = ?; 
+SQL
+    my $sth = $h->prepare($query)
+      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
+    $sth->execute( $value, $id)
+      or die "Cannot execute query '$query' (" . $h->errstr . ")";
+    return $sth->rows;
+}
+
+# Get channel by name
 #####################
 sub get {
-    my ( $s, $name ) = @_;
+    my ( $s, $type, $name ) = @_;
     $s->_parent->die_if_not_open();
-    unless ( $s->exists($name) ) {
-        $s->LOG("DB::Error Network '$name' doesn't exist");
+    unless ( $s->exists( $type, $name ) ) {
+        $s->LOG("DB::Error Channel '$type$name' doesn't exist");
         return undef;
     }
     my $h     = $s->_parent->handle;
     my $query = <<SQL;
-		SELECT * FROM networks WHERE name= ?;
+		SELECT * FROM channels WHERE type = ? AND name= ?;
 SQL
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute($name)
+    $sth->execute( $type, $name )
       or die "Cannot execute query '$query' (" . $h->errstr . ")";
     my $rn = $sth->fetchrow_hashref;
     return undef unless $rn;
-    my $N = new MediaBot::Db::Networks::Object();
+    my $N = new MediaBot::Db::Channels::Object();
 
     for my $k ( keys %{$N} ) {
         next if $k =~ /^_.*/;
@@ -100,18 +116,43 @@ SQL
     return $N;
 }
 
-# Delete network by name
+# Get channel by name
+#####################
+sub list {
+    my ($s) = @_;
+    $s->_parent->die_if_not_open();
+    my $h     = $s->_parent->handle;
+    my $query = <<SQL;
+		SELECT * FROM channels;
+SQL
+    my $sth = $h->prepare($query)
+      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
+    $sth->execute()
+      or die "Cannot execute query '$query' (" . $h->errstr . ")";
+    my @list;
+    while ( my $r = $sth->fetchrow_hashref ) {
+        my $N = new MediaBot::Db::Channels::Object();
+        for my $k ( keys %{$N} ) {
+            next if $k =~ /^_.*/;
+            $N->$k( $r->{$k} );
+        }
+        push @list, $N;
+    }
+    return @list;
+}
+
+# Delete channel by name
 ########################
 sub delete {
     my ( $s, $name ) = @_;
     $s->_parent->die_if_not_open();
     unless ( $s->exists($name) ) {
-        $s->LOG("DB::Error Cannot remove non existing network '$name'");
+        $s->LOG("DB::Error Cannot remove non existing channel '$name'");
         return 1;
     }
     my $h     = $s->_parent->handle;
     my $query = <<SQL;
-		DELETE FROM networks WHERE name= ? 
+		DELETE FROM channels WHERE name= ? 
 SQL
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";

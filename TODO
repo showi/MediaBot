@@ -1,0 +1,4 @@
+TODO
+----
+
+- Remove configuration from file (MediaBot::IRC). The bot must gather information from the database instead.

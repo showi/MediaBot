@@ -13,8 +13,15 @@ our $AUTOLOAD;
 
 our %fields = (
     id        => undef,
+    type     => undef,
     name      => undef,
-    _networks => undef,
+    owner    => undef,
+    topic => undef,
+    auto_topic => undef,
+    auto_voice => undef,
+    auto_op => undef,
+    active => undef,
+    created_on => undef,
 );
 
 # Constructor
@@ -31,4 +38,9 @@ sub new {
     return $s;
 }
 
+# Usable name, concatenate type and name
+sub usable_name {
+    my $s = shift;
+    return $s->type . $s->name;
+}
 1;

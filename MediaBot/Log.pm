@@ -31,6 +31,7 @@ sub LOG {
 
 sub DEBUG {
     return unless $MediaBot::DEBUG;
+    if($_[1]) {return if $MediaBot::DEBUG < $_[1]};
     LOG( $_[0], "DEBUG" );
 }
 

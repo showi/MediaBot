@@ -9,9 +9,10 @@ use MediaBot::Db;
 use MediaBot::Log;
 
 our $PROGRAMNAME  = "ShowBoat";
-our $VERSION      = "0.0.1a";
+our $VERSION      = "0.0.3";
+our $LASTVERSION  = "1314675373";
 our $PROGRAMBIRTH = "1313893570";
-our $DEBUG        = 1;
+our $DEBUG        = 2;
 
 our %fields = (
     _path  => "",
@@ -25,7 +26,7 @@ our %fields = (
 sub new {
     my ( $proto, $path ) = @_;
     MediaBot::Log::flush();
-    DEBUG( "Creating new " . __PACKAGE__ );
+    DEBUG( "Creating new " . __PACKAGE__, 5);
     my $class = ref($proto) || $proto;
     my $s = {
         _permitted => \%fields,
@@ -34,8 +35,9 @@ sub new {
     bless( $s, $class );
     $s->_path($path) if $path;
     $s->read_config($s);
-    $s->Irc( new MediaBot::IRC($s) );
     $s->Db( new MediaBot::Db($s) );
+    $s->Irc( new MediaBot::IRC($s) );
+   
     return $s;
 }
 

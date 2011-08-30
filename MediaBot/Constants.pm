@@ -9,6 +9,7 @@ use Exporter;
 use constant {
     IRCCMD_TYPE_PRV => 0,
     IRCCMD_TYPE_PUB => 1,
+    #USER_SESSION => 9944,
 };
 
 our @ISA    = qw(Exporter);

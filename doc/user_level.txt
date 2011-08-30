@@ -1,0 +1,24 @@
+1000 Owner
+ 800 Administrator
+ 500 Channel Owner
+ 400 Channel user
+ 200 Logged user
+   0 User
+   
+   
+>= 800
+- Can add/delete user
+- Can add/delete channel
+- Can change channel owner
+
+>= 500
+- Can add user from channel they own
+- Can delete user from channel they own
+- Can change user mode on channel they own
+- Can change channel mode on channel theu own
+
+>=400 
+
+>=200
+- Can request to be oped on channel where they are >= 400
+

@@ -23,13 +23,14 @@ our %fields = (
     Users    => undef,
     Networks => undef,
     Sessions => undef,
+    Channels => undef,
 );
 
 # Constructor
 # Aggregate other Db modules so we have a kind of OO acces to SQL databases
 sub new {
     my ( $proto, $parent ) = @_;
-    DEBUG( "Creating new " . __PACKAGE__ );
+    DEBUG( "Creating new " . __PACKAGE__, 5);
     croak "No parent specified" unless ref $parent;
     my $class = ref($proto) || $proto;
     my $s = {
@@ -39,8 +40,9 @@ sub new {
     bless( $s, $class );
     $s->_parent($parent);
     $s->Users( new MediaBot::Db::Users($s) );
-    $s->Networks( new MediaBot::Db::Networks($s) );
+    #$s->Networks( new MediaBot::Db::Networks($s) );
     $s->Sessions( new MediaBot::Db::Sessions($s) );
+    $s->Channels( new MediaBot::Db::Channels($s) );
     $s->init();
     return $s;
 }
@@ -56,7 +58,7 @@ sub init {
     }
     $s->handle( DBI->connect( $c->{driver} . ":dbname=" . $name, "", "" ) );
     croak "DB connection failed (" . $c->{name} . ")" unless $s->handle;
-    LOG("DB connection success ($c->{driver}:dbname=$name)");
+    DEBUG("DB connection success ($c->{driver}:dbname=$name)");
     $s->is_open(1);
     return 0;
 }

@@ -34,7 +34,7 @@ sub AUTOLOAD {
 
 sub DESTROY {
     my $s = shift;
-    DEBUG( "- Detroying object " . ref($s) ) if ref($s);
+    DEBUG( "- Detroying object " . ref($s), 5) if ref($s);
 }
 
 sub _get_root {

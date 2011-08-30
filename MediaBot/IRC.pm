@@ -16,10 +16,20 @@ use lib qw(..);
 use MediaBot::Class qw(AUTOLOAD DESTROY _get_root);
 use MediaBot::Log;
 use MediaBot::Constants;
-use MediaBot::IRC::UserRequestFilter;
-use MediaBot::IRC::Sessions;
-use MediaBot::IRC::Commands;
-use MediaBot::IRC::Commands::Object;
+
+#use MediaBot::IRC::UserRequestFilter;
+#use MediaBot::IRC::Sessions;
+#use MediaBot::IRC::Commands;
+#use MediaBot::IRC::Commands::Object;
+
+use POE::Component::IRC::Plugin qw( :ALL );
+use MediaBot::IRC::BotCmdPlus;
+use MediaBot::IRC::BotCmdPlus::Plugins::Sessions;
+use MediaBot::IRC::BotCmdPlus::Plugins::Dispatch;
+use MediaBot::IRC::BotCmdPlus::Plugins::Info;
+use MediaBot::IRC::BotCmdPlus::Plugins::User;
+use MediaBot::IRC::BotCmdPlus::Plugins::Channel;
+use MediaBot::IRC::BotCmdPlus::Plugins::Help;
 
 our $AUTOLOAD;
 
@@ -30,11 +40,11 @@ my %fields = (
     UserRequestFilter => undef,
 );
 
-my $nickname = 'OlumZ';
-my $ircname  = 'A futur capsule?';
+my $nickname = 'nos';
+my $ircname  = 'Wanna be my friend?';
 
-my %channels = ( '#teuk' => '', );
-my @servers = ('shake.mine.nu');
+my %channels = ( '#roots' => '', '#root' => '' );
+my @servers = ('irc.nosferat.us');
 
 #my %channels = ( '#erreur418' => '', );
 #my @servers  = ( 'diemen.nl.eu.undernet.org' );
@@ -49,29 +59,29 @@ sub new {
         %fields,
     };
     bless( $s, $class );
+    $s->_parent($parent);
     POE::Session->create(
         object_states => [
-            $s => { _start        => '_start' },
-            $s => { _default      => '_default' },
-            $s => { irc_msg       => 'irc_msg' },
-            $s => { irc_public    => 'irc_public' },
+            $s => { _start   => '_start' },
+            $s => { _default => '_default' },
+
+            #  $s => { irc_msg       => 'irc_msg' },
+            #  $s => { irc_public    => 'irc_public' },
             $s => { irc_ctcp_ping => 'irc_ctcp_ping' },
             $s => { lag_o_meter   => 'lag_o_meter' },
 
         ],
-
+        heap => { Db => $s->_parent->Db, }
     );
-    $s->_parent($parent);
-    $s->Commands( new MediaBot::IRC::Commands($s) );
-    $s->Sessions( new MediaBot::IRC::Sessions($s) );
-    $s->UserRequestFilter( new MediaBot::IRC::UserRequestFilter($s) );
+
+    #$s->Commands( new MediaBot::IRC::Commands($s) );
+    #$s->Sessions( new MediaBot::IRC::Sessions($s) );
+    #$s->UserRequestFilter( new MediaBot::IRC::UserRequestFilter($s) );
     return $s;
 }
 
 sub _start {
-
-    #my ($s) = shift;
-    my ( $kernel, $heap ) = @_[ KERNEL, HEAP ];
+    my ( $kernel, $heap, $s ) = @_[ KERNEL, HEAP, OBJECT ];
 
     # We create a new PoCo-IRC object
     my $irc = POE::Component::IRC->spawn(
@@ -81,12 +91,34 @@ sub _start {
         #server  => $server,
     ) or croak "Oh noooo! $!";
 
+    #$s->{irc} = $irc;
+    print "self: " . $_[0] . "\n";
+    $irc->{database}   = $s->_parent->Db;
     $heap->{connector} = POE::Component::IRC::Plugin::Connector->new();
     $irc->plugin_add( 'Connector' => $heap->{connector} );
 
-    #$heap->{irc} = $irc;
-    # retrieve our component's object from the heap where we stashed it
-    #my $irc = $heap->{irc};
+    # Our plugins system
+    $irc->plugin_add( 'BotCmdPlus', new MediaBot::IRC::BotCmdPlus() );
+
+    $irc->plugin_add( 'BotCmdPlus_Sessions',
+        new MediaBot::IRC::BotCmdPlus::Plugins::Sessions() );
+
+
+    $irc->plugin_add( 'BotCmdPlus_Dispatch',
+        new MediaBot::IRC::BotCmdPlus::Plugins::Dispatch() );
+
+    $irc->plugin_add( 'BotCmdPlus_Info',
+        new MediaBot::IRC::BotCmdPlus::Plugins::Info() );
+
+    $irc->plugin_add( 'BotCmdPlus_User',
+        new MediaBot::IRC::BotCmdPlus::Plugins::User() );
+    
+    $irc->plugin_add( 'BotCmdPlus_Channel',
+        new MediaBot::IRC::BotCmdPlus::Plugins::Channel() );
+
+    $irc->plugin_add( 'BotCmdPlus_Help',
+        new MediaBot::IRC::BotCmdPlus::Plugins::Help() );
+    # End of our plugins
 
     $irc->plugin_add(
         'AutoJoin',
@@ -97,9 +129,6 @@ sub _start {
             Retry_when_banned => 5,
         )
     );
-
-    $irc->plugin_add( 'CycleEmpty',
-        POE::Component::IRC::Plugin::CycleEmpty->new() );
 
     $irc->yield( register => 'all' );
     $irc->yield( connect => { Server => $servers[0] } );
@@ -118,25 +147,8 @@ sub _default {
             push( @output, "'$arg'" ) if defined $arg;
         }
     }
-    DEBUG( join ' ', @output );
+    DEBUG( join ' ', @output, 2);
     return;
-}
-
-
-sub irc_msg {
-    my $s = $_[0];   
-    my $user = $s->UserRequestFilter->run(@_);
-    return unless $user;
-    $s->Commands->dispatch( $user, IRCCMD_TYPE_PRV, @_ );
-    return 0;
-}
-
-sub irc_public {
-    my $s = $_[0]; 
-    my $user = $s->UserRequestFilter->run(@_);
-    return unless $user;
-    $s->Commands->dispatch( $user, IRCCMD_TYPE_PUB, @_ );
-    return 0;
 }
 
 sub lag_o_meter {
@@ -148,16 +160,19 @@ sub lag_o_meter {
 
 sub irc_ctcp_ping {
     my $s = $_[0];
-    my $user = $s->UserRequestFilter->run(@_);
-    return unless $user;
-    my ( $sender, $where, $what ) = @_[ SENDER, ARG1 .. ARG2 ];
+
+    #my $user = $s->UserRequestFilter->run(@_);
+    #return unless $user;
+    my ( $sender, $who, $where, $what ) = @_[ SENDER, ARG0 .. ARG2 ];
+    my $nick    = ( split /!/, $who )[0];
     my $channel = $where->[0];
     my $irc     = $sender->get_heap();      # obtain the poco's object
-    DEBUG("Receive CTCP PING from " . $user->pretty_print);
-    $irc->yield( ctcpreply => $user->nick => "PING $what" );
+         #DEBUG( "Receive CTCP PING from " . $user->pretty_print );
+    $irc->yield( ctcpreply => $nick => "PING $what" );
 }
 
 sub run {
     $poe_kernel->run();
 }
+
 1;

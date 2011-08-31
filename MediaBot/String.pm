@@ -10,7 +10,7 @@ use lib qw(..);
 use MediaBot::Class qw(AUTOLOAD DESTROY);
 
 our @ISA    = qw(Exporter);
-our @EXPORT = qw(str_chomp esc_ascii esc_nick esc_ident esc_host esc_password);
+our @EXPORT = qw(str_chomp esc_ascii esc_nick esc_ident esc_host esc_password str_fixsize);
 our $AUTOLOAD;
 
 sub str_chomp {
@@ -45,4 +45,15 @@ sub esc_password {
    return $str;    
 }
 
+sub str_fixsize {
+    my $str = str_chomp($_[0]);
+    #my $size = $_[1];
+    my $len = length $str;
+    if ($len > $_[1]) {
+        return substr($str, 0, $_[1]);
+    } else {
+        $str.= ' 'x ($_[1] - $len);
+        return $str;
+    } 
+}
 1;

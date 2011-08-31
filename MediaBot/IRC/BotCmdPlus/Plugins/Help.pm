@@ -10,7 +10,7 @@ use POE::Component::IRC::Plugin qw(:ALL);
 use Data::Dumper;
 
 use lib qw(../../../../);
-use MediaBot::Class qw(AUTOLOAD);
+use MediaBot::Class qw(AUTOLOAD DESTROY);
 use MediaBot::Log;
 use MediaBot::String;
 use MediaBot::IRC::BotCmdPlus::Helper;
@@ -55,9 +55,9 @@ sub help {
         LOG( "Show cmd '$cmd': " . $plugin->{help_cmd} );
         LOG( "Show cmd '$cmd': " . $plugin->{help_description} );
         next if $mylvl < $plugin->{lvl};
-        $irc->yield( notice => $Session->nick => " " . $plugin->{help_cmd} );
-        $irc->yield( notice => $Session->nick => "    -> "
-              . $plugin->{help_description} );
+        $irc->yield( notice => $Session->nick => " " . $plugin->{help_cmd} . "   -   " . $plugin->{help_description});
+#        $irc->yield( notice => $Session->nick => "    -> "
+#              . $plugin->{help_description} );
     }
     return PCI_EAT_ALL;
 }

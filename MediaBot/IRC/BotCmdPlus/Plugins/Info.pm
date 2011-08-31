@@ -9,7 +9,7 @@ use POE;
 use POE::Component::IRC::Plugin qw(:ALL);
 
 use lib qw(../../../../);
-use MediaBot::Class qw(AUTOLOAD);
+use MediaBot::Class qw(AUTOLOAD DESTROY);
 use MediaBot::Log;
 use MediaBot::String;
 use MediaBot::IRC::BotCmdPlus::Helper;

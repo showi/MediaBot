@@ -132,7 +132,7 @@ SQL
 
 }
 
-# Get network by name
+# Get session by name
 #####################
 sub get {
     my ( $s, $nick, $user, $hostname ) = @_;
@@ -148,6 +148,34 @@ SQL
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
     $sth->execute( $nick, $user, $hostname )
+      or die "Cannot execute query '$query' (" . $h->errstr . ")";
+    my $rn = $sth->fetchrow_hashref;
+    return undef unless $rn;
+
+    my $N = new MediaBot::Db::Sessions::Object();
+    for my $k ( keys %{$N} ) {
+        next if $k =~ /^_.*/;
+        $N->$k( $rn->{$k} );
+    }
+    return $N;
+}
+
+# Get session by name
+#####################
+sub get_by_user_hostname {
+    my ( $s, $user, $hostname ) = @_;
+    $s->_parent->die_if_not_open();
+    unless ( $s->exists( $user, $hostname ) ) {
+        $s->LOG("DB::Error Network '$user @ $hostname' doesn't exist");
+        return undef;
+    }
+    my $h     = $s->_parent->handle;
+    my $query = <<SQL;
+		SELECT * FROM sessions WHERE user = ? AND hostname = ?;
+SQL
+    my $sth = $h->prepare($query)
+      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
+    $sth->execute( $user, $hostname )
       or die "Cannot execute query '$query' (" . $h->errstr . ")";
     my $rn = $sth->fetchrow_hashref;
     return undef unless $rn;

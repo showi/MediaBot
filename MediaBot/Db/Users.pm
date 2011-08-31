@@ -54,7 +54,7 @@ SQL
 
 # User exists?
 ##############
-sub existsby_name {
+sub exists_by_name {
     my ( $s, $name ) = @_;
     $s->_parent->die_if_not_open();
     my $h     = $s->_parent->handle;
@@ -73,28 +73,24 @@ SQL
 # Create user
 #############
 sub create {
-    my ( $s, $name, $password, $lvl ) = @_;
+    my ( $s, $name, $password, $hostmask ) = @_;
     $s->_parent->die_if_not_open();
-    if ( $s->existsby_name($name) ) {
+    if ( $s->exists_by_name($name) ) {
         $s->LOG("DB::Error User '$name' already exists");
-        return 1;
+        return 0;
     }
-    $lvl = 1000 unless defined $lvl;
     my $h = $s->_parent->handle;
-
-    #	my $root = $s->_get_root;
-    #	print "Root: $root/ ref: ". ref($root) . "\n";
     my $salt = $s->_get_root->Config->bot->{password_salt};
     croak "No password salt defined in configuration" unless $salt;
     my $query = <<SQL;
-		INSERT INTO users (name, password, lvl, pending)
-		VALUES (?, ?, ?, 1)
+		INSERT INTO users (name, password, hostmask, lvl, pending)
+		VALUES (?, ?, ?, 200, 1)
 SQL
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute( $name, Crypt::Passwd::XS::crypt( $password, $salt ), $lvl )
+    $sth->execute( $name, Crypt::Passwd::XS::crypt( $password, $salt ), $hostmask )
       or die "Cannot execute query '$query' (" . $h->errstr . ")";
-    return 0;
+    return $sth->rows;
 }
 
 sub login_successfull {
@@ -175,6 +171,36 @@ SQL
     return $ru->{id};
 }
 
+sub is_pending {
+    my ( $s, $id ) = @_;
+    $s->_parent->die_if_not_open();
+    my $h     = $s->_parent->handle;
+    my $query = <<SQL;
+		SELECT * FROM users WHERE id = ? AND pending = 1
+SQL
+    my $sth = $h->prepare($query)
+      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
+    $sth->execute($id)
+      or die "Cannot execute query '$query' (" . $h->errstr . ")";
+    return $sth->rows;
+}
+
+sub set {
+    my ( $s, $id, $key, $value ) = @_;
+    my @vkeys = qw(hostmask pending lvl);
+    croak "Invalid key '$key'" unless grep $key, @vkeys;
+    $s->_parent->die_if_not_open();
+    my $h     = $s->_parent->handle;
+    my $query = <<SQL;
+		UPDATE users SET $key = ? WHERE id = ?;
+SQL
+    my $sth = $h->prepare($query)
+      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
+    $sth->execute($value, $id)
+      or die "Cannot execute query '$query' (" . $h->errstr . ")";
+    return $sth->rows;
+}
+
 # Get user by id
 ##################
 sub get {
@@ -203,7 +229,7 @@ SQL
     return $U;
 }
 
-sub get_byname {
+sub get_by_name {
     my ( $s, $name ) = @_;
     $s->_parent->die_if_not_open();
     my $h     = $s->_parent->handle;
@@ -224,7 +250,7 @@ SQL
     return $U;
 }
 
-sub get_byidenthost {
+sub get_by_identhost {
     my ( $s, $ident, $host ) = @_;
     $s->_parent->die_if_not_open();
     my $h     = $s->_parent->handle;
@@ -262,7 +288,7 @@ SQL
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
     $sth->execute($id)
       or die "Cannot execute query '$query' (" . $h->errstr . ")";
-    return 0;
+    return $sth->rows;
 }
 
 # Check Db::User object against password

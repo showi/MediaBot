@@ -20,8 +20,14 @@ our %fields = (
     auto_topic => undef,
     auto_voice => undef,
     auto_op => undef,
+    auto_mode => undef,
+    mode => undef,
+    bot_mode => undef,
+    bot_joined => undef,
     active => undef,
     created_on => undef,
+    password => undef,
+    ulimit => undef,
 );
 
 # Constructor
@@ -43,4 +49,5 @@ sub usable_name {
     my $s = shift;
     return $s->type . $s->name;
 }
+
 1;

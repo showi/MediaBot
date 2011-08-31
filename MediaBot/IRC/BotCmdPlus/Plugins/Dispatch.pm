@@ -11,6 +11,7 @@ use POE::Component::IRC::Plugin qw(:ALL);
 #use Data::Dumper;
 
 use lib qw(../../../../);
+use MediaBot::Class qw(DESTROY);
 use MediaBot::Log;
 use MediaBot::String;
 

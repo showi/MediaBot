@@ -13,15 +13,11 @@ our $AUTOLOAD;
 
 our %fields = (
     id       => undef,
-    nick    => undef,
     name => undef,
     password => undef,
     lvl      => undef,
     pending  => undef,
-    ident => undef,
-    host => undef,
-    last_access => undef,
-    logged_on => undef,
+    hostmask => undef,
 );
 # Constructor
 #############
@@ -35,6 +31,11 @@ sub new {
     };
     bless( $s, $class );
     return $s;
+}
+
+sub pretty__ {
+    my $s = shift;
+    return $s->name;
 }
 
 1;

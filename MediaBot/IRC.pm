@@ -1,5 +1,6 @@
 package MediaBot::IRC;
 
+use warnings;
 use strict;
 
 use Carp;
@@ -11,7 +12,8 @@ use POE qw(
   Component::IRC::Plugin::Connector
 );
 
-use warnings;
+use Data::Dumper;
+
 use lib qw(..);
 use MediaBot::Class qw(AUTOLOAD DESTROY _get_root);
 use MediaBot::Log;
@@ -26,10 +28,7 @@ use POE::Component::IRC::Plugin qw( :ALL );
 use MediaBot::IRC::BotCmdPlus;
 use MediaBot::IRC::BotCmdPlus::Plugins::Sessions;
 use MediaBot::IRC::BotCmdPlus::Plugins::Dispatch;
-use MediaBot::IRC::BotCmdPlus::Plugins::Info;
-use MediaBot::IRC::BotCmdPlus::Plugins::User;
-use MediaBot::IRC::BotCmdPlus::Plugins::Channel;
-use MediaBot::IRC::BotCmdPlus::Plugins::Help;
+use MediaBot::IRC::BotCmdPlus::Plugins::PluginsManagement;
 
 our $AUTOLOAD;
 
@@ -43,7 +42,7 @@ my %fields = (
 my $nickname = 'nos';
 my $ircname  = 'Wanna be my friend?';
 
-my %channels = ( '#roots' => '', '#root' => '' );
+#my %channels = ( '#roots' => '', '#root' => '' );
 my @servers = ('irc.nosferat.us');
 
 #my %channels = ( '#erreur418' => '', );
@@ -69,6 +68,7 @@ sub new {
             #  $s => { irc_public    => 'irc_public' },
             $s => { irc_ctcp_ping => 'irc_ctcp_ping' },
             $s => { lag_o_meter   => 'lag_o_meter' },
+           # $s => { irc_chanmode   => 'irc_chanmode' },
 
         ],
         heap => { Db => $s->_parent->Db, }
@@ -103,23 +103,18 @@ sub _start {
     $irc->plugin_add( 'BotCmdPlus_Sessions',
         new MediaBot::IRC::BotCmdPlus::Plugins::Sessions() );
 
-
     $irc->plugin_add( 'BotCmdPlus_Dispatch',
         new MediaBot::IRC::BotCmdPlus::Plugins::Dispatch() );
-
-    $irc->plugin_add( 'BotCmdPlus_Info',
-        new MediaBot::IRC::BotCmdPlus::Plugins::Info() );
-
-    $irc->plugin_add( 'BotCmdPlus_User',
-        new MediaBot::IRC::BotCmdPlus::Plugins::User() );
     
-    $irc->plugin_add( 'BotCmdPlus_Channel',
-        new MediaBot::IRC::BotCmdPlus::Plugins::Channel() );
+    $irc->plugin_add( 'BotCmdPlus_PluginsManagement',
+        new MediaBot::IRC::BotCmdPlus::Plugins::PluginsManagement() );
 
-    $irc->plugin_add( 'BotCmdPlus_Help',
-        new MediaBot::IRC::BotCmdPlus::Plugins::Help() );
     # End of our plugins
-
+    my %channels;
+    for ( $irc->{database}->Channels->list ) {
+        LOG( "Adding channel " . $_->usable_name . " to AutoJoin" );
+        $channels{ $_->usable_name } = $_->password,;
+    }
     $irc->plugin_add(
         'AutoJoin',
         POE::Component::IRC::Plugin::AutoJoin->new(
@@ -129,7 +124,8 @@ sub _start {
             Retry_when_banned => 5,
         )
     );
-
+    my $aj = $irc->plugin_get('AutoJoin');
+    print Dumper $aj;
     $irc->yield( register => 'all' );
     $irc->yield( connect => { Server => $servers[0] } );
     $kernel->delay( 'lag_o_meter' => 60 );
@@ -147,7 +143,7 @@ sub _default {
             push( @output, "'$arg'" ) if defined $arg;
         }
     }
-    DEBUG( join ' ', @output, 2);
+    DEBUG( join ' ', @output, 2 );
     return;
 }
 
@@ -157,6 +153,7 @@ sub lag_o_meter {
     $kernel->delay( 'lag_o_meter' => 60 );
     return;
 }
+
 
 sub irc_ctcp_ping {
     my $s = $_[0];

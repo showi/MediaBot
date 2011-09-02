@@ -107,10 +107,10 @@ sub channel_add {
     };
     my $type;
     ( $type, $channame ) = ( $1, $2 );
-    my $Channel = $db->Channels->get( $type, $channame );
+    my $Channel = $db->Channels->get_by( $type, $channame );
     if ($Channel) {
         $irc->yield( notice => $Session->nick => "[$cmdname] Channel '"
-              . $Channel->usable_name
+              . $Channel->_usable_name
               . "' already exist!" );
         return PCI_EAT_ALL;
     }
@@ -167,7 +167,7 @@ sub channel_list {
         my $str = " - ";
         $str .= localtime( int $Chan->created_on );
         $str .= " - [ " . str_fixsize( "$owner ]", 15 );
-        $str .= $Chan->usable_name;
+        $str .= $Chan->_usable_name;
 
         $irc->yield( notice => $Session->nick => $str );
     }
@@ -260,7 +260,7 @@ sub join {
          next unless is_valid_chan_name($_);
          /^(#|&)(.*)$/;
          my ($type, $channame) = ($1, $2);
-         my $Channel = $db->Channels->get($type, $channame);
+         my $Channel = $db->Channels->get_by($type, $channame);
          next unless $Channel;
          my $can = 0;
          if ($User->lvl >= 800) {
@@ -384,7 +384,7 @@ sub op {
          next unless is_valid_chan_name($_);
          /^(#|&)(.*)$/;
          my ($type, $channame) = ($1, $2);
-         my $Channel = $db->Channels->get($type, $channame);
+         my $Channel = $db->Channels->get_by($type, $channame);
          next unless $Channel;
          my $canop = 0;
          if ($User->lvl >= 800) {

@@ -5,6 +5,7 @@ use warnings;
 
 use Carp;
 
+use IRC::Utils qw(:ALL);
 use Crypt::Passwd::XS;
 
 use lib qw(../../);
@@ -15,14 +16,15 @@ use MediaBot::Log;
 our $AUTOLOAD;
 
 our %fields = (
-    handle  => undef,
+    _handle => undef,
     _parent => undef,
 );
+
 # Constructor
 #############
 sub new {
     my ( $proto, $parent ) = @_;
-    DEBUG( "Creating new " . __PACKAGE__, 5);
+    DEBUG( "Creating new " . __PACKAGE__ );
     croak "No parent specified" unless ref $parent;
     my $class = ref($proto) || $proto;
     my $s = {
@@ -34,265 +36,36 @@ sub new {
     return $s;
 }
 
-# User exists?
-##############
-sub exists {
-    my ( $s, $id ) = @_;
-    $s->_parent->die_if_not_open();
-    my $h     = $s->_parent->handle;
-    my $query = <<SQL;
-		SELECT * FROM users WHERE id= ?
-SQL
-    my $sth = $h->prepare($query)
-      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute($id)
-      or die "Cannot execute query '$query' (" . $h->errstr . ")";
-    my $row = $sth->fetch;
-    return $row if $row;
-    return 0;
+sub list {
+    my $s = shift;
+    my $C = new MediaBot::Db::Users::Object( $s->_parent );
+    return $C->_list();
 }
 
-# User exists?
-##############
-sub exists_by_name {
-    my ( $s, $name ) = @_;
-    $s->_parent->die_if_not_open();
-    my $h     = $s->_parent->handle;
-    my $query = <<SQL;
-		SELECT id FROM users WHERE name= ?
-SQL
-    my $sth = $h->prepare($query)
-      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute($name)
-      or die "Cannot execute query '$query' (" . $h->errstr . ")";
-    my $row = $sth->fetch;
-    return $row if $row;
-    return 0;
-}
-
-# Create user
-#############
-sub create {
-    my ( $s, $name, $password, $hostmask ) = @_;
-    $s->_parent->die_if_not_open();
-    if ( $s->exists_by_name($name) ) {
-        $s->LOG("DB::Error User '$name' already exists");
-        return 0;
-    }
-    my $h = $s->_parent->handle;
-    my $salt = $s->_get_root->Config->bot->{password_salt};
-    croak "No password salt defined in configuration" unless $salt;
-    my $query = <<SQL;
-		INSERT INTO users (name, password, hostmask, lvl, pending)
-		VALUES (?, ?, ?, 200, 1)
-SQL
-    my $sth = $h->prepare($query)
-      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute( $name, Crypt::Passwd::XS::crypt( $password, $salt ), $hostmask )
-      or die "Cannot execute query '$query' (" . $h->errstr . ")";
-    return $sth->rows;
-}
-
-sub login_successfull {
-    my ($s, $id, $ident, $host) = @_;   
-    $s->_parent->die_if_not_open();
-    my $h     = $s->_parent->handle;
-    my $time = time;
-    my $query = <<SQL;
-		UPDATE users SET ident = ?, host = ?, logged_on = ?, last_access = ?
-		WHERE id = ?
-SQL
-    my $sth = $h->prepare($query)
-      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute($ident, $host, $time, $time, $id)
-      or die "Cannot execute query '$query' (" . $h->errstr . ")";
-}
-
-sub logout {
-    my ($s, $id) = @_;   
-    $s->_parent->die_if_not_open();
-    my $h     = $s->_parent->handle;
-    my $query = <<SQL;
-		UPDATE users SET ident = ?, host = ?, logged_on = ?
-		WHERE id = ?
-SQL
-    my $sth = $h->prepare($query)
-      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute(undef, undef, undef, $id)
-      or die "Cannot execute query '$query' (" . $h->errstr . ")";
-}
-
-sub last_access {
-    my ($s, $id) = @_;   
-    $s->_parent->die_if_not_open();
-    my $h     = $s->_parent->handle;
-    my $query = <<SQL;
-		UPDATE users SET last_access = ?
-		WHERE id = ?
-SQL
-    my $sth = $h->prepare($query)
-      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute(time, $id)
-      or die "Cannot execute query '$query' (" . $h->errstr . ")";
-}
-
-sub delete_idle {
-    my ($s) = @_;   
-    $s->_parent->die_if_not_open();
-    my $h     = $s->_parent->handle;
-    my $time = time - 600;
-    my $query = <<SQL;
-		UPDATE users SET ident = ?, host = ?, logged_on = ?
-		WHERE last_access < ?
-SQL
-    my $sth = $h->prepare($query)
-      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute(undef, undef, undef, $time)
-      or die "Cannot execute query '$query' (" . $h->errstr . ")";
-}
-
-
-
-# Get user id
-##################
-sub get_id {
-    my ( $s, $name ) = @_;
-    $s->_parent->die_if_not_open();
-    my $h     = $s->_parent->handle;
-    my $query = <<SQL;
-		SELECT * FROM users WHERE name= ?;
-SQL
-    my $sth = $h->prepare($query)
-      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute($name)
-      or die "Cannot execute query '$query' (" . $h->errstr . ")";
-    my $ru = $sth->fetchrow_hashref;
-    return undef unless $ru;
-    return $ru->{id};
-}
-
-sub is_pending {
-    my ( $s, $id ) = @_;
-    $s->_parent->die_if_not_open();
-    my $h     = $s->_parent->handle;
-    my $query = <<SQL;
-		SELECT * FROM users WHERE id = ? AND pending = 1
-SQL
-    my $sth = $h->prepare($query)
-      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute($id)
-      or die "Cannot execute query '$query' (" . $h->errstr . ")";
-    return $sth->rows;
-}
-
-sub set {
-    my ( $s, $id, $key, $value ) = @_;
-    my @vkeys = qw(hostmask pending lvl);
-    croak "Invalid key '$key'" unless grep $key, @vkeys;
-    $s->_parent->die_if_not_open();
-    my $h     = $s->_parent->handle;
-    my $query = <<SQL;
-		UPDATE users SET $key = ? WHERE id = ?;
-SQL
-    my $sth = $h->prepare($query)
-      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute($value, $id)
-      or die "Cannot execute query '$query' (" . $h->errstr . ")";
-    return $sth->rows;
-}
-
-# Get user by id
-##################
 sub get {
     my ( $s, $id ) = @_;
-    $s->_parent->die_if_not_open();
-    unless ( $s->exists($id) ) {
-        $s->LOG("DB::Error User '$id' doesn't exist");
-        return undef;
-    }
-    my $h     = $s->_parent->handle;
-    my $query = <<SQL;
-		SELECT * FROM users WHERE id= ?;
-SQL
-    my $sth = $h->prepare($query)
-      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute($id)
-      or die "Cannot execute query '$query' (" . $h->errstr . ")";
-    my $ru = $sth->fetchrow_hashref;
-    return undef unless $ru;
-    my $U = new MediaBot::Db::Users::Object();
-
-    for my $k ( keys %{$U} ) {
-        next if $k =~ /^_.*/;
-        $U->$k( $ru->{$k} );
-    }
-    return $U;
+    LOG( __PACKAGE__ . "::get($id)" );
+    my $C = new MediaBot::Db::Users::Object( $s->_parent );
+    return $C->_get( $id );
 }
 
-sub get_by_name {
+sub get_by {
     my ( $s, $name ) = @_;
-    $s->_parent->die_if_not_open();
-    my $h     = $s->_parent->handle;
-    my $query = <<SQL;
-		SELECT * FROM users WHERE name= ?;
-SQL
-    my $sth = $h->prepare($query)
-      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute($name)
-      or die "Cannot execute query '$query' (" . $h->errstr . ")";
-    my $ru = $sth->fetchrow_hashref;
-    return undef unless $ru;
-    my $U = new MediaBot::Db::Users::Object();
-    for my $k ( keys %{$U} ) {
-        next if $k =~ /^_.*/;
-        $U->$k( $ru->{$k} );
-    }
-    return $U;
+    LOG( __PACKAGE__ . "::get_by($name)" );
+    my $C = new MediaBot::Db::Users::Object( $s->_parent );
+    return $C->_get_by( { name => $name} );
 }
 
-sub get_by_identhost {
-    my ( $s, $ident, $host ) = @_;
-    $s->_parent->die_if_not_open();
-    my $h     = $s->_parent->handle;
-    my $query = <<SQL;
-		SELECT * FROM users 
-		WHERE ident= ? AND host = ?;
-SQL
-    my $sth = $h->prepare($query)
-      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute($ident, $host)
-      or die "Cannot execute query '$query' (" . $h->errstr . ")";
-    my $ru = $sth->fetchrow_hashref;
-    return undef unless $ru;
-    my $U = new MediaBot::Db::Users::Object();
-    for my $k ( keys %{$U} ) {
-        next if $k =~ /^_.*/;
-        $U->$k( $ru->{$k} );
-    }
-    return $U;
-}
-# Delete user
-#############
-sub delete {
-    my ( $s, $id ) = @_;
-    $s->_parent->die_if_not_open();
-    unless ( $s->exists($id) ) {
-        $s->LOG("DB::Error Cannot remove non existing user '$id'");
-        return 1;
-    }
-    my $h     = $s->_parent->handle;
-    my $query = <<SQL;
-		DELETE FROM users WHERE id= ? 
-SQL
-    my $sth = $h->prepare($query)
-      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute($id)
-      or die "Cannot execute query '$query' (" . $h->errstr . ")";
-    return $sth->rows;
+sub create {
+    my ( $s, $name, $password, $hostmask ) = @_;
+    my $C = new MediaBot::Db::Users::Object( $s->_parent );
+    my $salt = $s->_get_root->Config->bot->{password_salt};
+    $C->name($name);
+    $C->password(Crypt::Passwd::XS::crypt( $password, $salt ));
+    $C->hostmask($hostmask);
+    return $C->_create();
 }
 
-# Check Db::User object against password
-#########################################
 sub check_password {
     my ( $s, $User, $password ) = @_;
     $s->_parent->die_if_not_open();

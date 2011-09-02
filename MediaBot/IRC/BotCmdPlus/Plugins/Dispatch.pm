@@ -74,7 +74,7 @@ sub _default {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     LOG("Dispatcher[$event]");
     LOG("Message: '$msg'");
-    $msg =~ /^!([\w\d._-]+)(\s+(.*))?$/ or do {
+    $msg =~ /^!([\w\d][\w\d._-]*)(\s+(.*))?$/ or do {
         LOG("Message not prefixed by '!' so it's not a command");
         return PCI_EAT_NONE;
     };

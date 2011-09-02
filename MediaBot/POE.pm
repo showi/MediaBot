@@ -1,4 +1,4 @@
-package MediaBot::IRC;
+package MediaBot::POE;
 
 use warnings;
 use strict;
@@ -10,6 +10,9 @@ use POE qw(
   Component::IRC::Plugin::AutoJoin
   Component::IRC::Plugin::CycleEmpty
   Component::IRC::Plugin::Connector
+  Component::Server::TCP
+  Filter::Stream
+  Filter::SSL
 );
 
 use Data::Dumper;
@@ -39,14 +42,15 @@ my %fields = (
     UserRequestFilter => undef,
 );
 
+# IRC
 my $nickname = 'nos';
 my $ircname  = 'Wanna be my friend?';
+my @servers  = ('irc.nosferat.us');
 
-#my %channels = ( '#roots' => '', '#root' => '' );
-my @servers = ('irc.nosferat.us');
-
-#my %channels = ( '#erreur418' => '', );
-#my @servers  = ( 'diemen.nl.eu.undernet.org' );
+# WS
+my @ports = qw(http https);
+my $host  = 'localhost';
+our $port = 9010;
 
 sub new {
     my ( $proto, $parent ) = @_;
@@ -59,6 +63,7 @@ sub new {
     };
     bless( $s, $class );
     $s->_parent($parent);
+     # IRC
     POE::Session->create(
         object_states => [
             $s => { _start   => '_start' },
@@ -68,15 +73,80 @@ sub new {
             #  $s => { irc_public    => 'irc_public' },
             $s => { irc_ctcp_ping => 'irc_ctcp_ping' },
             $s => { lag_o_meter   => 'lag_o_meter' },
-           # $s => { irc_chanmode   => 'irc_chanmode' },
+
+            # $s => { irc_chanmode   => 'irc_chanmode' },
 
         ],
-        heap => { Db => $s->_parent->Db, }
+        heap => {  }
     );
+   
+ POE::Component::Server::TCP->new(
+  Alias => "web_server",
+  Port  => 9090,
 
-    #$s->Commands( new MediaBot::IRC::Commands($s) );
-    #$s->Sessions( new MediaBot::IRC::Sessions($s) );
-    #$s->UserRequestFilter( new MediaBot::IRC::UserRequestFilter($s) );
+  # You need to have created (self) signed certificates
+  # and a corresponding key file to encrypt the data with
+  # SSL.
+
+  ClientFilter => POE::Filter::Stackable->new(
+    Filters => [
+      POE::Filter::SSL->new(crt => 'data/server.crt', key => 'data/server.key'),
+      POE::Filter::HTTPD->new(),
+    ]
+  ),
+
+  # The ClientInput function is called to deal with client input.
+  # Because this server uses POE::Filter::SSL to encrypt the connection,
+  # POE::Filter::HTTPD must be added after this to parse input.
+  # ClientInput will receive first the SSL data and then the
+  # add POE::Filter::HTTPD to handle the decrytped HTTP requests.
+
+  ClientInput => sub {
+    my ($kernel, $heap, $request) = @_[KERNEL, HEAP, ARG0];
+
+    # Filter::HTTPD sometimes generates HTTP::Response objects.
+    # They indicate (and contain the response for) errors that occur
+    # while parsing the client's HTTP request.  It's easiest to send
+    # the responses as they are and finish up.
+
+    if ($request->isa("HTTP::Response")) {
+      $heap->{client}->put($request);
+      $kernel->yield("shutdown");
+      return;
+    }
+
+    # The request is real and fully formed.  Build content based on
+    # it.  Insert your favorite template module here, or write your
+    # own. :)
+    my $response = $s->_parent->REST->dispatch($request);
+ 
+#    my $request_fields = '';
+#    $request->headers()->scan(
+#      sub {
+#        my ($header, $value) = @_;
+#        $request_fields .= "<tr><td>$header</td><td>$value</td></tr>";
+#      }
+#    );
+#
+#    $response = HTTP::Response->new(200);
+#    $response->push_header('Content-type', 'text/html');
+#    $response->content(
+#
+#      # Break the HTML tag for the wiki.
+#      "<"
+#        . "html><head><title>Your Request</title></head>"
+#        . "<body>Details about your request:"
+#        . "<table border='1'>$request_fields</table>"
+#        . "</body></html>"
+#    );
+#
+#    # Once the content has been built, send it back to the client
+#    # and schedule a shutdown.
+
+    $heap->{client}->put($response);
+    $kernel->yield("shutdown");
+  }
+);
     return $s;
 }
 
@@ -105,15 +175,15 @@ sub _start {
 
     $irc->plugin_add( 'BotCmdPlus_Dispatch',
         new MediaBot::IRC::BotCmdPlus::Plugins::Dispatch() );
-    
+
     $irc->plugin_add( 'BotCmdPlus_PluginsManagement',
         new MediaBot::IRC::BotCmdPlus::Plugins::PluginsManagement() );
 
     # End of our plugins
     my %channels;
     for ( $irc->{database}->Channels->list ) {
-        LOG( "Adding channel " . $_->usable_name . " to AutoJoin" );
-        $channels{ $_->usable_name } = $_->password,;
+        LOG( "Adding channel " . $_->_usable_name . " to AutoJoin" );
+        $channels{ $_->_usable_name } = $_->password,;
     }
     $irc->plugin_add(
         'AutoJoin',
@@ -129,6 +199,11 @@ sub _start {
     $irc->yield( register => 'all' );
     $irc->yield( connect => { Server => $servers[0] } );
     $kernel->delay( 'lag_o_meter' => 60 );
+    
+
+
+    # WS
+    
     return;
 }
 
@@ -154,7 +229,6 @@ sub lag_o_meter {
     return;
 }
 
-
 sub irc_ctcp_ping {
     my $s = $_[0];
 
@@ -169,6 +243,7 @@ sub irc_ctcp_ping {
 }
 
 sub run {
+    LOG("RUNNING");
     $poe_kernel->run();
 }
 

@@ -51,11 +51,11 @@ sub help {
     #print Dumper $C->cmd;
     for my $cmd ( sort keys %{ $C->cmd } ) {
         my $plugin = $C->cmd->{$cmd}->{plugin}->cmd->{$cmd};
-        LOG( "Show cmd '$cmd': " . $plugin->{lvl} );
-        LOG( "Show cmd '$cmd': " . $plugin->{help_cmd} );
-        LOG( "Show cmd '$cmd': " . $plugin->{help_description} );
+#        LOG( "Show cmd '$cmd': " . $plugin->{lvl} );
+#        LOG( "Show cmd '$cmd': " . $plugin->{help_cmd} );
+#        LOG( "Show cmd '$cmd': " . $plugin->{help_description} );
         next if $mylvl < $plugin->{lvl};
-        $irc->yield( notice => $Session->nick => " " . $plugin->{help_cmd} . "   -   " . $plugin->{help_description});
+        $irc->yield( notice => $Session->nick => " " . $plugin->{help_cmd});# . "   -   " . $plugin->{help_description});
 #        $irc->yield( notice => $Session->nick => "    -> "
 #              . $plugin->{help_description} );
     }

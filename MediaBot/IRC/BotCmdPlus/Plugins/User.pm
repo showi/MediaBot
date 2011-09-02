@@ -57,6 +57,12 @@ sub new {
                 help_cmd         => '!user.set [username] [hostmask|pending|lvl] [value]',
                 help_description => 'Adding user',
             },
+            'user_list' => {
+                access           => 'msg',
+                lvl              => 800,
+                help_cmd         => '!user.list',
+                help_description => 'Lisging user',
+            },
         }
     );
     return $s;
@@ -77,7 +83,7 @@ sub login {
     my ( $cmd, $user, $password ) = split( /\s+/, $msg );
     LOG("We need to authenticate user '$user' with password '$password'");
 
-    $User = $db->Users->get_by_name($user);
+    $User = $db->Users->get_by($user);
     unless ($User) {
         $irc->yield( notice => $Session->nick => "[$cmdname] Invalid username" );
         return PCI_EAT_ALL;
@@ -139,7 +145,7 @@ sub user_set {
         return PCI_EAT_ALL;
     }
     my $UserTarget;
-    unless ( $UserTarget = $db->Users->get_by_name($name) ) {
+    unless ( $UserTarget = $db->Users->get_by($name) ) {
         $irc->yield( notice => $Session->nick =>
               "[$cmdname] Username '$name' doesn't exist!" );
         return PCI_EAT_ALL;
@@ -169,7 +175,9 @@ sub user_set {
             notice => $Session->nick => "[$cmdname] Invalid field '$key'" );
         return PCI_EAT_ALL;
     }
-    my $res = $db->Users->set( $UserTarget->id, $key, $value );
+    $UserTarget->$key($value);
+    my $res = $UserTarget->_update();
+    #$db->Users->set( $UserTarget->id, $key, $value );
     if ($res) {
         $irc->yield( notice => $Session->nick =>
               "[$cmdname] '$name' $key set to '$value'" );
@@ -203,7 +211,8 @@ sub user_add {
             notice => $Session->nick => "[$cmdname] Invalid username $name" );
         return PCI_EAT_ALL;
     }
-    if ( $db->Users->exists_by_name($name) ) {
+    my $NewUser;
+    if ( $NewUser = $db->Users->get_by($name) ) {
         $irc->yield( notice => $Session->nick =>
               "[$cmdname] Username '$name' already exist!" );
         return PCI_EAT_ALL;
@@ -215,7 +224,8 @@ sub user_add {
     }
     $hostmask = normalize_mask($hostmask);
     LOG("Adding user $name with password $password [$hostmask]");
-    my $res = $db->Users->create( $name, $password, $hostmask );
+
+    my $res = $db->Users->create($name, $password, $hostmask);
     if ($res) {
         $irc->yield( notice => $Session->nick =>
               "[$cmdname] Successfully created user '$name'" );
@@ -229,7 +239,7 @@ sub user_add {
 sub user_del {
     my ( $self, $Session, $User, $irc, $event ) = splice @_, 0, 5;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
-    my $cmdname = 'user_add';
+    my $cmdname = 'user_del';
     my $PCMD    = $self->get_cmd($cmdname);
     my $db      = $irc->{database};
 
@@ -250,7 +260,7 @@ sub user_del {
         return PCI_EAT_ALL;
     }
     my $TargetUser;
-    unless ( $TargetUser = $db->Users->get_by_name($name) ) {
+    unless ( $TargetUser = $db->Users->get_by($name) ) {
         $irc->yield( notice => $Session->nick =>
               "[$cmdname] Username '$name' doesn't exist!" );
         return PCI_EAT_ALL;
@@ -261,7 +271,8 @@ sub user_del {
         );
         return PCI_EAT_ALL;
     }
-    my $res = $db->Users->delete( $TargetUser->id);
+    print "Deleting user id: " . $TargetUser->id . "\n";
+    my $res = $TargetUser->_delete;
     if ($res) {
         $irc->yield( notice => $Session->nick =>
               "[$cmdname] Successfully deleted user '$name'" );

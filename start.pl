@@ -10,4 +10,4 @@ use MediaBot::Log;
 
 my $b = new MediaBot("./");
 LOG("--- Starting MediaBot ---");
-$b->Irc->run();
+$b->POE->run();

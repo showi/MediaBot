@@ -20,7 +20,7 @@ sub AUTOLOAD {
       or croak "$self is not an object";
     my $name = $AUTOLOAD;
     $name =~ s/.*://;        # strip fully-qualified portion
-
+    #print "ERROR: $name\n";
     unless ( exists $self->{_permitted}->{$name} ) {
         croak "Can't access `$name' field in class $type";
     }

@@ -85,7 +85,7 @@ sub S_324 {
         #$mode =~ s/[kl]//g;
         LOG("Channel $1 have mode $2");
         my $db      = $irc->{database};
-        my $Channel = $db->Channels->get_by_name($chan);
+        my $Channel = $db->Channels->get_by($chan);
         return PCI_EAT_NONE unless $Channel;
         return PCI_EAT_NONE unless $Channel->auto_mode;
         my $newmode = "+" . $Channel->mode;
@@ -100,7 +100,8 @@ sub S_324 {
 #                    $newargs .= $Channel->ulimit. " ";
 #                }
         my $rmode = gen_mode_change( $mode, $newmode );
-        return PCI_EAT_NONE if ( ( $mode eq $rmode ) );
+        LOG("MODE CHANGE $rmode / $newmode");
+        return PCI_EAT_NONE if ( !$rmode or ( $mode eq $rmode ) );
         $irc->yield( 'mode' => $chan => $rmode => $newargs );
 
     };
@@ -134,11 +135,11 @@ sub S_join {
     my ( $nick, $user, $hostmask ) = parse_user($who);
     if ( $irc->nick_name eq $nick ) {
         my $db      = $irc->{database};
-        my $Channel = $db->Channels->get_by_name($where);
+        my $Channel = $db->Channels->get_by($where);
         return PCI_EAT_NONE unless $Channel;
         $Channel->bot_joined(1);
         $Channel->bot_mode(undef);
-        $db->Channels->update($Channel);
+        $Channel->_update;
         LOG("We have joined channel $where");
     }
     return PCI_EAT_NONE;

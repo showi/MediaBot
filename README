@@ -1,11 +1,18 @@
 MediaBot - Another Perl IRC Bot
 
-Informations
-------------
+- Informations
+--------------
 MediaBot is built on top of POE::Component::IRC. He must provide user and channel management with SQL database as data back-end.
 
 
-0.0.3 2011/07.30 Major improvement on IRC::BotCmdPlus system (Alpha version) - <joachim {dot} basmaison {at} gmail {dot} com>
+
+- Versions
+----------
+
+0.0.4 2011/08/01 Change in underlying sql database access. Introduce HTTPS Rest API so bot can "chat" and we can manage them over HTTPS.
+----------------
+
+0.0.3 2011/07/30 Major improvement on IRC::BotCmdPlus system (Alpha version) - <joachim {dot} basmaison {at} gmail {dot} com>
 ----------------
 - Much cleaner interface when calling command on plug-in, so we have less coding on the plug-in side.
 - Plug-in register command automatically. Each plug-in can register 'n' commands along with lvl, type of access (public, private), and description for automatic help.

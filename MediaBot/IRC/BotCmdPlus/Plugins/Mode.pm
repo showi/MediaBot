@@ -54,14 +54,19 @@ sub S_mode {
     my ( $self, $irc ) = splice @_, 0, 2;
     my $db = $irc->{database};
     my ( $who, $where, $mode ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
-    my ($nick, $user, $host) = parse_user($who);
+    my ( $nick, $user, $host ) = parse_user($who);
     LOG("$who wanna set $mode on $where");
-    if ( is_valid_chan_name($where) ) {
-        my $Channel = $db->Channels->get_by_name($where);
-        if ( $nick ne $irc->nick_name and $Channel and $Channel->bot_mode eq 'o' ) {
-             $irc->yield('mode', $Channel->usable_name);
-        }
-    }
+
+    #    if ( is_valid_chan_name($where) ) {
+    #        my $Channel = $db->Channels->get_by($where);
+    #        if (    $nick ne $irc->nick_name
+    #            and $Channel
+    #            and $Channel->bot_mode
+    #            and $Channel->bot_mode eq 'o' )
+    #        {
+    #            $irc->yield( 'mode', $Channel->_usable_name );
+    #        }
+    #    }
     $self->set_mode( $irc, $who, $where, $mode, splice( @_, 3, $#_ ) );
     return PCI_EAT_ALL;
 }
@@ -69,9 +74,15 @@ sub S_mode {
 sub set_mode {
     my ( $s, $irc ) = splice @_, 0, 2;
     my ( $who, $target, $mode, @args ) = @_;
-     my ($nick, $user, $host) = parse_user($who);
+    my ( $nick, $user, $host ) = parse_user($who);
     my $db = $irc->{database};
     $mode = unparse_mode_line($mode);
+    if ( $nick ne $irc->nick_name ) {
+        LOG("Event on mode $mode");
+        $mode =~ /[tnimps]/ and $mode !~ /[o]/ and do {
+            $irc->yield( 'mode', $target );
+        };
+    }
     do {
         my $sign = substr( $mode, 0, 1 );
         $mode = substr( $mode, 1 );
@@ -89,18 +100,34 @@ sub set_mode {
                     and $$arg eq $irc->nick_name
                     and is_valid_chan_name($target) )
                 {
-                    my $Channel = $db->Channels->get_by_name($target);
-                    $Channel->bot_mode('o');
-                    $db->Channels->update($Channel);
- if ( $nick ne $irc->nick_name and $Channel and $Channel->bot_mode eq 'o' ) {
-             $irc->yield('mode', $Channel->usable_name);
-        }
+                    my $Channel = $db->Channels->get_by($target);
+                    if ( $sign eq '+' ) {
+                        $Channel->bot_mode('o');
+                    }
+                    else {
+                        $Channel->bot_mode(undef);
+                    }
+                    $Channel->_update;
+                    if ( $sign eq '+' and $nick ne $irc->nick_name ) {
+                        $irc->yield( 'mode', $Channel->_usable_name );
+                    }
                 }
             }
             elsif ( $op =~ /^[kl]$/ and $sign eq '+' ) {
                 my $arg = shift @args;
-
-                LOG("Set mode $sign$op on $$arg");
+                if (    ( $op eq 'k' )
+                    and ( $sign eq '+' )
+                    and ( $nick ne $irc->nick_name ) )
+                {
+                    my $Channel = $db->Channels->get_by($target);
+                    if ($Channel) {
+                        if ($Channel->password and $Channel->password ne $arg) {
+                            $irc->yield( 'mode', $Channel->_usable_name, "-k+k $$arg " . $Channel->password);
+                        } elsif(!$Channel->password) {
+                            $irc->yield( 'mode', $Channel->_usable_name, "-k $$arg "); 
+                        }
+                    }
+                }
             }
             else {
 

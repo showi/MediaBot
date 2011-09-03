@@ -50,10 +50,10 @@ sub get {
 }
 
 sub get_by {
-    my ( $s, $name ) = @_;
-    LOG( __PACKAGE__ . "::get_by($name)" );
+    my ( $s, $hash ) = @_;
+    LOG( __PACKAGE__ . "::get_by($hash)" );
     my $C = new MediaBot::Db::Users::Object( $s->_parent );
-    return $C->_get_by( { name => $name} );
+    return $C->_get_by( $hash );
 }
 
 sub create {

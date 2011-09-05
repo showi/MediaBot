@@ -14,6 +14,11 @@ WriteMakefile(
     PL_FILES            => {},
     PREREQ_PM => {
         'POE' => 0,
+        'POE::Component::IRC' => 0,
+        'POE::Component::IRC::Plugin' => 0,
+        'POE::Component::IRC::Plugin::CycleEmpty' => 0,
+        'POE::Component::IRC::Plugin::Connector' => 0,
+        
         'Test::More' => 0,
     },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },

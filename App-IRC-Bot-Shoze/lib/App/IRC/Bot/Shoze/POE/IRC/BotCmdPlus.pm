@@ -1,4 +1,4 @@
-package MediaBot::POE::IRC::BotCmdPlus;
+package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus;
 
 use strict;
 use warnings;

@@ -18,6 +18,7 @@ use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::User;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Channel;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Mode;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Help;
+use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Mynick;
 
 our %fields = ( cmd => undef, plugins => undef, irc => undef );
 
@@ -39,7 +40,7 @@ sub new {
             },
         }
     );
-    my @plugins = qw(mode info user channel help);
+    my @plugins = qw(mode info user channel help mynick);
     $s->plugins( \@plugins );
     return $s;
 }
@@ -76,7 +77,7 @@ sub _load_plugin {
     for ( @{ $s->plugins } ) {
         my $name   = ucfirst( lc($_) );
         my $plugin = "App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::$name";
-        LOG("Adding plugin $plugin");
+        LOG("Adding plugin $name");
         $s->irc->plugin_add( "BotCmdPlus_$name", $plugin->new );
     }
 }

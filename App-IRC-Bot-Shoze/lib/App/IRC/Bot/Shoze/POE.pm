@@ -137,14 +137,15 @@ sub _start {
 
     # We create a new PoCo-IRC object
     my $irc = POE::Component::IRC->spawn(
-        nick    => $nickname,
+        nick    => $s->_parent->Config->bot->{nick},
         ircname => $ircname,
 
         #server  => $server,
     ) or croak "Oh noooo! $!";
 
-    $s->IRC( new MediaBot::POE::IRC($irc));
+    $s->IRC( new App::IRC::Bot::Shoze::POE::IRC($irc));
     $irc->{database}   = $s->_parent->Db;
+    $irc->{Config}   = $s->_parent->Config;
     $heap->{connector} = POE::Component::IRC::Plugin::Connector->new();
     $irc->plugin_add( 'Connector' => $heap->{connector} );
 

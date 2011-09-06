@@ -322,7 +322,8 @@ sub channel_set {
         $mode_change = 1
           if ( ( defined $Channel->$key and not defined $value )
             or ( not defined $Channel->$key and defined $value )
-            or ( $Channel->$key != $value )  or ( $Channel->$key ne $value ));
+            or ( $Channel->$key != $value )
+            or ( $Channel->$key ne $value ) );
     }
     $Channel->$key($value);
     if ( $Channel->_update ) {
@@ -336,13 +337,6 @@ sub channel_set {
               "[$cmdname] Cannot set $key to $value" );
     }
     return PCI_EAT_ALL;
-}
-
-sub _send_lines {
-    my ( $s, $irc, $what, $where, @lines ) = @_;
-    for (@lines) {
-        $irc->yield( $what => $where => $_ );
-    }
 }
 
 sub channel_list {
@@ -421,28 +415,45 @@ sub channel_set_owner {
               . $self->pretty_help($cmdname) );
         return PCI_EAT_ALL;
     };
-    my $Channel = $db->Channels->get( $type, $channame );
+    my $Channel = $db->Channels->get_by( $type, $channame );
     unless ($Channel) {
         $irc->yield( notice => $Session->nick =>
               "[$cmdname] No channel named '$type$channame'" );
         return PCI_EAT_ALL;
     }
-    my $Owner = $db->Users->get_byname($name);
+    my $Owner = $db->Users->get_by( { name => $name } );
     unless ($Owner) {
         $irc->yield(
             notice => $Session->nick => "[$cmdname] No user named '$name'" );
         return PCI_EAT_ALL;
     }
-    if ( $db->Channels->set( $Channel->id, 'owner', $Owner->id ) ) {
+    my $CurrentOwner;
+    if ( $Channel->owner ) {
+        $CurrentOwner = $db->Users->get( $Channel->owner );
+        if ( ( $User->lvl != 1000 ) and ( $CurrentOwner->lvl >= $User->lvl ) ) {
+            $irc->yield( notice => $Session->nick =>
+                  "[$cmdname] You cannot change this channel owner!" );
+            return PCI_EAT_ALL;
+        }
+        elsif ( $CurrentOwner->id == $Owner->id ) {
+            $irc->yield( notice => $Session->nick => "[$cmdname] Same owner!" )
+              ;
+            return PCI_EAT_ALL;
+        }
+    }
+
+    $Channel->owner( $Owner->id );
+
+    if ( $Channel->_update ) {
         $irc->yield( notice => $Session->nick => "[$cmdname] "
-              . $Channel->usable_name
+              . $Channel->_usable_name
               . " owner set to "
               . $Owner->name );
         return PCI_EAT_ALL;
     }
     else {
         $irc->yield( notice => $Session->nick => "[$cmdname] Cannot set "
-              . $Channel->usable_name
+              . $Channel->_usable_name
               . " owner set to "
               . $Owner->name );
         return PCI_EAT_ALL;
@@ -521,13 +532,18 @@ sub topic {
         return PCI_EAT_NONE;
     }
     my $channel;
+    my $topic;
     if ( $event eq "S_msg" ) {
-        $msg =~ s/^!topic\s+([#&][\w\d_-]+)\s+(.*)\s*$/$2/;
-        $channel = $1;
+        $msg =~ s/^!topic\s+([#&][\w\d_-]+)\s+(.*)\s*$/$2/ and do {
+            $channel = $1;
+            $topic   = $2;
+        };
     }
     else {
-        $msg =~ s/^!topic\s+(.*)\s*$/$1/;
-        $channel = $where->[0];
+        $msg =~ s/^!topic\s+(.*)\s*$/$1/ and do {
+            $channel = $where->[0];
+            $topic   = $1;
+        };
     }
     LOG("[$event] Want to set topic on '$channel': $msg");
     return PCI_EAT_NONE unless is_valid_chan_name($channel);
@@ -544,7 +560,18 @@ sub topic {
     else {
         return PCI_EAT_NONE;
     }
-    $irc->yield( 'topic' => $channel => $msg );
+    $Channel->topic($topic);
+    $Channel->topic_setby( $User->id );
+    $Channel->topic_seton(time);
+    unless ( $Channel->_update ) {
+        WARN("Cannot update channel $channel with new topic informations");
+        return PCI_EAT_NONE;
+    }
+    if ($topic) {
+        $topic .=
+          " (" . $User->name . "/" . localtime( $Channel->topic_seton ) . ")";
+    }
+    $irc->yield( 'topic' => $channel => $topic );
     return PCI_EAT_ALL;
 }
 

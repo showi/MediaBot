@@ -62,7 +62,12 @@ sub create {
     my $salt = $s->_get_root->Config->bot->{password_salt};
     $C->name($name);
     $C->password(Crypt::Passwd::XS::crypt( $password, $salt ));
+    print "Create: $hostmask\n";
     $C->hostmask($hostmask);
+    $C->pending(1);
+    $C->lvl(200);
+    $C->is_bot(0);
+    $C->created_on(time);
     return $C->_create();
 }
 

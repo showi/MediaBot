@@ -11,7 +11,7 @@ use App::IRC::Bot::Shoze::Log;
 
 our @ISA = qw(Exporter);
 
-our @MyExport  = qw(pretty_help get_cmd PCI_register PCI_unregister);
+our @MyExport  = qw(_send_lines pretty_help get_cmd PCI_register PCI_unregister);
 our @EXPORT_OK = @MyExport;
 our @EXPORT    = @MyExport;
 
@@ -48,6 +48,13 @@ sub PCI_unregister {
         $C->unregister_command($cmd);
     }
     return 1;
+}
+
+sub _send_lines {
+    my ( $s, $irc, $what, $where, @lines ) = @_;
+    for (@lines) {
+        $irc->yield( $what => $where => $_ );
+    }
 }
 
 1;

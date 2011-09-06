@@ -8,7 +8,7 @@ use POE;
 use POE::Component::IRC::Plugin qw(:ALL);
 
 use lib qw(../../);
-use App::IRC::Bot::Shoze::Class qw(AUTOLOAD _get_root);
+use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
 use App::IRC::Bot::Shoze::Constants;
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::POE::IRC::Out;

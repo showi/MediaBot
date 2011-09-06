@@ -12,7 +12,7 @@ use POE;
 use IRC::Utils ':ALL';
 
 use lib qw(../../../);
-use App::IRC::Bot::Shoze::Class qw(AUTOLOAD _get_root);
+use App::IRC::Bot::Shoze::Class qw(AUTOLOAD _get_root DESTROY);
 use App::IRC::Bot::Shoze::Constants qw(:ALL);
 use App::IRC::Bot::Shoze::Log;
 

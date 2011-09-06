@@ -48,6 +48,7 @@ sub list {
 		c.created_on AS created_on, c.id AS id, c.auto_op AS auto_op, c.owner AS owner,
 		c.topic AS topic, c.auto_voice AS auto_voice, c.name AS name, c.active AS active,
 		c.auto_mode AS auto_mode, c.type AS type, c.created_by AS created_by, 
+		c.topic_setby AS topic_setby, c.topic_seton AS topic_seton, 
 		u.name AS user_name, u.lvl as user_lvl, u.is_bot AS user_is_bot
 		FROM channels AS c, users AS u
 		WHERE c.owner = u.id OR c.owner IS NULL;

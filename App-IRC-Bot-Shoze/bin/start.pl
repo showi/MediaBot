@@ -79,7 +79,7 @@ LOG("----- Starting Shoze -----");
 LOG("Debug level: " . $App::IRC::Bot::Shoze::Debug)
     if $App::IRC::Bot::Shoze::Debug;
 my $b = new App::IRC::Bot::Shoze($BASE_PATH);
-$SIG{'INT'} = sub {print "\nBye!"; $b->stop(); print "Bye\n";};
+$SIG{'INT'} = sub {print "\nBye!"; $b->POE->stop(); $b = undef; print "Bye\n";};
 $b->POE->run();
 LOG("----- Shoze ended -----");
 exit(0);

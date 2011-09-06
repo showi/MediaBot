@@ -150,6 +150,7 @@ sub _delete {
 
 sub _get_by {
     my ( $s, $kv ) = @_;
+    croak "Not an hash ref" unless ref($kv) =~ /^HASH/;
     $s->_object_db->die_if_not_open();
     my $h     = $s->_object_db->handle;
     my $query = "SELECT * FROM  " . $s->_object_name . " WHERE ";

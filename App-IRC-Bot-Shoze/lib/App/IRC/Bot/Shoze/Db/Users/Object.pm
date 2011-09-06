@@ -22,6 +22,7 @@ our %fields = (
     name => undef,
     password => undef,
     is_bot => undef,
+    created_on => undef,
     
     _object_name => undef,
     _object_db   => undef,

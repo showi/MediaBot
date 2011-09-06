@@ -42,19 +42,19 @@ sub new {
             'user_add' => {
                 access   => 'msg',
                 lvl      => 800,
-                help_cmd => '!user.add [user name] [password] <hostmask>',
-                help_description => 'Adding user',
+                help_cmd => '!user.add <user name> <password> [hostmask]',
+                help_description => 'Add a new user',
             },
             'user_del' => {
                 access   => 'msg',
                 lvl      => 800,
-                help_cmd => '!user.del [user name] ',
-                help_description => 'Deleting user',
+                help_cmd => '!user.del <user name>',
+                help_description => 'Delete a given user',
             },
             'user_set' => {
                 access           => 'msg',
                 lvl              => 800,
-                help_cmd         => '!user.set [username] [hostmask|pending|lvl] [value]',
+                help_cmd         => '!user.set <username> <hostmask|pending|lvl> <value>',
                 help_description => 'Adding user',
             },
             'user_list' => {
@@ -62,6 +62,12 @@ sub new {
                 lvl              => 800,
                 help_cmd         => '!user.list',
                 help_description => 'Lisging user',
+            },
+            'user_info' => {
+                access           => 'msg',
+                lvl              => 800,
+                help_cmd         => '!user.info <user name>',
+                help_description => 'Information about a given user',
             },
         }
     );
@@ -134,18 +140,18 @@ sub user_set {
     }
     if ( $User->lvl < $PCMD->{lvl} ) {
         $irc->yield( notice => $Session->nick =>
-              "[$cmdname] You don't have the right to add user!" );
+              "[$cmdname] You don't have the right to set user key&value!" );
         return PCI_EAT_ALL;
     }
-    my ( $cmd, $name, $key, $value ) = split /\s+/, $msg;
-    my @vkeys = qw(hostmask pending level);
+    my ( $cmd, $name, $key, $value ) = split /\s+/, str_chomp($msg);
+    my @vkeys = qw(hostmask pending lvl);
     unless ( grep $key, @vkeys ) {
         $irc->yield(
             notice => $Session->nick => "[$cmdname] Invalid field '$key'" );
         return PCI_EAT_ALL;
     }
     my $UserTarget;
-    unless ( $UserTarget = $db->Users->get_by($name) ) {
+    unless ( $UserTarget = $db->Users->get_by({name =>$name}) ) {
         $irc->yield( notice => $Session->nick =>
               "[$cmdname] Username '$name' doesn't exist!" );
         return PCI_EAT_ALL;
@@ -212,7 +218,7 @@ sub user_add {
         return PCI_EAT_ALL;
     }
     my $NewUser;
-    if ( $NewUser = $db->Users->get_by($name) ) {
+    if ( $NewUser = $db->Users->get_by({name =>$name}) ) {
         $irc->yield( notice => $Session->nick =>
               "[$cmdname] Username '$name' already exist!" );
         return PCI_EAT_ALL;
@@ -222,9 +228,12 @@ sub user_add {
               "[$cmdname] Invalid password $password" );
         return PCI_EAT_ALL;
     }
-    $hostmask = normalize_mask($hostmask);
+    if ($hostmask) {
+        $hostmask = normalize_mask($hostmask);
+    } else {
+     $hostmask = "*!*@*" unless $hostmask;    
+    }
     LOG("Adding user $name with password $password [$hostmask]");
-
     my $res = $db->Users->create($name, $password, $hostmask);
     if ($res) {
         $irc->yield( notice => $Session->nick =>
@@ -260,7 +269,7 @@ sub user_del {
         return PCI_EAT_ALL;
     }
     my $TargetUser;
-    unless ( $TargetUser = $db->Users->get_by($name) ) {
+    unless ( $TargetUser = $db->Users->get_by({name => $name}) ) {
         $irc->yield( notice => $Session->nick =>
               "[$cmdname] Username '$name' doesn't exist!" );
         return PCI_EAT_ALL;
@@ -281,5 +290,82 @@ sub user_del {
         $irc->yield( notice => $Session->nick =>
               "[$cmdname] Cannot delete user '$name'" );
     }
+}
+
+sub user_list {
+    my ( $self, $Session, $User, $irc, $event ) = splice @_, 0, 5;
+    my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
+    my $cmdname = 'user_list';
+    my $PCMD    = $self->get_cmd($cmdname);
+    my $db      = $irc->{database};
+
+    unless ( $Session->user_id ) {
+        $irc->yield(
+            notice => $Session->nick => "[$cmdname] You must be logged!" );
+        return PCI_EAT_ALL;
+    }
+    if ( $User->lvl < $PCMD->{lvl} ) {
+        $irc->yield( notice => $Session->nick =>
+              "[$cmdname] You don't have the right to list user!" );
+        return PCI_EAT_ALL;
+    }
+
+    my @list = $db->Users->list;
+    unless (@list) {
+        $irc->yield(
+            notice => $Session->nick => "[$cmdname] No user in database " );
+        return PCI_EAT_ALL;
+    }
+    $irc->yield( notice => $Session->nick => "[$cmdname] Listing user " );
+    for my $User (@list) {
+        my $str = " - ";
+        $str .= "[".$User->lvl."] " . $User->name . " / " . $User->hostmask;
+        $str .= " [IsBot]" if $User->is_bot;
+        $str .= " [Pending]" if $User->pending;
+        $irc->yield( notice => $Session->nick => $str );
+    }
+    return PCI_EAT_ALL;
+}
+
+sub user_info {
+    my ( $self, $Session, $User, $irc, $event ) = splice @_, 0, 5;
+    my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
+    my $cmdname = 'user_info';
+    my $PCMD    = $self->get_cmd($cmdname);
+    my $db      = $irc->{database};
+
+    unless ( $Session->user_id ) {
+        $irc->yield(
+            notice => $Session->nick => "[$cmdname] You must be logged!" );
+        return PCI_EAT_ALL;
+    }
+    if ( $User->lvl < $PCMD->{lvl} ) {
+        $irc->yield( notice => $Session->nick =>
+              "[$cmdname] You don't have the right to list channel!" );
+        return PCI_EAT_ALL;
+    }
+    print "msg: $msg\n";
+    my $name = ( split( /\s+/, $msg ) )[1];
+    $name =~ /^([\w\d_-]+)$/ or do {
+        $irc->yield(
+            notice => $Session->nick => "[$cmdname] Invalid user name '$name'!" );
+        return PCI_EAT_ALL;
+    };
+    my $TargetUser = $db->Users->get_by( { name => $name} );
+    unless ($TargetUser) {
+        $irc->yield( notice => $Session->nick =>
+              "[$cmdname] User named $name not found!" );
+        return PCI_EAT_ALL;
+    }
+    my $out = "User information [$name]\n";
+    $out .= "lvl: " . $TargetUser->lvl . "\n";
+    $out .= "hostmask: " . $TargetUser->hostmask . "\n";
+    $out .= "pending: " . ($TargetUser->pending ? "Yes" : "No") . "\n";
+    $out .= "is bot: " . ($TargetUser->is_bot? "Yes": "No") . "\n";
+    $out .= "created on: " . localtime(int $TargetUser->created_on) . "\n";
+    
+    my @lines = split( /\n/, $out );
+    $self->_send_lines( $irc, 'notice', $Session->nick, @lines );
+    return PCI_EAT_ALL;
 }
 1;

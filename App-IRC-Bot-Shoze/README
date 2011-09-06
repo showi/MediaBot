@@ -14,6 +14,66 @@ fixes for the module are worth downloading.
 
 INSTALLATION
 
+Required CPAN Module
+------------
+POE
+POE::Component::IRC
+POE::Component::IRC::Plugin
+POE::Component::IRC::Plugin::AutoJoin
+POE::Component::IRC::Plugin::CycleEmpty
+POE::Component::IRC::Plugin::Connector
+POE::Component::Server::TCP
+POE::Filter::Stream
+POE::Filter::SSL
+IRC::Utils
+HTTP::Status
+DBI
+DBD::SQLite (If you're using SQLite)
+Crypt::Passwd::XS
+Digest::HMAC
+Digest::SHA256
+POE::Filter::SSL (*)
+
+* CPAN Module manual install
+--------------------------
+
+1. Install dist package
+
+libnet-ssleay-perl
+libssl-dev
+
+2. Install POE::Filter::SSL
+wget http://search.cpan.org/CPAN/authors/id/P/PR/PRIVI/POE-Filter-SSL-0.24.tar.gz
+tar zxvf ...
+perl Makefile.PL
+make 
+make install
+
+Edit start.pl
+-------------
+1. Edit bin/start.pl
+2. Create root and subdirecories
+ex:
+/srv/shoze
+/srv/shoze/etc
+/srv/shoze/log
+/srv/shoze/data
+
+3. Set good righet on directory
+groupadd shoze
+
+chmod shoze: -R /srv/shoze
+
+Copy sql database in data folder
+--------------------------------
+
+Copy server.crt server.key in data folder
+------------------------------------------
+
+Copy bot.yaml  db.yaml irc.yaml in etc folder
+---------------------------------------------
+
+
 To install this module, run the following commands:
 
 	perl Makefile.PL

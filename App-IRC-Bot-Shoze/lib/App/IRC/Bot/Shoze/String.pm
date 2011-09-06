@@ -15,6 +15,8 @@ our $AUTOLOAD;
 
 sub str_chomp {
     my $str = $_[0];
+    return undef unless defined $str;
+    return "" unless $str;
     $str =~ s/^\s+//;    #remove leading spaces
     $str =~ s/\s+$//;    #remove trailing spaces
     return $str;

@@ -6,7 +6,7 @@
 #
 #       ANY CHANGES MADE HERE WILL BE LOST!
 #
-#   MakeMaker ARGV: (q[INSTALLDIRS=site])
+#   MakeMaker ARGV: ()
 #
 
 #   MakeMaker Parameters:
@@ -164,8 +164,7 @@ C_FILES  =
 O_FILES  = 
 H_FILES  = 
 MAN1PODS = 
-MAN3PODS = lib/App/IRC/Bot/Shoze.pm \
-	lib/App/IRC/Bot/ShozeOriginal.pm
+MAN3PODS = lib/App/IRC/Bot/Shoze.pm
 
 # Where is the Config information that we are using/depend on
 CONFIGDEP = $(PERL_ARCHLIB)$(DFSEP)Config.pm $(PERL_INC)$(DFSEP)config.h
@@ -208,6 +207,7 @@ TO_INST_PM = lib/App/IRC/Bot/Shoze.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Helper.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Channel.pm \
+	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelEvent.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Dispatch.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Help.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Info.pm \
@@ -219,8 +219,7 @@ TO_INST_PM = lib/App/IRC/Bot/Shoze.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC/Out.pm \
 	lib/App/IRC/Bot/Shoze/REST.pm \
 	lib/App/IRC/Bot/Shoze/REST/Channels.pm \
-	lib/App/IRC/Bot/Shoze/String.pm \
-	lib/App/IRC/Bot/ShozeOriginal.pm
+	lib/App/IRC/Bot/Shoze/String.pm
 
 PM_TO_BLIB = lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Info.pm \
 	blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Info.pm \
@@ -256,8 +255,6 @@ PM_TO_BLIB = lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Info.pm \
 	blib/lib/App/IRC/Bot/Shoze/Db/ServerCapabilities.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Channel.pm \
 	blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Channel.pm \
-	lib/App/IRC/Bot/ShozeOriginal.pm \
-	blib/lib/App/IRC/Bot/ShozeOriginal.pm \
 	lib/App/IRC/Bot/Shoze/Db.pm \
 	blib/lib/App/IRC/Bot/Shoze/Db.pm \
 	lib/App/IRC/Bot/Shoze/Db/Users/Object.pm \
@@ -266,6 +263,8 @@ PM_TO_BLIB = lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Info.pm \
 	blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus.pm \
 	lib/App/IRC/Bot/Shoze/REST.pm \
 	blib/lib/App/IRC/Bot/Shoze/REST.pm \
+	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelEvent.pm \
+	blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelEvent.pm \
 	lib/App/IRC/Bot/Shoze/Db/Channels.pm \
 	blib/lib/App/IRC/Bot/Shoze/Db/Channels.pm \
 	lib/App/IRC/Bot/Shoze/Log.pm \
@@ -511,11 +510,9 @@ POD2MAN = $(POD2MAN_EXE)
 
 
 manifypods : pure_all  \
-	lib/App/IRC/Bot/Shoze.pm \
-	lib/App/IRC/Bot/ShozeOriginal.pm
+	lib/App/IRC/Bot/Shoze.pm
 	$(NOECHO) $(POD2MAN) --section=3 --perm_rw=$(PERM_RW) \
-	  lib/App/IRC/Bot/Shoze.pm $(INST_MAN3DIR)/App::IRC::Bot::Shoze.$(MAN3EXT) \
-	  lib/App/IRC/Bot/ShozeOriginal.pm $(INST_MAN3DIR)/App::IRC::Bot::ShozeOriginal.$(MAN3EXT) 
+	  lib/App/IRC/Bot/Shoze.pm $(INST_MAN3DIR)/App::IRC::Bot::Shoze.$(MAN3EXT) 
 
 
 
@@ -730,7 +727,7 @@ distdir : create_distdir distmeta
 
 # --- MakeMaker dist_test section:
 disttest : distdir
-	cd $(DISTVNAME) && $(ABSPERLRUN) Makefile.PL "INSTALLDIRS=site"
+	cd $(DISTVNAME) && $(ABSPERLRUN) Makefile.PL 
 	cd $(DISTVNAME) && $(MAKE) $(PASTHRU)
 	cd $(DISTVNAME) && $(MAKE) test $(PASTHRU)
 
@@ -894,7 +891,7 @@ $(FIRST_MAKEFILE) : Makefile.PL $(CONFIGDEP)
 	-$(NOECHO) $(RM_F) $(MAKEFILE_OLD)
 	-$(NOECHO) $(MV)   $(FIRST_MAKEFILE) $(MAKEFILE_OLD)
 	- $(MAKE) $(USEMAKEFILE) $(MAKEFILE_OLD) clean $(DEV_NULL)
-	$(PERLRUN) Makefile.PL "INSTALLDIRS=site"
+	$(PERLRUN) Makefile.PL 
 	$(NOECHO) $(ECHO) "==> Your Makefile has been rebuilt. <=="
 	$(NOECHO) $(ECHO) "==> Please rerun the $(MAKE) command.  <=="
 	$(FALSE)
@@ -915,8 +912,7 @@ $(MAKE_APERL_FILE) : $(FIRST_MAKEFILE) pm_to_blib
 	$(NOECHO) $(PERLRUNINST) \
 		Makefile.PL DIR= \
 		MAKEFILE=$(MAKE_APERL_FILE) LINKTYPE=static \
-		MAKEAPERL=1 NORECURS=1 CCCDLFLAGS= \
-		INSTALLDIRS=site
+		MAKEAPERL=1 NORECURS=1 CCCDLFLAGS=
 
 
 # --- MakeMaker test section:
@@ -987,19 +983,19 @@ pm_to_blib : $(FIRST_MAKEFILE) $(TO_INST_PM)
 	  lib/App/IRC/Bot/Shoze/Db/Networks.pm blib/lib/App/IRC/Bot/Shoze/Db/Networks.pm \
 	  lib/App/IRC/Bot/Shoze/Db/ServerCapabilities.pm blib/lib/App/IRC/Bot/Shoze/Db/ServerCapabilities.pm \
 	  lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Channel.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Channel.pm \
-	  lib/App/IRC/Bot/ShozeOriginal.pm blib/lib/App/IRC/Bot/ShozeOriginal.pm \
 	  lib/App/IRC/Bot/Shoze/Db.pm blib/lib/App/IRC/Bot/Shoze/Db.pm \
 	  lib/App/IRC/Bot/Shoze/Db/Users/Object.pm blib/lib/App/IRC/Bot/Shoze/Db/Users/Object.pm \
 	  lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus.pm \
 	  lib/App/IRC/Bot/Shoze/REST.pm blib/lib/App/IRC/Bot/Shoze/REST.pm \
+	  lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelEvent.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelEvent.pm \
 	  lib/App/IRC/Bot/Shoze/Db/Channels.pm blib/lib/App/IRC/Bot/Shoze/Db/Channels.pm \
 	  lib/App/IRC/Bot/Shoze/Log.pm blib/lib/App/IRC/Bot/Shoze/Log.pm \
 	  lib/App/IRC/Bot/Shoze/Constants.pm blib/lib/App/IRC/Bot/Shoze/Constants.pm \
 	  lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/User.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/User.pm \
-	  lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Sessions.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Sessions.pm \
-	  lib/App/IRC/Bot/Shoze/Db/SynchObject.pm blib/lib/App/IRC/Bot/Shoze/Db/SynchObject.pm \
-	  lib/App/IRC/Bot/Shoze.pm blib/lib/App/IRC/Bot/Shoze.pm 
+	  lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Sessions.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Sessions.pm 
 	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)/auto'\'', q[$(PM_FILTER)], '\''$(PERM_DIR)'\'')' -- \
+	  lib/App/IRC/Bot/Shoze/Db/SynchObject.pm blib/lib/App/IRC/Bot/Shoze/Db/SynchObject.pm \
+	  lib/App/IRC/Bot/Shoze.pm blib/lib/App/IRC/Bot/Shoze.pm \
 	  lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Help.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Help.pm \
 	  lib/App/IRC/Bot/Shoze/Db/Channels/Object.pm blib/lib/App/IRC/Bot/Shoze/Db/Channels/Object.pm \
 	  lib/App/IRC/Bot/Shoze/REST/Channels.pm blib/lib/App/IRC/Bot/Shoze/REST/Channels.pm \

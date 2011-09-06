@@ -3,21 +3,85 @@
 use strict;
 use warnings;
 
+use Carp;
+
 use lib qw(.);
 
 use App::IRC::Bot::Shoze;
 use App::IRC::Bot::Shoze::Log;
 
+###########################################
+# EDIT
+###########################################
+
+my $BASE_PATH = "/srv/shoze/";
+my $LOG_PATH = $BASE_PATH . "log/";
+
 $App::IRC::Bot::Shoze::Debug = 9;
 
-$App::IRC::Bot::Shoze::Log::logfile = "/srv/shoze/log/shoze.log";
-App::IRC::Bot::Shoze::Log::flush();
 
+###########################################
+# END OF EDIT
+###########################################
+
+
+my $SEP = '-'x80 . "\n";
+my $DEMISEP = '-'x40 . "\n";
+my $data_dir = $BASE_PATH . "data";
+my $etc_dir = $BASE_PATH . "etc";
+my $LOG_FILE = $LOG_PATH . "shoze.log";
+
+my @dirs = ($BASE_PATH, $data_dir, $etc_dir, $LOG_PATH);
+print $SEP;
+print "- Checking directories\n";
+print $DEMISEP;
+for(@dirs) {
+    print "$_\t";
+    unless (-d $_) {
+        print " Not found\n";
+        die "Directory not found '$_'";
+    }
+    unless(-x $_) {
+         print " Bad right (check permission)\n";
+        die "Directory not found '$_'";
+    }
+    print "Ok\n";
+}
+my @files = (
+    $LOG_FILE, 
+    "$data_dir/mediabot.sqlite3",
+    "$data_dir/server.crt",
+    "$data_dir/server.key",
+    "$etc_dir/bot.yaml",
+    "$etc_dir/db.yaml",
+    "$etc_dir/irc.yaml",
+);
+print $SEP;
+print "- Checking files\n";
+print $DEMISEP;
+for(@files) {
+    print "$_\t";
+    unless (-e $_) {
+        print " Not found\n";
+        die "Directory not found '$_'";
+    }
+    unless(-r $_) {
+         print " Bad right (check permission)\n";
+        die "Directory not found '$_'";
+    }
+    print "Ok\n";
+}
+print $SEP;
+$App::IRC::Bot::Shoze::Log::logfile = $LOG_FILE;
+
+App::IRC::Bot::Shoze::Log::flush();
 LOG("----- Starting Shoze -----");
-my $b = new App::IRC::Bot::Shoze("/srv/shoze/");
+LOG("Debug level: " . $App::IRC::Bot::Shoze::Debug)
+    if $App::IRC::Bot::Shoze::Debug;
+my $b = new App::IRC::Bot::Shoze($BASE_PATH);
+$SIG{'INT'} = sub {print "\nBye!"; $b->stop(); print "Bye\n";};
 $b->POE->run();
 LOG("----- Shoze ended -----");
-
 exit(0);
 
 1;

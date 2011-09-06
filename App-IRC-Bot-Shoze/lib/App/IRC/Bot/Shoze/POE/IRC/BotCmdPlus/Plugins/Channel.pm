@@ -27,75 +27,69 @@ sub new {
     $s->cmd(
         {
             'channel_add' => {
-                access   => 'msg',
-                lvl      => 800,
-                help_cmd => '!channel.add [#|&]channel_name',
-                help_description =>
-'Adding channel. You must be admin or owner of the bot (>800)',
+                access           => 'msg',
+                lvl              => 800,
+                help_cmd         => '!channel.add <channel name>',
+                help_description => 'Adding channel',
             },
             'channel_del' => {
-                access   => 'msg',
-                lvl      => 800,
-                help_cmd => '!channel.add [#|&]channel_name',
-                help_description =>
-'Adding channel. You must be admin or owner of the bot (>800)',
+                access           => 'msg',
+                lvl              => 800,
+                help_cmd         => '!channel.del <channel name>',
+                help_description => 'Deleting channel',
             },
             'channel_info' => {
-                access   => 'msg',
-                lvl      => 500,
-                help_cmd => '!channel.add [#|&]channel_name',
-                help_description =>
-'Adding channel. You must be admin or owner of the bot (>800)',
+                access           => 'msg',
+                lvl              => 500,
+                help_cmd         => '!channel.info <channel name>',
+                help_description => 'Adding channel',
             },
             'channel_set' => {
-                access   => 'msg',
-                lvl      => 500,
-                help_cmd => '!channel.add [#|&]channel_name',
-                help_description =>
-'Adding channel. You must be admin or owner of the bot (>800)',
+                access           => 'msg',
+                lvl              => 500,
+                help_cmd         => '!channel.set <key> <value>',
+                help_description => 'Adding channel',
             },
             'channel_list' => {
-                access   => 'msg',
-                lvl      => 800,
-                help_cmd => '!channel.list',
-                help_description =>
-'Listing channel. you must be admin or owner of the bot (>800)',
+                access           => 'msg',
+                lvl              => 800,
+                help_cmd         => '!channel.list',
+                help_description => 'Listing channel.',
             },
             'channel_set_owner' => {
-                access   => 'msg',
-                lvl      => 800,
-                help_cmd => '!channel.set.owner [#|&]channel_name name',
-                help_description =>
-'Listing channel. you must be admin or owner of the bot (>800)',
+                access           => 'msg',
+                lvl              => 800,
+                help_cmd         => '!channel.set.owner <channel_name>',
+                help_description => 'Setting channel owner',
             },
             'op' => {
                 access           => 'public|msg',
                 lvl              => 200,
-                help_cmd         => '!op <channel list>',
+                help_cmd         => '!op [channel list]',
                 help_description => 'Give you op!',
             },
             'deop' => {
                 access           => 'public|msg',
                 lvl              => 200,
-                help_cmd         => '!deop <channel list>',
+                help_cmd         => '!deop [channel list]',
                 help_description => 'Deop you!',
             },
             'join' => {
                 access           => 'public|msg',
-                lvl              => 200,
+                lvl              => 500,
                 help_cmd         => '!join <channel list>',
                 help_description => 'Make bot joining channel!',
             },
             'part' => {
                 access           => 'public|msg',
-                lvl              => 200,
+                lvl              => 500,
                 help_cmd         => '!part <channel list>',
-                help_description => '!Make bot leavin channel',
+                help_description => '!Make bot leaving channel',
             },
             'topic' => {
                 access           => 'public|msg',
                 lvl              => 500,
-                help_cmd         => '!topic <channel> [topic]',
+                help_cmd         => '!topic [channel] <topic>',
                 help_description => '!set channel topic',
             }
         }
@@ -129,13 +123,15 @@ sub channel_del {
     my $type;
     ( $type, $channame ) = ( $1, $2 );
     my $Channel = $db->Channels->get_by( $type, $channame );
-    if (!$Channel) {
-        $irc->yield( notice => $Session->nick => "[$cmdname] Channel doesn't exist!" );
+    if ( !$Channel ) {
+        $irc->yield(
+            notice => $Session->nick => "[$cmdname] Channel doesn't exist!" );
         return PCI_EAT_ALL;
     }
     LOG("Deleting channel '$channame'");
+
     #$Channel = $db->Channels->create( $type, $channame, $User->id );
-    if ($Channel->_delete) {
+    if ( $Channel->_delete ) {
         $irc->yield( notice => $Session->nick =>
               "[$cmdname] Channel $type$channame deleted." );
         my $aj = $irc->plugin_get('AutoJoin');
@@ -302,7 +298,7 @@ sub channel_set {
     }
     my @akeys =
       qw(ulimit auto_mode auto_topic auto_op auto_voice active topic password  mode);
-    unless ( grep $key, @akeys ) {
+    unless ( grep /^$key$/, @akeys ) {
         $irc->yield(
             notice => $Session->nick => "[$cmdname] Invalid key $key" );
         return PCI_EAT_ALL;
@@ -312,7 +308,7 @@ sub channel_set {
         $value = abs( int($value) );
     }
     elsif ( $key eq 'password' ) {
-        $value =~ s/[^\w\d_-]//g;
+        $value =~ s/[^\w\d_-]//g if $value;
     }
     elsif ( $key =~ /^(auto_(mode|topic|op|voice)|active)$/ ) {
         $value = int($value);
@@ -323,7 +319,10 @@ sub channel_set {
     }
     my $mode_change = 0;
     if ( $key =~ /^(ulimit|password|mode|auto_mode)$/ ) {
-        $mode_change = 1 if $Channel->$key != $value;
+        $mode_change = 1
+          if ( ( defined $Channel->$key and not defined $value )
+            or ( not defined $Channel->$key and defined $value )
+            or ( $Channel->$key != $value )  or ( $Channel->$key ne $value ));
     }
     $Channel->$key($value);
     if ( $Channel->_update ) {
@@ -338,55 +337,6 @@ sub channel_set {
     }
     return PCI_EAT_ALL;
 }
-
-#    my @vkeys = qw(hostmask pending level);
-#    unless ( grep $key, @vkeys ) {
-#        $irc->yield(
-#            notice => $Session->nick => "[$cmdname] Invalid field '$key'" );
-#        return PCI_EAT_ALL;
-#    }
-#    my $UserTarget;
-#    unless ( $UserTarget = $db->Users->get_by($name) ) {
-#        $irc->yield( notice => $Session->nick =>
-#              "[$cmdname] Username '$name' doesn't exist!" );
-#        return PCI_EAT_ALL;
-#    }
-#    if ( $key eq 'hostmask' ) {
-#        $value = normalize_mask($value);
-#    }
-#    elsif ( $key eq 'lvl' ) {
-#        $value = abs( int($value) );
-#        if ( $value >= $User->lvl ) {
-#            $irc->yield( notice => $Session->nick =>
-#                  "[$cmdname] You cannot set user lvl higher or equal than yours" );
-#            return PCI_EAT_ALL;
-#        }
-#        if ($UserTarget->lvl >= $User->lvl) {
-#            $irc->yield( notice => $Session->nick =>
-#                  "[$cmdname] You cannot set user lvl to user with same lvl or above!" );
-#            return PCI_EAT_ALL;
-#        }
-#    }
-#    elsif ( $key eq 'pending' ) {
-#        $value = abs( int($value) );
-#        $value = 1 if $value;
-#    }
-#    else {
-#        $irc->yield(
-#            notice => $Session->nick => "[$cmdname] Invalid field '$key'" );
-#        return PCI_EAT_ALL;
-#    }
-#    $UserTarget->$key($value);
-#    my $res = $UserTarget->_update();
-#    #$db->Users->set( $UserTarget->id, $key, $value );
-#    if ($res) {
-#        $irc->yield( notice => $Session->nick =>
-#              "[$cmdname] '$name' $key set to '$value'" );
-#    }
-#    else {
-#        $irc->yield( notice => $Session->nick =>
-#              "[$cmdname] '$name' Cannot set $key to '$value'" );
-#    }
 
 sub _send_lines {
     my ( $s, $irc, $what, $where, @lines ) = @_;
@@ -522,24 +472,7 @@ sub join {
         push @channels, $where->[0];
     }
     for (@channels) {
-        next unless is_valid_chan_name($_);
-        /^(#|&)(.*)$/;
-        my ( $type, $channame ) = ( $1, $2 );
-        my $Channel = $db->Channels->get_by( $type, $channame );
-        next unless $Channel;
-        my $can = 0;
-        if ( $User->lvl >= 800 ) {
-            $can = 1;
-        }
-        elsif ( $Channel->owner and ( $User->id == $Channel->owner ) ) {
-            $can = 1;
-        }
-        if ($can) {
-            my $msg = $Channel->_usable_name;
-            $msg .= " " . $Channel->password if $Channel->password;
-            LOG("[IRC] Joining channel $msg");
-            $irc->yield( 'join', $msg );
-        }
+        $irc->{Shoze}->POE->IRC->Out->join( $User, $_ );
     }
     return PCI_EAT_ALL;
 }
@@ -566,22 +499,7 @@ sub part {
         push @channels, $where->[0];
     }
     for (@channels) {
-        next unless is_valid_chan_name($_);
-        /^(#|&)(.*)$/;
-        my ( $type, $channame ) = ( $1, $2 );
-        my $Channel = $db->Channels->get_by( $type, $channame );
-        next unless $Channel;
-        my $can = 0;
-        if ( $User->lvl >= 800 ) {
-            LOG("Leaving $_");
-            $can = 1;
-        }
-        elsif ( $Channel->owner and ( $User->id == $Channel->owner ) ) {
-            $can = 1;
-        }
-        if ($can) {
-            $irc->yield( 'part', $_ );
-        }
+        $irc->{Shoze}->POE->IRC->Out->part( $User, $_ );
     }
     return PCI_EAT_ALL;
 }
@@ -613,11 +531,9 @@ sub topic {
     }
     LOG("[$event] Want to set topic on '$channel': $msg");
     return PCI_EAT_NONE unless is_valid_chan_name($channel);
+    my $Channel = $db->Channels->get_by($channel);
     LOG("Want to set topic: chan ok");
-    my $Channel = $db->Channels->get_by_name($channel);
-
     return PCI_EAT_NONE unless $Channel;
-
     my $can = 0;
     if ( $User->lvl >= 800 ) {
         $can = 1;

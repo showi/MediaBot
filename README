@@ -7,7 +7,10 @@ MediaBot is built on top of POE::Component::IRC. He must provide user and channe
 
 
 - Versions
+
 ----------
+0.0.5 2011/08/05 CPANnifying the beast!
+----------------
 
 0.0.4 2011/08/01 Change in underlying sql database access. Introduce HTTPS Rest API so bot can "chat" and we can manage them over HTTPS.
 ----------------

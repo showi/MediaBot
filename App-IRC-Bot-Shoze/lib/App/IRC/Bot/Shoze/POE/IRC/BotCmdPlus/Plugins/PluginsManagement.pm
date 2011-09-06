@@ -16,6 +16,7 @@ use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(get_cmd);
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Info;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::User;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Channel;
+use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::ChannelEvent;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Mode;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Help;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Mynick;
@@ -40,7 +41,7 @@ sub new {
             },
         }
     );
-    my @plugins = qw(mode info user channel help mynick);
+    my @plugins = qw(mode info user channel help mynick channelEvent);
     $s->plugins( \@plugins );
     return $s;
 }
@@ -75,7 +76,7 @@ sub _load_plugin {
 
     #LOG("PLUGINS: " . $s->plugins);
     for ( @{ $s->plugins } ) {
-        my $name   = ucfirst( lc($_) );
+        my $name   = ucfirst( $_ );
         my $plugin = "App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::$name";
         LOG("Adding plugin $name");
         $s->irc->plugin_add( "BotCmdPlus_$name", $plugin->new );

@@ -49,8 +49,9 @@ sub version {
     my $nick    = $Session->nick;
     my $channel = $where->[0];
     #my $msg     = ${ $_[2] };
-
-    my $version = "I'm running $App::IRC::Bot::Shoze::PROGRAMNAME($MediaBot::VERSION)";
+    no warnings;
+    my $version = "I'm running $App::IRC::Bot::Shoze::PROGRAMNAME($App::IRC::Bot::Shoze::VERSION)";
+    use warnings;
     $where   = $nick;
     if ( $event =~ /^\w_public$/ ) {
         $where = $channel;

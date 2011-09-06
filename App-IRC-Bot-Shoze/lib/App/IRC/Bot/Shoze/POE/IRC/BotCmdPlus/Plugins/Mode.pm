@@ -96,54 +96,21 @@ sub set_mode {
             if ( $op =~ /^[ov]$/ ) {
                 my $arg = shift @args;
                 LOG("Set mode $sign$op on $$arg");
-                if (    $op eq "o"
-                    and $$arg eq $irc->nick_name
+                if ( $$arg eq $irc->nick_name
                     and is_valid_chan_name($target) )
                 {
                     my $Channel = $db->Channels->get_by($target);
                     if ( $sign eq '+' ) {
-                        $Channel->bot_mode('o');
+                        $Channel->bot_mode($op);
                     }
                     else {
                         $Channel->bot_mode(undef);
                     }
                     $Channel->_update;
-                    if ( $sign eq '+' and $nick ne $irc->nick_name ) {
+                    if ( $sign eq '+' and  $op eq 'o' and $nick ne $irc->nick_name ) {
                         $irc->yield( 'mode', $Channel->_usable_name );
                     }
                 }
-            }
-            elsif ( $op =~ /^[kl]$/ and $sign eq '+' ) {
-                my $arg = shift @args;
-                if (    ( $op eq 'k' )
-                    and ( $sign eq '+' )
-                    and ( $nick ne $irc->nick_name ) )
-                {
-                    my $Channel = $db->Channels->get_by($target);
-                    if ($Channel) {
-                        if ($Channel->password and $Channel->password ne $arg) {
-                            $irc->yield( 'mode', $Channel->_usable_name, "-k+k $$arg " . $Channel->password);
-                        } elsif(!$Channel->password) {
-                            $irc->yield( 'mode', $Channel->_usable_name, "-k $$arg "); 
-                        }
-                    }
-                } elsif (    ( $op eq 'l' )
-                    and ( $sign eq '+' )
-                    and ( $nick ne $irc->nick_name ) )
-                {
-                    my $Channel = $db->Channels->get_by($target);
-                    if ($Channel) {
-                        if ($Channel->ulimit and $Channel->ulimit ne $arg) {
-                            $irc->yield( 'mode', $Channel->_usable_name, "+l " . $Channel->ulimit);
-                        } elsif(!$Channel->ulimit) {
-                            $irc->yield( 'mode', $Channel->_usable_name, "-l"); 
-                        }
-                    }
-                }
-            }
-            else {
-
-                LOG("Set mode $sign$op");
             }
         }
     } while ( length($mode) > 0 );

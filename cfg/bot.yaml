@@ -2,6 +2,3 @@
 logfile: log/mediabot.log
 password_salt: $6$4fdF$SaQwN?m.DzA
 cmd_prefix: '!'
-cmd_plugins:
-  - name: info
-  - name: user

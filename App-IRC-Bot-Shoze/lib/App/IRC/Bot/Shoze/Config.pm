@@ -20,6 +20,7 @@ my %fields = (
     irc     => undef,
     db      => undef,
     bot     => undef,
+    ws      => undef,
 );
 
 sub new {
@@ -35,6 +36,7 @@ sub new {
     $s->read('irc');
     $s->read('db');
     $s->read('bot');
+    $s->read('ws');
     return $s;
 }
 

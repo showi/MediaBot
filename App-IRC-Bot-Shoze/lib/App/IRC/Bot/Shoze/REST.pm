@@ -44,7 +44,7 @@ sub new {
 }
 
 sub request {
-    my ( $s, $ressource, $action, $apikey, $apikey_private, $format ) = @_;
+    my ( $s, $host, $port, $ressource, $action, $apikey, $apikey_private, $format ) = @_;
     my $module = ucfirst($ressource);
     $format = 'html' unless $format;
 
@@ -57,7 +57,7 @@ sub request {
     my $r   = new HTTP::Request;
     my $uri = new URI();
     $uri->scheme('https');
-    $uri->host('localhost:9090');
+    $uri->host("$host:$port");
     $uri->path("$ressource/");
 
     if ( $action eq 'list' ) {

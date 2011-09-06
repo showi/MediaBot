@@ -1,10 +1,12 @@
 ---
-nick: showboat
-altnick: showb0at
+enable: 1
+nick: shoze
+altnick: sh[O]ze
+name: Wanna be my Friend!
 servers:
-  - server: diemen.nl.eu.undernet.org
+  - host: irc.nosferat.us
     port: 6667
     ssl: no
-  - server: hamburg.de.eu.undernet.org
+  - host: hamburg.de.eu.undernet.org
     port: 6669
     ssl: no

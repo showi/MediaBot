@@ -5,10 +5,10 @@ package Dumb;
 use Carp;
 
 use lib qw(../);
-use MediaBot::Class qw(AUTOLOAD DESTROY _get_root);
-use MediaBot::Config;
-use MediaBot::Db;
-use MediaBot::REST;
+use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
+use App::IRC::Bot::Shoze::Config;
+use App::IRC::Bot::Shoze::Db;
+use App::IRC::Bot::Shoze::REST;
 
 our $AUTOLOAD;
 
@@ -31,10 +31,10 @@ sub new {
         %fields,
     };
     bless( $s, $class );
-    $s->_path("");
-    $s->Config( new MediaBot::Config($s) );
-    $s->Db( new MediaBot::Db($s) );
-    $s->REST( new MediaBot::REST($s) );
+    $s->_path("/srv/shoze/");
+    $s->Config( new App::IRC::Bot::Shoze::Config($s) );
+    $s->Db( new App::IRC::Bot::Shoze::Db($s) );
+    $s->REST( new App::IRC::Bot::Shoze::REST($s) );
     return $s;
 }
 1;
@@ -50,6 +50,8 @@ use YAML qw'freeze thaw Bless';
 
 my $Dumb = new Dumb();
 
+my $host = $ARGV[0] || "127.0.0.1";
+my $port = $ARGV[1] || 9090;
 my $apikey         = "2Efke33F";
 my $apikey_private = "nd39GDsQAlKmAqDfVbnXdRtp03fBC653";
 
@@ -61,7 +63,7 @@ my $ua = LWP::UserAgent->new(
 sub request {
     my ( $ressource, $action ) = @_;
     my $request =
-    $Dumb->REST->request( $ressource, $action, $apikey, $apikey_private );
+    $Dumb->REST->request( $host, $port, $ressource, $action, $apikey, $apikey_private );
     my $response = $ua->request($request);
     if ( $response->is_success ) {
         my $res = $response->decoded_content;

@@ -1,4 +1,4 @@
-package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::User;
+package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Apero;
 
 use strict;
 use warnings;
@@ -26,105 +26,51 @@ sub new {
     bless( $s, $class );
     $s->cmd(
         {
-
-            'login' => {
-                access           => 'msg',
-                lvl              => 0,
-                help_cmd         => '!login name password',
-                help_description => 'Identifying you againt the bot!',
-            },
-            'logout' => {
-                access           => 'msg',
-                lvl              => 200,
-                help_cmd         => '!logout',
-                help_description => 'Close current session!',
-            },
-            'user_add' => {
+            'apero_add' => {
                 access   => 'msg',
                 lvl      => 800,
-                help_cmd => '!user.add <user name> <password> [hostmask]',
-                help_description => 'Add a new user',
+                help_cmd => '!apero.add <name> <trigger>',
+                help_description => 'Add a new apero',
             },
-            'user_del' => {
+            'apero_del' => {
                 access   => 'msg',
                 lvl      => 800,
-                help_cmd => '!user.del <user name>',
-                help_description => 'Delete a given user',
+                help_cmd => '!apero.del <name>',
+                help_description => 'Deleting a give apero',
             },
-            'user_set' => {
+            'apero_list' => {
+                access   => 'msg',
+                lvl      => 800,
+                help_cmd => '!apero.list',
+                help_description => 'List apero',
+            },
+            'apero_set' => {
                 access           => 'msg',
                 lvl              => 800,
-                help_cmd         => '!user.set <username> <hostmask|pending|lvl> <value>',
-                help_description => 'Adding user',
+                help_cmd         => '!apero.set <name> <trigger> <value>',
+                help_description => 'Setting trigger for apero (require reloading)',
             },
-            'user_list' => {
+            'apero_set_text' => {
                 access           => 'msg',
                 lvl              => 800,
-                help_cmd         => '!user.list',
-                help_description => 'Lisging user',
+                help_cmd         => '!apero.set.text <name> <index> <text>',
+                help_description => 'Setting text at index',
             },
-            'user_info' => {
+            'apero_set_chantext' => {
                 access           => 'msg',
                 lvl              => 800,
-                help_cmd         => '!user.info <user name>',
-                help_description => 'Information about a given user',
+                help_cmd         => '!apero.set.chantext <name> <index> <text>',
+                help_description => 'Setting channel text at index',
+            },
+            'apero_info' => {
+                access           => 'msg',
+                lvl              => 800,
+                help_cmd         => '!apero.info <name>',
+                help_description => 'Information about a given apero',
             },
         }
     );
     return $s;
-}
-
-sub login {
-    my ( $self, $Session, $User, $irc, $event ) = splice @_, 0, 5;
-    my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
-    my $cmdname = 'login';
-    my $PCMD    = $self->get_cmd($cmdname);
-    my $C       = $irc->plugin_get('BotCmdPlus');
-    my $db      = $irc->{database};
-
-    if ( $Session->user_id ) {
-        $irc->yield( notice => $Session->nick => "[$cmdname] Already logged" );
-        return PCI_EAT_ALL;
-    }
-    my ( $cmd, $user, $password ) = split( /\s+/, $msg );
-    LOG("We need to authenticate user '$user' with password '$password'");
-
-    $User = $db->Users->get_by({ name => $user});
-    unless ($User) {
-        $irc->yield( notice => $Session->nick => "[$cmdname] Invalid username" );
-        return PCI_EAT_ALL;
-    }
-    unless(matches_mask($User->hostmask, $who)) {
-              $irc->yield( notice => $Session->nick => "[$cmdname] Hostmask doesn't match"  );
-        return PCI_EAT_ALL;  
-    }
-    unless ( $db->Users->check_password( $User, $password ) ) {
-        $irc->yield( notice => $Session->nick => "[$cmdname] Invalid password" );
-        return PCI_EAT_ALL;
-    }
-    $irc->yield( notice => $Session->nick => "[$cmdname] Ok you're in" );
-    $Session->user_id( $User->id );
-    $db->Sessions->update($Session);
-    return PCI_EAT_ALL;
-}
-
-sub logout {
-    my ( $self, $Session, $User, $irc, $event ) = splice @_, 0, 5;
-    my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
-    my $cmdname = 'logout';
-    my $PCMD    = $self->get_cmd($cmdname);
-    my $C       = $irc->plugin_get('BotCmdPlus');
-    my $db      = $irc->{database};
-
-    unless ( defined $Session->user_id ) {
-        $irc->yield(
-            notice => $Session->nick => "[$cmdname] You're not logged" );
-        return PCI_EAT_ALL;
-    }
-    $Session->user_id(undef);
-    $db->Sessions->update($Session);
-    $irc->yield( notice => $Session->nick => "[$cmdname] Bye!" );
-    return PCI_EAT_ALL;
 }
 
 sub user_set {
@@ -133,7 +79,11 @@ sub user_set {
     my $cmdname = 'user_set';
     my $PCMD    = $self->get_cmd($cmdname);
     my $db      = $irc->{database};
-
+    unless ( $Session->user_id ) {
+        $irc->yield(
+            notice => $Session->nick => "[$cmdname] You must be logged!" );
+        return PCI_EAT_ALL;
+    }
     if ( $User->lvl < $PCMD->{lvl} ) {
         $irc->yield( notice => $Session->nick =>
               "[$cmdname] You don't have the right to set user key&value!" );
@@ -190,13 +140,23 @@ sub user_set {
     }
 }
 
-sub user_add {
+sub apero_add {
     my ( $self, $Session, $User, $irc, $event ) = splice @_, 0, 5;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
-    my $cmdname = 'user_add';
+    my $cmdname = 'apero_add';
     my $PCMD    = $self->get_cmd($cmdname);
     my $db      = $irc->{database};
 
+    unless ( $Session->user_id ) {
+        $irc->yield(
+            notice => $Session->nick => "[$cmdname] You must be logged!" );
+        return PCI_EAT_ALL;
+    }
+    if ( $User->lvl < $PCMD->{lvl} ) {
+        $irc->yield( notice => $Session->nick =>
+              "[$cmdname] You don't have the right to add user!" );
+        return PCI_EAT_ALL;
+    }
     my ( $cmd, $name, $password, $hostmask ) = split /\s+/, $msg;
     unless ( is_valid_nick_name($name) ) {
         $irc->yield(
@@ -238,6 +198,16 @@ sub user_del {
     my $PCMD    = $self->get_cmd($cmdname);
     my $db      = $irc->{database};
 
+    unless ( $Session->user_id ) {
+        $irc->yield(
+            notice => $Session->nick => "[$cmdname] You must be logged!" );
+        return PCI_EAT_ALL;
+    }
+    if ( !$User or ($User->lvl < $PCMD->{lvl}))  {
+        $irc->yield( notice => $Session->nick =>
+              "[$cmdname] You don't have the right to add user!" );
+        return PCI_EAT_ALL;
+    }
     my ( $cmd, $name ) = split /\s+/, $msg;
     unless ( is_valid_nick_name($name) ) {
         $irc->yield(
@@ -275,6 +245,17 @@ sub user_list {
     my $PCMD    = $self->get_cmd($cmdname);
     my $db      = $irc->{database};
 
+    unless ( $Session->user_id ) {
+        $irc->yield(
+            notice => $Session->nick => "[$cmdname] You must be logged!" );
+        return PCI_EAT_ALL;
+    }
+    if ( $User->lvl < $PCMD->{lvl} ) {
+        $irc->yield( notice => $Session->nick =>
+              "[$cmdname] You don't have the right to list user!" );
+        return PCI_EAT_ALL;
+    }
+
     my @list = $db->Users->list;
     unless (@list) {
         $irc->yield(
@@ -299,6 +280,16 @@ sub user_info {
     my $PCMD    = $self->get_cmd($cmdname);
     my $db      = $irc->{database};
 
+    unless ( $Session->user_id ) {
+        $irc->yield(
+            notice => $Session->nick => "[$cmdname] You must be logged!" );
+        return PCI_EAT_ALL;
+    }
+    if ( $User->lvl < $PCMD->{lvl} ) {
+        $irc->yield( notice => $Session->nick =>
+              "[$cmdname] You don't have the right to list channel!" );
+        return PCI_EAT_ALL;
+    }
     print "msg: $msg\n";
     my $name = ( split( /\s+/, $msg ) )[1];
     $name =~ /^([\w\d_-]+)$/ or do {
@@ -323,5 +314,4 @@ sub user_info {
     $self->_send_lines( $irc, 'notice', $Session->nick, @lines );
     return PCI_EAT_ALL;
 }
-
 1;

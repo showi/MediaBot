@@ -13,13 +13,15 @@ use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(get_cmd);
 
-use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Info;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::User;
+use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Info;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Channel;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::ChannelEvent;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Mode;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Help;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Mynick;
+use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Apero;
+use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::EasySentence;
 
 our %fields = ( cmd => undef, plugins => undef, irc => undef );
 
@@ -41,7 +43,7 @@ sub new {
             },
         }
     );
-    my @plugins = qw(mode info user channel help mynick channelEvent);
+    my @plugins = qw(mode info user channel help mynick channelEvent apero easySentence);
     $s->plugins( \@plugins );
     return $s;
 }

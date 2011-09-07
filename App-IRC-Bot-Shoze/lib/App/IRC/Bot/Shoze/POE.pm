@@ -21,7 +21,7 @@ use Data::Dumper;
 use lib qw(..);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
 use App::IRC::Bot::Shoze::Log;
-use App::IRC::Bot::Shoze::Constants;;
+use App::IRC::Bot::Shoze::Constants;
 
 use POE::Component::IRC::Plugin qw( :ALL );
 use App::IRC::Bot::Shoze::POE::IRC;
@@ -29,14 +29,16 @@ use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Sessions;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Dispatch;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::PluginsManagement;
+use App::IRC::Bot::Shoze::POE::IRC::Apero;
 
 our $AUTOLOAD;
 
 my %fields = (
-    _parent  => undef,
+    _parent => undef,
+
     #Commands => undef,
     #Sessions => undef,
-    IRC      => undef,
+    IRC => undef,
 );
 
 # IRC
@@ -58,7 +60,7 @@ sub new {
     };
     bless( $s, $class );
     $s->_parent($parent);
-    
+
     # IRC
     ######
     if ( $s->_parent->Config->irc->{enable} ) {
@@ -72,6 +74,7 @@ sub new {
             ],
             heap => {}
         )->ID;
+
         #$s->IRC(new App::IRC::Bot::Shoze::POE::IRC($s));
         #$s->IRC->session_id($id);
     }
@@ -82,18 +85,16 @@ sub new {
         LOG(    "* Lauching web service "
               . $s->_parent->Config->ws->{host} . ":"
               . $s->_parent->Config->ws->{port} );
-        LOG("Loading SSL certificate from " .  $s->_parent->_path . "/data/");
+        LOG( "Loading SSL certificate from " . $s->_parent->_path . "/data/" );
         POE::Component::Server::TCP->new(
             Alias => "web_server",
             Port  => $s->_parent->Config->ws->{port} || 9090,
-            Host  => (
-                $s->_parent->Config->ws->{host} || '127.0.0.1'
-            ),
+            host  => ( $s->_parent->Config->ws->{host} || '127.0.0.1' ),
 
             # You need to have created (self) signed certificates
             # and a corresponding key file to encrypt the data with
             # SSL.
-          
+
             ClientFilter => POE::Filter::Stackable->new(
                 Filters => [
                     POE::Filter::SSL->new(
@@ -142,13 +143,14 @@ sub _start {
             nick => $s->_parent->Config->irc->{nick}
               || $s->_parent->Config->irc->{altnick}
               || 'shoze',
-            ircname =>  $s->_parent->Config->irc->{name} || 'shoze',
+            ircname => $s->_parent->Config->irc->{name}
+              || 'shoze',
 
             #server  => $server,
         ) or croak "Oh noooo! $!";
-        $s->IRC(new App::IRC::Bot::Shoze::POE::IRC($s));
+        $s->IRC( new App::IRC::Bot::Shoze::POE::IRC($s) );
         $s->IRC->poco($irc);
-        $irc->{Shoze} = $s->_parent;
+        $irc->{Shoze}      = $s->_parent;
         $irc->{database}   = $s->_parent->Db;
         $irc->{Config}     = $s->_parent->Config;
         $heap->{connector} = POE::Component::IRC::Plugin::Connector->new();
@@ -166,13 +168,18 @@ sub _start {
             new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Dispatch()
         );
 
+
+            
         $irc->plugin_add(
             'BotCmdPlus_PluginsManagement',
             new
               App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::PluginsManagement(
               )
         );
-
+        
+        $irc->plugin_add( 'Apero',
+            new App::IRC::Bot::Shoze::POE::IRC::Apero() );
+            
         # End of our plugins
         my %channels;
         for ( $irc->{database}->Channels->list ) {
@@ -188,11 +195,15 @@ sub _start {
                 Retry_when_banned => 5,
             )
         );
+
         #my $aj = $irc->plugin_get('AutoJoin');
-        my $server = $s->_parent->Config->irc->{servers}->[0]->{host} .":".$s->_parent->Config->irc->{servers}->[0]->{port};
+        my $server =
+            $s->_parent->Config->irc->{servers}->[0]->{host} . ":"
+          . $s->_parent->Config->irc->{servers}->[0]->{port};
         LOG("* IRC server: $server");
         $irc->yield( register => 'all' );
-        $irc->yield( connect => { Server =>  $s->_parent->Config->irc->{servers}->[0]->{host} } );
+        $irc->yield( connect =>
+              { Server => $s->_parent->Config->irc->{servers}->[0]->{host} } );
         $kernel->delay( 'lag_o_meter' => 60 );
     }
     return;

@@ -4,11 +4,12 @@ MediaBot - Another Perl IRC Bot
 --------------
 MediaBot is built on top of POE::Component::IRC. He must provide user and channel management with SQL database as data back-end.
 
-
-
 - Versions
-
 ----------
+
+0.0.6 2011/08/07 Introduce apero, beeer for everyone !
+----------------
+
 0.0.5 2011/08/05 CPANnifying the beast!
 ----------------
 
@@ -24,7 +25,6 @@ MediaBot is built on top of POE::Component::IRC. He must provide user and channe
 - User login support
 - Channel creation support
 - Adding user support 
-
 
 ...
 Still an alpha version but things take forms :P

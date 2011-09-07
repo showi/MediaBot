@@ -19,6 +19,8 @@ lib/App/IRC/Bot/Shoze/Db/Sessions/Object.pm
 lib/App/IRC/Bot/Shoze/Db/SynchObject.pm
 lib/App/IRC/Bot/Shoze/Db/Users.pm
 lib/App/IRC/Bot/Shoze/Db/Users/Object.pm
+lib/App/IRC/Bot/Shoze/Db/Apero.pm
+lib/App/IRC/Bot/Shoze/Db/Apero/Object.pm
 lib/App/IRC/Bot/Shoze/Log.pm
 lib/App/IRC/Bot/Shoze/POE.pm
 lib/App/IRC/Bot/Shoze/POE/IRC.pm
@@ -32,6 +34,7 @@ lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/PluginsManagement.pm
 lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Sessions.pm
 lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/User.pm
 lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Helper.pm
+lib/App/IRC/Bot/Shoze/POE/IRC/Apero.pm
 lib/App/IRC/Bot/Shoze/POE/IRC/Out.pm
 lib/App/IRC/Bot/Shoze/REST.pm
 lib/App/IRC/Bot/Shoze/REST/Channels.pm

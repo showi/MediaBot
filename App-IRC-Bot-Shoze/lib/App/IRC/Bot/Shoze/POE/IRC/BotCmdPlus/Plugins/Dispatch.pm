@@ -28,49 +28,48 @@ sub new {
     return $s;
 }
 
- sub PCI_register {
-     my ($self, $irc) = splice @_, 0, 2;
+sub PCI_register {
+    my ( $self, $irc ) = splice @_, 0, 2;
 
-     # We store a ref to the $irc object so we can use it in our
-     # session handlers.
-     $self->{irc} = $irc;
+    # We store a ref to the $irc object so we can use it in our
+    # session handlers.
+    $self->{irc} = $irc;
 
-     $irc->plugin_register( $self, 'SERVER', qw(msg public) );
+    $irc->plugin_register( $self, 'SERVER', qw(msg public) );
 
-     POE::Session->create(
-         object_states => [
-             $self => [qw(_start _shutdown)],
-         ],
-     );
+    POE::Session->create( object_states => [ $self => [qw(_start _shutdown)], ],
+    );
 
-     return 1;
- }
+    return 1;
+}
 
- sub PCI_unregister {
-     my ($self, $irc) = splice @_, 0, 2;
-     # Plugin is dying make sure our POE session does as well.
-     $poe_kernel->call( $self->{SESSION_ID} => '_shutdown' );
-     delete $self->{irc};
-     return 1;
- }
+sub PCI_unregister {
+    my ( $self, $irc ) = splice @_, 0, 2;
 
- sub _start {
-     my ($kernel, $self) = @_[KERNEL, OBJECT];
-     $self->{SESSION_ID} = $_[SESSION]->ID();
-     # Make sure our POE session stays around. Could use aliases but that is so messy :)
-     $kernel->refcount_increment( $self->{SESSION_ID}, __PACKAGE__ );
-     return;
- }
+    # Plugin is dying make sure our POE session does as well.
+    $poe_kernel->call( $self->{SESSION_ID} => '_shutdown' );
+    delete $self->{irc};
+    return 1;
+}
 
- sub _shutdown {
-     my ($kernel, $self) = @_[KERNEL, OBJECT];
-     $kernel->alarm_remove_all();
-     $kernel->refcount_decrement( $self->{SESSION_ID}, __PACKAGE__ );
-     return;
- }
+sub _start {
+    my ( $kernel, $self ) = @_[ KERNEL, OBJECT ];
+    $self->{SESSION_ID} = $_[SESSION]->ID();
+
+# Make sure our POE session stays around. Could use aliases but that is so messy :)
+    $kernel->refcount_increment( $self->{SESSION_ID}, __PACKAGE__ );
+    return;
+}
+
+sub _shutdown {
+    my ( $kernel, $self ) = @_[ KERNEL, OBJECT ];
+    $kernel->alarm_remove_all();
+    $kernel->refcount_decrement( $self->{SESSION_ID}, __PACKAGE__ );
+    return;
+}
 
 sub _default {
-    my ( $self, $irc, $event ) = splice @_, 0, 3; 
+    my ( $self, $irc, $event ) = splice @_, 0, 3;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     LOG("Dispatcher[$event]");
     LOG("Message: '$msg'");
@@ -78,39 +77,51 @@ sub _default {
         LOG("Message not prefixed by '!' so it's not a command");
         return PCI_EAT_NONE;
     };
-    my ($cmd, $cmd_args) = ($1, str_chomp($2));
+    my ( $cmd, $cmd_args ) = ( $1, str_chomp($2) );
     $cmd =~ s/\./_/g;
     LOG("Got a command: $1 [$cmd_args]");
     my $Master = $irc->plugin_get("BotCmdPlus");
-    unless (defined $Master->cmd->{$cmd}) {
+    unless ( defined $Master->cmd->{$cmd} ) {
         LOG("No plugin have registered command '$cmd'");
         return PCI_EAT_NONE;
     }
     my $access = $Master->cmd->{$cmd}->{access};
-    my $pat = qr/^(S|U)_$access$/;
-    unless($event =~ /$pat/) {
+    my $pat    = qr/^(S|U)_$access$/;
+    unless ( $event =~ /$pat/ ) {
         LOG("Plugin not responding on $event '$cmd'");
         return PCI_EAT_NONE;
     }
-      
+
     my $db         = $irc->{database};
     my $TmpSession = new App::IRC::Bot::Shoze::Db::Sessions::Object();
-    $TmpSession->parse_who( $who );
+    $TmpSession->parse_who($who);
     my $Session =
       $db->Sessions->get( $TmpSession->nick, $TmpSession->user,
         $TmpSession->hostname );
     unless ($Session) {
-        $irc->yield(
-            privmsg => $TmpSession->nick => "# Who are you!" );
+        $irc->yield( privmsg => $TmpSession->nick => "# Who are you!" );
         return PCI_EAT_ALL;
     }
     my $User;
     if ( $Session->user_id ) {
-        $User = $db->Users->get($Session->user_id);
+        $User = $db->Users->get( $Session->user_id );
     }
-    my $pl = $Master->cmd->{$cmd}->{plugin};
+    my $pl  = $Master->cmd->{$cmd}->{plugin};
+    my $lvl = $Master->cmd->{$cmd}->{lvl};
+    if ( $lvl > 0 ) {
+        unless ($User) {
+            $irc->yield( notice => $Session->nick =>
+                  "You must be logged to execute this command" );
+            return PCI_EAT_ALL;
+        }
+        if ( $User->lvl < $lvl ) {
+            $irc->yield( notice => $Session->nick =>
+                  "You don't have the right to execute this command" );
+            return PCI_EAT_ALL;
+        }
+    }
     LOG("Calling $cmd on plugin $pl");
-    $pl->$cmd($Session, $User, $irc, $event, @_);
+    $pl->$cmd( $Session, $User, $irc, $event, @_ );
     return PCI_EAT_ALL;
 }
 

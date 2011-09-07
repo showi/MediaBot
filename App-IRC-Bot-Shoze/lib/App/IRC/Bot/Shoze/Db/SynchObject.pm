@@ -6,6 +6,7 @@ use warnings;
 use Carp;
 
 use Exporter;
+use Encode qw(decode);
 
 our @TAGS =
   qw(_add_permitted_field _init_fields _get _get_by _create _delete _update _list _pretty AUTOLOAD synched is_synch);
@@ -85,7 +86,7 @@ sub AUTOLOAD {
                 $self->{_changed}->{$name} = 1;
             }
         }
-        return $self->{$name} = $value;
+        return $self->{$name} = decode('utf8', $value);
     }
     else {
         return $self->{$name};
@@ -199,7 +200,7 @@ sub _list {
         }
         $O->synched;
         push @list, $O;
-        print $O->_pretty . "\n";
+        #print $O->_pretty . "\n";
     }
     return @list;
 }

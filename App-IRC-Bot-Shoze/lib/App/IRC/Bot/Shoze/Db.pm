@@ -6,31 +6,37 @@ use warnings;
 use Carp;
 use DBI;
 
-use lib qw(..);
+use lib qw(../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
+use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::Db::Users;
 use App::IRC::Bot::Shoze::Db::Networks;
 use App::IRC::Bot::Shoze::Db::Channels;
 use App::IRC::Bot::Shoze::Db::Sessions;
-use App::IRC::Bot::Shoze::Log;
+use App::IRC::Bot::Shoze::Db::Apero;
+use App::IRC::Bot::Shoze::Db::EasySentence;
+
 
 our $AUTOLOAD;
 
 our %fields = (
-    handle   => undef,
-    is_open  => undef,
-    _parent  => undef,
-    Users    => undef,
-    Networks => undef,
-    Sessions => undef,
-    Channels => undef,
+    handle  => undef,
+    is_open => undef,
+    _parent => undef,
+    Users   => undef,
+
+    #Networks => undef,
+    Sessions  => undef,
+    Channels  => undef,
+    Apero     => undef,
+    Sentences => undef,
 );
 
 # Constructor
 # Aggregate other Db modules so we have a kind of OO acces to SQL databases
 sub new {
     my ( $proto, $parent ) = @_;
-    DEBUG( "Creating new " . __PACKAGE__, 5);
+    DEBUG( "Creating new " . __PACKAGE__, 5 );
     croak "No parent specified" unless ref $parent;
     my $class = ref($proto) || $proto;
     my $s = {
@@ -40,9 +46,12 @@ sub new {
     bless( $s, $class );
     $s->_parent($parent);
     $s->Users( new App::IRC::Bot::Shoze::Db::Users($s) );
+
     #$s->Networks( new MediaBot::Db::Networks($s) );
     $s->Sessions( new App::IRC::Bot::Shoze::Db::Sessions($s) );
     $s->Channels( new App::IRC::Bot::Shoze::Db::Channels($s) );
+    $s->Apero( new App::IRC::Bot::Shoze::Db::Apero($s) );
+    $s->Sentences( new App::IRC::Bot::Shoze::Db::EasySentence($s) );
     $s->init();
     return $s;
 }

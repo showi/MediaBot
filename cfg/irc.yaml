@@ -10,3 +10,4 @@ servers:
   - host: hamburg.de.eu.undernet.org
     port: 6669
     ssl: no
+

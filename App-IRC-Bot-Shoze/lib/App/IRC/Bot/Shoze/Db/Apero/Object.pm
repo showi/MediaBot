@@ -1,4 +1,4 @@
-package App::IRC::Bot::Shoze::Db::Users::Object;
+package App::IRC::Bot::Shoze::Db::Apero::Object;
 
 use strict;
 use warnings;
@@ -13,17 +13,13 @@ use App::IRC::Bot::Shoze::Log;
 our $AUTOLOAD;
 
 our %fields = (
-    id            => undef,
-    apikey  => undef,
-    apikey_private => undef,
-    hostmask => undef,
-    pending => undef,
-    lvl => undef,
-    name => undef,
-    password => undef,
-    is_bot => undef,
-    created_on => undef,
-    
+    id      => undef,
+    name    => undef,
+    trigger => undef,
+    text    => undef,
+    chantext => undef,
+    msg_type => undef,
+
     _object_name => undef,
     _object_db   => undef,
 );
@@ -40,16 +36,10 @@ sub new {
     };
 
     bless( $s, $class );
-    $s->_init_fields(); # DIRTY HACK VALUES IS SET TO 1 on init ...
-    $s->_object_name('users');
+    $s->_init_fields();    # DIRTY HACK VALUES IS SET TO 1 on init ...
+    $s->_object_name('apero');
     $s->_object_db($object_db);
     return $s;
 }
-
-sub _usable_name {
-    my $s = shift;
-    return $s->type . $s->name;
-    
-} 
 
 1;

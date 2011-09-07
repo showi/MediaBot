@@ -24,7 +24,7 @@ $App::IRC::Bot::Shoze::Debug = 9;
 # END OF EDIT
 ###########################################
 
-
+$0 = "Shoze";
 my $SEP = '-'x80 . "\n";
 my $DEMISEP = '-'x40 . "\n";
 my $data_dir = $BASE_PATH . "data";

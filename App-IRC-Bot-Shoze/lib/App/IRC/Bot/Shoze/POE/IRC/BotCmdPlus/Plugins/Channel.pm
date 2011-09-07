@@ -104,16 +104,6 @@ sub channel_del {
     my $PCMD    = $self->get_cmd($cmdname);
     my $db      = $irc->{database};
 
-    unless ( $Session->user_id ) {
-        $irc->yield(
-            notice => $Session->nick => "[$cmdname] You must be logged!" );
-        return PCI_EAT_ALL;
-    }
-    if ( $User->lvl < $PCMD->{lvl} ) {
-        $irc->yield( notice => $Session->nick =>
-              "[$cmdname] You don't have the right to delete channel!" );
-        return PCI_EAT_ALL;
-    }
     my ($channame) = ( split( /\s+/, $msg ) )[1];
     $channame =~ /^(#|&)([\w\d_]+)$/ or do {
         $irc->yield( notice => $Session->nick => "[$cmdname] Invalid syntax, "
@@ -152,16 +142,6 @@ sub channel_add {
     my $PCMD    = $self->get_cmd($cmdname);
     my $db      = $irc->{database};
 
-    unless ( $Session->user_id ) {
-        $irc->yield(
-            notice => $Session->nick => "[$cmdname] You must be logged!" );
-        return PCI_EAT_ALL;
-    }
-    if ( $User->lvl < $PCMD->{lvl} ) {
-        $irc->yield( notice => $Session->nick =>
-              "[$cmdname] You don't have the right to add channel!" );
-        return PCI_EAT_ALL;
-    }
     my ($channame) = ( split( /\s+/, $msg ) )[1];
     $channame =~ /^(#|&)([\w\d_]+)$/ or do {
         $irc->yield( notice => $Session->nick => "[$cmdname] Invalid syntax, "
@@ -200,16 +180,6 @@ sub channel_info {
     my $PCMD    = $self->get_cmd($cmdname);
     my $db      = $irc->{database};
 
-    unless ( $Session->user_id ) {
-        $irc->yield(
-            notice => $Session->nick => "[$cmdname] You must be logged!" );
-        return PCI_EAT_ALL;
-    }
-    if ( $User->lvl < $PCMD->{lvl} ) {
-        $irc->yield( notice => $Session->nick =>
-              "[$cmdname] You don't have the right to list channel!" );
-        return PCI_EAT_ALL;
-    }
     print "msg: $msg\n";
     my $chan = ( split( /\s+/, $msg ) )[1];
     $chan =~ /^([#&])([^\s]+)/ or do {
@@ -267,17 +237,7 @@ sub channel_set {
     my $cmdname = 'channel_set';
     my $PCMD    = $self->get_cmd($cmdname);
     my $db      = $irc->{database};
-    unless ( $Session->user_id ) {
-        $irc->yield(
-            notice => $Session->nick => "[$cmdname] You must be logged!" );
-        return PCI_EAT_ALL;
-    }
-    if ( $User->lvl < $PCMD->{lvl} ) {
-        $irc->yield( notice => $Session->nick =>
-              "[$cmdname] You don't have the right to set channel information!"
-        );
-        return PCI_EAT_ALL;
-    }
+
     my ( $cmd, $chan, $key, $value ) = split /\s+/, $msg;
     $chan =~ /^([#&])([^\s]+)$/ or do {
         $irc->yield(
@@ -346,17 +306,6 @@ sub channel_list {
     my $PCMD    = $self->get_cmd($cmdname);
     my $db      = $irc->{database};
 
-    unless ( $Session->user_id ) {
-        $irc->yield(
-            notice => $Session->nick => "[$cmdname] You must be logged!" );
-        return PCI_EAT_ALL;
-    }
-    if ( $User->lvl < $PCMD->{lvl} ) {
-        $irc->yield( notice => $Session->nick =>
-              "[$cmdname] You don't have the right to list channel!" );
-        return PCI_EAT_ALL;
-    }
-
     my @list = $db->Channels->list;
     unless (@list) {
         $irc->yield(
@@ -389,16 +338,7 @@ sub channel_set_owner {
     my $cmdname = 'channel_set_owner';
     my $PCMD    = $self->get_cmd($cmdname);
     my $db      = $irc->{database};
-    unless ( $Session->user_id ) {
-        $irc->yield(
-            notice => $Session->nick => "[$cmdname] You must be logged!" );
-        return PCI_EAT_ALL;
-    }
-    if ( $User->lvl < $PCMD->{lvl} ) {
-        $irc->yield( notice => $Session->nick =>
-              "[$cmdname] You don't have the right to list channel!" );
-        return PCI_EAT_ALL;
-    }
+
     LOG("msg: $msg");
     my ( $channame, $name ) = ( split( /\s+/, $msg ) )[ 1 .. 2 ];
     $channame =~ /^(#|&)([\w\d_-]+)$/ or do {
@@ -468,15 +408,6 @@ sub join {
     my $PCMD    = $self->get_cmd($cmdname);
     my $db      = $irc->{database};
 
-    unless ( $Session->user_id ) {
-        $irc->yield(
-            notice => $Session->nick => "[$cmdname] You must be logged!" );
-        return PCI_EAT_ALL;
-    }
-    if ( $User->lvl < $PCMD->{lvl} ) {
-        $irc->yield( notice => $Session->nick => "[$cmdname] You !" );
-        return PCI_EAT_ALL;
-    }
     my @channels = split /\s+/, $msg;
     shift @channels;    # First argument is the command
     if ( $event eq "S_public" ) {
@@ -495,15 +426,6 @@ sub part {
     my $PCMD    = $self->get_cmd($cmdname);
     my $db      = $irc->{database};
 
-    unless ( $Session->user_id ) {
-        $irc->yield(
-            notice => $Session->nick => "[$cmdname] You must be logged!" );
-        return PCI_EAT_ALL;
-    }
-    if ( $User->lvl < $PCMD->{lvl} ) {
-        $irc->yield( notice => $Session->nick => "[$cmdname] You !" );
-        return PCI_EAT_ALL;
-    }
     my @channels = split /\s+/, $msg;
     shift @channels;    # First argument is the command
     if ( $event eq "S_public" ) {
@@ -522,15 +444,6 @@ sub topic {
     my $PCMD    = $self->get_cmd($cmdname);
     my $db      = $irc->{database};
 
-    unless ( $Session->user_id ) {
-        $irc->yield(
-            notice => $Session->nick => "[$cmdname] You must be logged!" );
-        return PCI_EAT_NONE;
-    }
-    if ( $User->lvl < $PCMD->{lvl} ) {
-        $irc->yield( notice => $Session->nick => "[$cmdname] You !" );
-        return PCI_EAT_NONE;
-    }
     my $channel;
     my $topic;
     if ( $event eq "S_msg" ) {
@@ -582,15 +495,6 @@ sub op {
     my $PCMD    = $self->get_cmd($cmdname);
     my $db      = $irc->{database};
 
-    unless ( $Session->user_id ) {
-        $irc->yield(
-            notice => $Session->nick => "[$cmdname] You must be logged!" );
-        return PCI_EAT_ALL;
-    }
-    if ( $User->lvl < $PCMD->{lvl} ) {
-        $irc->yield( notice => $Session->nick => "[$cmdname] You !" );
-        return PCI_EAT_ALL;
-    }
     my @channels = split /\s+/, $msg;
     shift @channels;    # First argument is the command
     if ( $event eq "S_public" ) {
@@ -625,15 +529,6 @@ sub deop {
     my $PCMD    = $self->get_cmd($cmdname);
     my $db      = $irc->{database};
 
-    unless ( $Session->user_id ) {
-        $irc->yield(
-            notice => $Session->nick => "[$cmdname] You must be logged!" );
-        return PCI_EAT_ALL;
-    }
-    if ( $User->lvl < $PCMD->{lvl} ) {
-        $irc->yield( notice => $Session->nick => "[$cmdname] You !" );
-        return PCI_EAT_ALL;
-    }
     my $channel = $where->[0];
     if ( $User->lvl >= 800 ) {
         LOG( $User->name . "800+ request deop on $channel" );

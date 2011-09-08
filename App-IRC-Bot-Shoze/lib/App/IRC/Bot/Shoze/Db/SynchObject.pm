@@ -62,11 +62,12 @@ sub _init_fields {
 }
 sub AUTOLOAD {
     my $self = shift;
-    my $type = ref($self)
-      or croak "$self is not an object";
     my $name = $AUTOLOAD;
     $name =~ s/.*://;    # strip fully-qualified portion
-
+    my $type = ref($self) 
+        or croak "$self is not an object (AUTOLOAD: $name)";
+    
+   
     unless ( exists $self->{_permitted}->{$name} ) {
         croak "Can't access `$name' field in class $type";
     }
@@ -86,7 +87,7 @@ sub AUTOLOAD {
                 $self->{_changed}->{$name} = 1;
             }
         }
-        return $self->{$name} = decode('utf8', $value);
+        return $self->{$name} = $value;#decode('utf8', $value);
     }
     else {
         return $self->{$name};

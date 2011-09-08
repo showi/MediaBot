@@ -10,12 +10,11 @@ use lib qw(../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::Db::Users;
-use App::IRC::Bot::Shoze::Db::Networks;
 use App::IRC::Bot::Shoze::Db::Channels;
+use App::IRC::Bot::Shoze::Db::ChannelUsers;
 use App::IRC::Bot::Shoze::Db::Sessions;
 use App::IRC::Bot::Shoze::Db::Apero;
 use App::IRC::Bot::Shoze::Db::EasySentence;
-
 
 our $AUTOLOAD;
 
@@ -23,13 +22,14 @@ our %fields = (
     handle  => undef,
     is_open => undef,
     _parent => undef,
-    Users   => undef,
 
-    #Networks => undef,
-    Sessions  => undef,
-    Channels  => undef,
-    Apero     => undef,
-    Sentences => undef,
+    Sessions     => undef,
+    Users        => undef,
+    Channels     => undef,
+    ChannelUsers => undef,
+    Apero        => undef,
+    Sentences    => undef,
+
 );
 
 # Constructor
@@ -45,11 +45,10 @@ sub new {
     };
     bless( $s, $class );
     $s->_parent($parent);
-    $s->Users( new App::IRC::Bot::Shoze::Db::Users($s) );
-
-    #$s->Networks( new MediaBot::Db::Networks($s) );
     $s->Sessions( new App::IRC::Bot::Shoze::Db::Sessions($s) );
+    $s->Users( new App::IRC::Bot::Shoze::Db::Users($s) );
     $s->Channels( new App::IRC::Bot::Shoze::Db::Channels($s) );
+    $s->ChannelUsers( new App::IRC::Bot::Shoze::Db::ChannelUsers($s) );
     $s->Apero( new App::IRC::Bot::Shoze::Db::Apero($s) );
     $s->Sentences( new App::IRC::Bot::Shoze::Db::EasySentence($s) );
     $s->init();
@@ -67,7 +66,9 @@ sub init {
     }
     $s->handle( DBI->connect( $c->{driver} . ":dbname=" . $name, "", "" ) );
     croak "DB connection failed (" . $c->{name} . ")" unless $s->handle;
-    DEBUG("DB connection success ($c->{driver}:dbname=$name)");
+    LOG("--- Database ---");
+    LOG("DB connection success ($c->{driver}:dbname=$name)");
+    LOG("--- Database ---");
     $s->is_open(1);
     return 0;
 }
@@ -80,7 +81,8 @@ sub close {
     $s->is_open(0);
 }
 
-# Try to reopen database handle or die, must find better way to handle failure for longtime running service.
+# Try to reopen database handle or die, must find better way to handle 
+# failure for longtime running service.
 sub die_if_not_open {
     my ($s) = @_;
     $s->init() unless $s->is_open();

@@ -65,8 +65,8 @@ sub insulte {
         return PCI_EAT_ALL;
     }
     my $rand = rand(@list);
-    #my $str = decode('utf8', $list[$rand]->text);
-    my $str = $list[$rand]->text;
+    my $str = decode('utf8', $list[$rand]->text);
+    #my $str = $list[$rand]->text;
     LOG("[$who] $where/Insulte: $str");
      my @lines = split(/\n/, $str);
     $self->_send_lines($irc, 'privmsg', $where, @lines);
@@ -89,7 +89,7 @@ sub carambar {
     my $str = "<< " . $list[$rand]->text . " >>";
     $str .= "\n[" . $list[$rand]->author . "]" 
         if $list[$rand]->author;
-    #$str = decode('utf8', $str);
+    $str = decode('utf8', $str);
     LOG("[$who] $where/Carambar: $str");
     my @lines = split(/\n/, $str);
     $self->_send_lines($irc, 'privmsg', $where, @lines);
@@ -112,12 +112,11 @@ sub proverbe {
     my $str = "<< " . $list[$rand]->text . " >>";
     $str .= "\n[" . $list[$rand]->author . "]" 
         if $list[$rand]->author;
-    #$str = decode('utf8', $str);
+    $str = decode('utf8', $str);
     LOG("[$who] $where/Proverbe: $str");
     my @lines = split(/\n/, $str);
     $self->_send_lines($irc, 'privmsg', $where, @lines);
     return PCI_EAT_ALL;
 }
-
 
 1;

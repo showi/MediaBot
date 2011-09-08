@@ -16,6 +16,7 @@ use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(get_cmd);
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::User;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Info;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Channel;
+use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::ChannelUser;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::ChannelEvent;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Mode;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Help;
@@ -43,7 +44,7 @@ sub new {
             },
         }
     );
-    my @plugins = qw(mode info user channel help mynick channelEvent apero easySentence);
+    my @plugins = qw(mode info user channel channelUser help mynick channelEvent apero easySentence);
     $s->plugins( \@plugins );
     return $s;
 }

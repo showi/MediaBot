@@ -7,8 +7,6 @@ use Carp;
 
 use lib qw(../../../);
 use App::IRC::Bot::Shoze::Class qw(DESTROY);
-
-#use MediaBot::Db::Class qw(AUTOLOAD synched is_synch);
 use App::IRC::Bot::Shoze::Db::SynchObject qw(:ALL);
 use App::IRC::Bot::Shoze::Log;
 

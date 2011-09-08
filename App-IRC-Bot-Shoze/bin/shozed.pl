@@ -16,7 +16,7 @@ my $Shoze = Proc::Daemon->new(
     child_STDOUT => "$BASE_PATH/log/shoze.log",
     child_STDERR => "$BASE_PATH/log/shoze.debug.log",
     pid_file     => "$BASE_PATH/run/shoze.pid",
-    exec_command => 'perl /usr/bin/shoze',
+    exec_command => 'perl -MCarp=verbose /usr/bin/shoze',
 );
 
 if ( $ARGV[0] eq "start" ) {

@@ -11,7 +11,11 @@ use App::IRC::Bot::Shoze::Log;
 
 our @ISA = qw(Exporter);
 
-our @MyExport  = qw(_send_lines pretty_help get_cmd PCI_register PCI_unregister);
+our @MyExport = qw(_n_error _send_lines 
+  pretty_help get_cmd 
+  PCI_register PCI_unregister
+  BOTLVL CHANLVL);
+  
 our @EXPORT_OK = @MyExport;
 our @EXPORT    = @MyExport;
 
@@ -56,5 +60,27 @@ sub _send_lines {
         $irc->yield( $what => $where => $_ );
     }
 }
+
+sub _n_error {
+    my ( $s, $irc, $who, $msg ) = @_;
+    $irc->yield( "notice" => $who => "Error: $msg" );
+}
+
+sub BOTLVL {
+    my $lvl = shift;
+    return "owner    " if $lvl >= 1000;
+    return "admin    " if $lvl >= 800;
+    return "chanowner" if $lvl >= 500;
+    return "user     "; 
+}
+
+sub CHANLVL {
+    my $lvl = shift;
+    return "owner" if $lvl >= 500;
+    return "admin" if $lvl >= 400;
+    return "user " if $lvl >= 200; 
+}
+
+
 
 1;

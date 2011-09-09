@@ -25,6 +25,7 @@ use App::IRC::Bot::Shoze::Constants;
 
 use POE::Component::IRC::Plugin qw( :ALL );
 use App::IRC::Bot::Shoze::POE::IRC;
+use App::IRC::Bot::Shoze::POE::SubTask;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Sessions;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Dispatch;
@@ -39,6 +40,7 @@ my %fields = (
     #Commands => undef,
     #Sessions => undef,
     IRC => undef,
+    SubTask => undef,
 );
 
 # IRC
@@ -60,7 +62,7 @@ sub new {
     };
     bless( $s, $class );
     $s->_parent($parent);
-
+    $s->SubTask(new App::IRC::Bot::Shoze::POE::SubTask($s));
     # IRC
     ######
     if ( $s->_parent->Config->irc->{enable} ) {
@@ -220,7 +222,7 @@ sub _default {
             push( @output, "'$arg'" ) if defined $arg;
         }
     }
-    DEBUG( join( ' ', @output ), 4 );
+    DEBUG( join( ' ', @output ), 1 );
     return;
 }
 

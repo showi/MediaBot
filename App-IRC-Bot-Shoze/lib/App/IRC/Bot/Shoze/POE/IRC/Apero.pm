@@ -39,7 +39,7 @@ sub PCI_register {
     $self->triggers( {} );
     for my $A (@triggers) {
         my $t = $A->trigger;
-        print "Registering trigger $t\n";
+        DEBUG("Registering trigger $t", 5);
         $self->triggers->{ $A->id } = qr/$t/i;
     }
     return 1;

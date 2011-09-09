@@ -22,6 +22,7 @@ use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Mode;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Help;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Mynick;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Apero;
+use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Tld;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::EasySentence;
 
 our %fields = ( cmd => undef, plugins => undef, irc => undef );
@@ -44,7 +45,7 @@ sub new {
             },
         }
     );
-    my @plugins = qw(mode info user channel channelUser help mynick channelEvent apero easySentence);
+    my @plugins = qw(mode info user channel channelUser help mynick channelEvent apero easySentence tld);
     $s->plugins( \@plugins );
     return $s;
 }

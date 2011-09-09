@@ -88,6 +88,11 @@ sub _shutdown {
 
 }
 
+sub get_cmd {
+    my ($s, $cmd) = @_;
+    return $s->cmd->{$cmd} if defined $s->cmd->{$cmd};
+}
+
 sub register_command {
     my ( $s, $plugin, $cmd, $acces, $lvl ) = @_;
     return if ref($cmd); ### Dirty hack, something's going wrong on plugin registration###

@@ -35,6 +35,14 @@ sub new {
     return $s;
 }
 
+sub list_match {
+    my ($s, $name, $matches) = @_;
+    croak "Need a name to acces sentence list" 
+        unless $name;
+    my $C = new App::IRC::Bot::Shoze::Db::EasySentence::Object( $s->_parent, $name);
+    return $C->_list_match($matches);
+}
+
 sub list {
     my ($s, $name) = @_;
     croak "Need a name to acces sentence list" 
@@ -43,7 +51,7 @@ sub list {
     return $C->_list();
 }
 
-sub get {
+sub __get {
     my ( $s, $id ) = @_;
     DEBUG( __PACKAGE__ . "::get($id)", 3);
     my $C = new App::IRC::Bot::Shoze::Db::Apero::Object( $s->_parent );
@@ -51,16 +59,15 @@ sub get {
 }
 
 sub get_by {
-    my ( $s, $hash ) = @_;
+    my ( $s, $name, $hash ) = @_;
     DEBUG( __PACKAGE__ . "::get_by($hash)", 3);
-    my $C = new App::IRC::Bot::Shoze::Db::Apero::Object( $s->_parent );
+    my $C = new App::IRC::Bot::Shoze::Db::EasySentence::Object( $s->_parent, $name );
     return $C->_get_by( $hash );
 }
 
 sub create {
-    my ( $s, $trigger, $text) = @_;
-    my $A = new App::IRC::Bot::Shoze::Db::Apero::Object( $s->_parent );
-    $A->trigger($trigger);
+    my ( $s, $type, $text) = @_;
+    my $A = new App::IRC::Bot::Shoze::Db::EasySentence::Object($type, $s->_parent );
     $A->text($text);
     return $A->_create();
 }

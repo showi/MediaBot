@@ -6,16 +6,19 @@ use warnings;
 use Carp;
 use Exporter;
 
+use POE::Component::IRC::Plugin qw(:ALL);
+
 use lib qw(../../../../);
 use App::IRC::Bot::Shoze::Log;
 
 our @ISA = qw(Exporter);
 
-our @MyExport = qw(_n_error _send_lines 
-  pretty_help get_cmd 
+our @MyExport = qw(_n_error _send_lines
+  pretty_help get_cmd
   PCI_register PCI_unregister
+  _register_cmd _unregister_cmd
   BOTLVL CHANLVL);
-  
+
 our @EXPORT_OK = @MyExport;
 our @EXPORT    = @MyExport;
 
@@ -32,8 +35,8 @@ sub get_cmd {
     return $s->cmd->{$cmd};
 }
 
-sub PCI_register {
-    my ( $s, $irc ) = splice @_, 0, 2;
+sub _register_cmd {
+    my ( $s, $irc ) = @_;
     my $C = $irc->plugin_get('BotCmdPlus');
     for my $cmd ( %{ $s->cmd } ) {
         $C->register_command(
@@ -42,15 +45,25 @@ sub PCI_register {
             $s->cmd->{$cmd}->{lvl}
         );
     }
+}
+
+sub PCI_register {
+    my ( $s, $irc ) = splice @_, 0, 2;
+    $s->_register_cmd($irc);
     return 1;
 }
 
-sub PCI_unregister {
-    my ( $s, $irc ) = splice @_, 0, 2;
+sub _unregister_cmd {
+    my ( $s, $irc ) = @_;
     my $C = $irc->plugin_get('BotCmdPlus');
     for my $cmd ( %{ $s->cmd } ) {
         $C->unregister_command($cmd);
     }
+}
+
+sub PCI_unregister {
+    my ( $s, $irc ) = splice @_, 0, 2;
+    $s->_unregister_cmd($irc);
     return 1;
 }
 
@@ -64,6 +77,7 @@ sub _send_lines {
 sub _n_error {
     my ( $s, $irc, $who, $msg ) = @_;
     $irc->yield( "notice" => $who => "Error: $msg" );
+    return PCI_EAT_ALL;
 }
 
 sub BOTLVL {
@@ -71,16 +85,14 @@ sub BOTLVL {
     return "owner    " if $lvl >= 1000;
     return "admin    " if $lvl >= 800;
     return "chanowner" if $lvl >= 500;
-    return "user     "; 
+    return "user     ";
 }
 
 sub CHANLVL {
     my $lvl = shift;
     return "owner" if $lvl >= 500;
     return "admin" if $lvl >= 400;
-    return "user " if $lvl >= 200; 
+    return "user " if $lvl >= 200;
 }
-
-
 
 1;

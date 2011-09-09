@@ -20,7 +20,7 @@ our $PROGRAMNAME  = "Shoze";
 our $VERSION      = "0.0.6";
 our $LASTVERSION  = "1314675373";
 our $PROGRAMBIRTH = "1313893570";
-our $DEBUG        = 9;
+our $DEBUG        = 1;
 
 =head1 SYNOPSIS
 

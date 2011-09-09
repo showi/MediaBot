@@ -61,6 +61,8 @@ our %fields = (
     REST   => undef,
 );
 
+#our %App::IRC::Bot::Shoze = undef;
+
 sub new {
     my ( $proto, $path ) = @_;
     DEBUG( "Creating new " . __PACKAGE__, 5 );

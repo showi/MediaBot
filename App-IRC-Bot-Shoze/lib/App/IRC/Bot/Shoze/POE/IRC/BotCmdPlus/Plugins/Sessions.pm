@@ -57,7 +57,8 @@ sub destroy_session {
     my ( $self, $irc ) = splice @_, 0, 2;
     my ( $who, $msg ) = ( ${ $_[0] }, ${ $_[1] } );
     my $db         = $irc->{database};
-    my $OldSession = App::IRC::Bot::Shoze::Db::Sessions::Object->new()->parse_who($who);
+
+    my $OldSession = App::IRC::Bot::Shoze::Db::Sessions::Object->new($db)->parse_who($who);
     my $NewSession =
       $db->Sessions->get( $OldSession->nick, $OldSession->user,
         $OldSession->hostname );
@@ -68,7 +69,7 @@ sub S_nick {
     my ( $self, $irc ) = splice @_, 0, 2;
     my ( $who, $msg ) = ( ${ $_[0] }, ${ $_[1] } );
     my $db         = $irc->{database};
-    my $OldSession = App::IRC::Bot::Shoze::Db::Sessions::Object->new()->parse_who($who);
+    my $OldSession = App::IRC::Bot::Shoze::Db::Sessions::Object->new($db)->parse_who($who);
     my $NewSession =
       $db->Sessions->get_by_user_hostname( $OldSession->user,
         $OldSession->hostname );
@@ -85,13 +86,13 @@ sub _default {
     LOG( __PACKAGE__ . " Unprocessed event: $event" );
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     $db->Sessions->delete_idle;
-    my $TmpSession = App::IRC::Bot::Shoze::Db::Sessions::Object->new()->parse_who($who);
+    my $TmpSession = App::IRC::Bot::Shoze::Db::Sessions::Object->new($db)->parse_who($who);
 
     my $Session =
       $db->Sessions->get( $TmpSession->nick, $TmpSession->user,
         $TmpSession->hostname );
     unless ( defined $Session ) {
-        LOG( "Creating session: " . $TmpSession->pretty );
+        LOG( "Creating session: " . $TmpSession->_pretty );
         $db->Sessions->create( $TmpSession->nick, $TmpSession->user,
             $TmpSession->hostname );
 
@@ -102,8 +103,8 @@ sub _default {
         $db->Sessions->update($Session);
         if ( $Session->ignore ) {
             LOG( "Ignoring " . $Session->pretty );
-            $irc->yield( notice => $Session->nick =>
-                  "You re boring... keep quiet please!" );
+#            $irc->yield( notice => $Session->nick =>
+#                  "You re boring... keep quiet please!" );
             return PCI_EAT_ALL;
         }
     }

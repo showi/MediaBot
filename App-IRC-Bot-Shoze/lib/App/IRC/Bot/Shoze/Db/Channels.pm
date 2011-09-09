@@ -36,6 +36,7 @@ sub new {
     return $s;
 }
 
+###############################################################################
 sub list {
     my ($s) = @_;
     print "List Channel\n";
@@ -78,20 +79,18 @@ SQL
     return @list;
 }
 
+###############################################################################
 sub get_by {
     my ( $s, $type, $name ) = @_;
-    unless ($name) {
-        $type =~ /^(#|&)(.*)$/
-          or croak "Invalid channel name";
-        ( $type, $name ) = ( $1, $2 );
+    if ($name) {
+        die "CHANGE IN API USE A HASH for Channels->get_by(HASH)";
     }
-    croak "Invalid channel name $type$name"
-      unless is_valid_chan_name("$type$name");
-    LOG( __PACKAGE__ . "::get_by($type, $name)" );
     my $C = new App::IRC::Bot::Shoze::Db::Channels::Object( $s->_parent );
-    return $C->_get_by( { name => $name, type => $type } );
+    return $C->_get_by($type);
+
 }
 
+###############################################################################
 sub create {
     my ( $s, $type, $name, $owner ) = @_;
     my $C = new App::IRC::Bot::Shoze::Db::Channels::Object( $s->_parent );
@@ -103,6 +102,7 @@ sub create {
     return $C->_create();
 }
 
+###############################################################################
 sub clear_joined {
     my ($s) = @_;
     $s->_parent->die_if_not_open();
@@ -116,3 +116,5 @@ SQL
       or die "Cannot execute query '$query' (" . $h->errstr . ")";
     return $sth->rows;
 }
+
+1;

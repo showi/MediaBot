@@ -14,6 +14,9 @@ use App::IRC::Bot::Shoze::Log;
 # EDIT
 ###########################################
 
+my $user = 'shoze';
+my $group = 'sho';
+
 my $BASE_PATH = "/srv/shoze/";
 my $LOG_PATH = $BASE_PATH . "log/";
 
@@ -24,7 +27,14 @@ $App::IRC::Bot::Shoze::Debug = 9;
 # END OF EDIT
 ###########################################
 
-$0 = "Shoze";
+#my $uid = (getpwnam($user))[2];
+#die "Tentative de lancer le serveur en tant qu'utilisateur inexistant ou supperutilisateur\n" 
+#    unless ($uid);
+##chroot($BASE_PATH);
+#$> = $uid;
+ 
+$0 = "shozed";
+
 my $SEP = '-'x80 . "\n";
 my $DEMISEP = '-'x40 . "\n";
 my $data_dir = $BASE_PATH . "data";

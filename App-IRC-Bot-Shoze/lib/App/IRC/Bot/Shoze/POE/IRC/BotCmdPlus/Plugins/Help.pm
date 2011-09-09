@@ -13,7 +13,7 @@ use lib qw(../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;
-use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper;
+use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(:ALL);
 
 our %fields = ( cmd => undef );
 

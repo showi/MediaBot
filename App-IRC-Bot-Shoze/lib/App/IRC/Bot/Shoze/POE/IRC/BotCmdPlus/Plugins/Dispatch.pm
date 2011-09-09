@@ -93,7 +93,7 @@ sub _default {
     }
 
     my $db         = $irc->{database};
-    my $TmpSession = new App::IRC::Bot::Shoze::Db::Sessions::Object();
+    my $TmpSession = new App::IRC::Bot::Shoze::Db::Sessions::Object($db);
     $TmpSession->parse_who($who);
     my $Session =
       $db->Sessions->get( $TmpSession->nick, $TmpSession->user,

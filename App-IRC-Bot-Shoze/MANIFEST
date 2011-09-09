@@ -9,6 +9,7 @@ t/pod.t
 bin/start.pl
 bin/restcli.pl
 bin/shozed.pl
+scripts/tld.pl
 lib/App/IRC/Bot/Shoze.pm
 lib/App/IRC/Bot/Shoze/Class.pm
 lib/App/IRC/Bot/Shoze/Config.pm
@@ -30,6 +31,7 @@ lib/App/IRC/Bot/Shoze/Db/ChannelUsers/Object.pm
 lib/App/IRC/Bot/Shoze/Log.pm
 lib/App/IRC/Bot/Shoze/POE.pm
 lib/App/IRC/Bot/Shoze/POE/IRC.pm
+lib/App/IRC/Bot/Shoze/POE/SubTask.pm
 lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus.pm
 lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Channel.pm
 lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelUser.pm
@@ -41,6 +43,7 @@ lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/PluginsManagement.pm
 lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Sessions.pm
 lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/User.pm
 lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/EasySentence.pm
+lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Tld.pm
 lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Helper.pm
 lib/App/IRC/Bot/Shoze/POE/IRC/Apero.pm
 lib/App/IRC/Bot/Shoze/POE/IRC/Out.pm

@@ -1,5 +1,9 @@
 #!/usr/bin/perl
-
+#############################################
+#
+# Extract tld information from iana web site
+#
+#############################################
 use strict;
 use warnings;
 
@@ -35,11 +39,6 @@ unless ($ARGV[0]) {
 
 $otld = decode( 'utf8', $ARGV[0] );
 $tld = domain_to_ascii($otld);
-
-#print "Looking for tld '$tld' ($otld)\n";
-
-
-
 
 
 unless ( $tld =~ /^[\w\d-]{2,15}$/ ) {
@@ -86,8 +85,5 @@ else {
 }
 
 myexit( 0, $type, $info );
-
-#print encode( 'utf8', $otld ) . "#$tld#$type#";
-#print $info if defined $info;
 
 1;

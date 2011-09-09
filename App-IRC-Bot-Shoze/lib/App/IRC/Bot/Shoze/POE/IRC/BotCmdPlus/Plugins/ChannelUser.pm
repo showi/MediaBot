@@ -12,7 +12,7 @@ use lib qw(../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;
-use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper;
+use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(:ALL);
 use App::IRC::Bot::Shoze::Db::ChannelUsers::Object;
 
 our %fields = ( cmd => undef );
@@ -81,7 +81,8 @@ sub chanuser_add {
         return $s->_n_error( $irc, $Session->nick,
             "Invalid channel name '$chan'" );
     }
-    my $Channel = $db->Channels->get_by($chan);
+    my ($type, $channame) = ($chan =~ /^(#|&)(.*)$/);
+    my $Channel = $db->Channels->get_by({ type => $type, name => $channame });
     unless ($Channel) {
         return $s->_n_error( $irc, $Session->nick,
             "Channel '$chan' not found" );
@@ -145,7 +146,8 @@ sub chanuser_set {
         return $s->_n_error( $irc, $Session->nick,
             "Invalid channel name '$chan'" );
     }
-    my $Channel = $db->Channels->get_by($chan);
+    my ($type, $channame) = ($chan =~ /^(#|&)(.*)$/);
+    my $Channel = $db->Channels->get_by({ type => $type, name => $channame });
     unless ($Channel) {
         return $s->_n_error( $irc, $Session->nick,
             "Channel '$chan' not found" );
@@ -214,7 +216,8 @@ sub chanuser_list {
         return $s->_n_error( $irc, $Session->nick,
             "Invalid channel name '$chan'" );
     }
-    my $Channel = $db->Channels->get_by($chan);
+    my ($type, $channame) = ($chan =~ /^(#|&)(.*)$/);
+    my $Channel = $db->Channels->get_by({ type => $type, name => $channame });
     unless ($Channel) {
         return $s->_n_error( $irc, $Session->nick,
             "Channel '$chan' not found" );
@@ -258,7 +261,8 @@ sub chanuser_info {
         return $s->_n_error( $irc, $Session->nick,
             "Invalid channel name '$chan'" );
     }
-    my $Channel = $db->Channels->get_by($chan);
+    my ($type, $channame) = ($chan =~ /^(#|&)(.*)$/);
+    my $Channel = $db->Channels->get_by({ type => $type, name => $channame });
     unless ($Channel) {
         return $s->_n_error( $irc, $Session->nick,
             "Channel '$chan' not found" );
@@ -301,6 +305,7 @@ sub chanuser_del {
         return $s->_n_error( $irc, $Session->nick,
             "Invalid channel name '$chan'" );
     }
+    my ($type, $channame) = ($chan =~ /^(#|&)(.*)$/);
     my $Channel = $db->Channels->get_by($chan);
     unless ($Channel) {
         return $s->_n_error( $irc, $Session->nick,

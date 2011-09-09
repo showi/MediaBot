@@ -1,14 +1,14 @@
 ---
 enable: 1
-nick: shoze
+nick: sh
 altnick: sh[O]ze
 name: Wanna be my Friend!
 servers:
-  - host: eu.undernet.org
-    port: 6669
-    ssl: no
   - host: irc.nosferat.us
     port: 6667
+    ssl: no
+  - host: eu.undernet.org
+    port: 6669
     ssl: no
   - host: hamburg.de.eu.undernet.org
     port: 6669

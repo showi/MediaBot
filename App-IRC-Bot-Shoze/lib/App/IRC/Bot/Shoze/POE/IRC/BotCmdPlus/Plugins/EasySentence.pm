@@ -13,7 +13,7 @@ use lib qw(../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;
-use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper;
+use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(:ALL);
 use App::IRC::Bot::Shoze::Db::EasySentence::Object;
 
 our %fields = ( cmd => undef, kind => undef, _parent => undef, authtypes => undef, );
@@ -70,10 +70,10 @@ sub new {
 }
 
 ###############################################################################
-sub add_sentence {
+sub sentence_add {
     my ( $s, $Session, $User, $irc, $event ) = splice @_, 0, 5;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
-    my $cmdname = 'add_sentence';
+    my $cmdname = 'sentence_add';
     my $PCMD    = $s->get_cmd($cmdname);
     my $db      = $irc->{database};
 

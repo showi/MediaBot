@@ -7,7 +7,7 @@ use Carp;
 
 use lib qw(../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
-use App::IRC::Bot::Shoze::Db::Sessions::Object;
+use App::IRC::Bot::Shoze::Db::Sessions::Object qw();
 use App::IRC::Bot::Shoze::Log;
 
 our $AUTOLOAD;
@@ -33,45 +33,61 @@ sub new {
     return $s;
 }
 
-# Sessions exists?
-##############
-sub exists {
-    my ( $s, $user, $hostname ) = @_;
-    $s->_parent->die_if_not_open();
-    my $h     = $s->_parent->handle;
-    my $query = <<SQL;
-		SELECT * FROM sessions WHERE user = ? AND hostname = ?
-SQL
-    my $sth = $h->prepare($query)
-      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute( $user, $hostname )
-      or die "Cannot execute query '$query' (" . $h->errstr . ")";
-    my $row = $sth->fetch;
-    return $row if $row;
-    return 0;
+## Sessions exists?
+###############
+#sub exists {
+#    my ( $s, $user, $hostname ) = @_;
+#    $s->_parent->die_if_not_open();
+#    my $h     = $s->_parent->handle;
+#    my $query = <<SQL;
+#		SELECT * FROM sessions WHERE user = ? AND hostname = ?
+#SQL
+#    my $sth = $h->prepare($query)
+#      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
+#    $sth->execute( $user, $hostname )
+#      or die "Cannot execute query '$query' (" . $h->errstr . ")";
+#    my $row = $sth->fetch;
+#    return $row if $row;
+#    return 0;
+#}
+
+sub create {
+    my ( $s, $nick, $user, $hostname ) = @_;
+    my $time = time;
+    my $O = new App::IRC::Bot::Shoze::Db::Sessions::Object( $s->_parent );
+    $O->nick($nick);
+    $O->user($user);
+    $O->hostname($hostname);
+    $O->first_access($time);
+    $O->last_access($time);
+    $O->flood_start($time);
+    $O->flood_end($time + 60);
+    $O->flood_numcmd(1);
+    $O->ignore(undef);
+    return $O->_create();
 }
 
 # Create session
 #############
-sub create {
-    my ( $s, $nick, $user, $hostname ) = @_;
-    $s->_parent->die_if_not_open();
-    if ( $s->exists( $user, $hostname ) ) {
-        $s->LOG("DB::Error Sessions '$nick $user @ $hostname'  already exists");
-        return 1;
-    }
-    my $h     = $s->_parent->handle;
-    my $time  = time;
-    my $query = <<SQL;
-		INSERT INTO sessions (nick, user, hostname, first_access, last_access, flood_start, flood_end, flood_numcmd, ignore)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-SQL
-    my $sth = $h->prepare($query)
-      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute( $nick, $user, $hostname, $time, $time, $time, $time + 60, 1, undef )
-      or die "Cannot execute query '$query' (" . $h->errstr . ")";
-    return 0;
-}
+#sub create {
+#    my ( $s, $nick, $user, $hostname ) = @_;
+#    $s->_parent->die_if_not_open();
+#    if ( $s->exists( $user, $hostname ) ) {
+#        $s->LOG("DB::Error Sessions '$nick $user @ $hostname'  already exists");
+#        return 1;
+#    }
+#    my $h     = $s->_parent->handle;
+#    my $time  = time;
+#    my $query = <<SQL;
+#		INSERT INTO sessions (nick, user, hostname, first_access, last_access, flood_start, flood_end, flood_numcmd, ignore)
+#		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+#SQL
+#    my $sth = $h->prepare($query)
+#      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
+#    $sth->execute( $nick, $user, $hostname, $time, $time, $time, $time + 60, 1, undef )
+#      or die "Cannot execute query '$query' (" . $h->errstr . ")";
+#    return 0;
+#}
 
 sub update {
     my ( $s, $Session ) = @_;
@@ -101,19 +117,20 @@ sub update {
             $Session->flood_numcmd( $Session->flood_numcmd + 1 );
         }
     }
-    my $query = <<SQL;
-    UPDATE sessions SET nick = ?, flood_start = ?, flood_end = ?,
-    flood_numcmd = ?, ignore = ?, last_access = ?, user_id = ?
-    WHERE id = ?
-SQL
-    my $sth = $h->prepare($query)
-      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute($Session->nick,
-        $Session->flood_start, $Session->flood_end, $Session->flood_numcmd,
-        $Session->ignore, $time, $Session->user_id, $Session->id
-    ) or die "Cannot execute query '$query' (" . $h->errstr . ")";
-    return 0 if $Session->ignore;
-    return 1;
+    return $Session->_update();
+#    my $query = <<SQL;
+#    UPDATE sessions SET nick = ?, flood_start = ?, flood_end = ?,
+#    flood_numcmd = ?, ignore = ?, last_access = ?, user_id = ?
+#    WHERE id = ?
+#SQL
+#    my $sth = $h->prepare($query)
+#      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
+#    $sth->execute($Session->nick,
+#        $Session->flood_start, $Session->flood_end, $Session->flood_numcmd,
+#        $Session->ignore, $time, $Session->user_id, $Session->id
+#    ) or die "Cannot execute query '$query' (" . $h->errstr . ")";
+#    return 0 if $Session->ignore;
+#    return 1;
 }
 
 sub delete_idle {
@@ -136,72 +153,81 @@ SQL
 #####################
 sub get {
     my ( $s, $nick, $user, $hostname ) = @_;
-    $s->_parent->die_if_not_open();
-    unless ( $s->exists( $user, $hostname ) ) {
-        $s->LOG("DB::Error Network '$user @ $hostname' doesn't exist");
-        return undef;
-    }
-    my $h     = $s->_parent->handle;
-    my $query = <<SQL;
-		SELECT * FROM sessions WHERE nick = ? AND user = ? AND hostname = ?;
-SQL
-    my $sth = $h->prepare($query)
-      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute( $nick, $user, $hostname )
-      or die "Cannot execute query '$query' (" . $h->errstr . ")";
-    my $rn = $sth->fetchrow_hashref;
-    return undef unless $rn;
-
-    my $N = new App::IRC::Bot::Shoze::Db::Sessions::Object();
-    for my $k ( keys %{$N} ) {
-        next if $k =~ /^_.*/;
-        $N->$k( $rn->{$k} );
-    }
-    return $N;
+     my $N = new App::IRC::Bot::Shoze::Db::Sessions::Object($s->_parent);
+     return $N->_get_by({nick => $nick, user => $user, hostname => $hostname});
 }
+#    $s->_parent->die_if_not_open();
+#    unless ( $s->exists( $user, $hostname ) ) {
+#        $s->LOG("DB::Error Network '$user @ $hostname' doesn't exist");
+#        return undef;
+#    }
+#    my $h     = $s->_parent->handle;
+#    my $query = <<SQL;
+#		SELECT * FROM sessions WHERE nick = ? AND user = ? AND hostname = ?;
+#SQL
+#    my $sth = $h->prepare($query)
+#      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
+#    $sth->execute( $nick, $user, $hostname )
+#      or die "Cannot execute query '$query' (" . $h->errstr . ")";
+#    my $rn = $sth->fetchrow_hashref;
+#    return undef unless $rn;
+#
+#    my $N = new App::IRC::Bot::Shoze::Db::Sessions::Object($s->_parent);
+#    for my $k ( keys %{$N} ) {
+#        next if $k =~ /^_.*/;
+#        $N->$k( $rn->{$k} );
+#    }
+#    return $N;
+#}
 
 # Get session by name
 #####################
 sub get_by_user_hostname {
     my ( $s, $user, $hostname ) = @_;
-    $s->_parent->die_if_not_open();
-    unless ( $s->exists( $user, $hostname ) ) {
-        $s->LOG("DB::Error Network '$user @ $hostname' doesn't exist");
-        return undef;
-    }
-    my $h     = $s->_parent->handle;
-    my $query = <<SQL;
-		SELECT * FROM sessions WHERE user = ? AND hostname = ?;
-SQL
-    my $sth = $h->prepare($query)
-      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute( $user, $hostname )
-      or die "Cannot execute query '$query' (" . $h->errstr . ")";
-    my $rn = $sth->fetchrow_hashref;
-    return undef unless $rn;
-
-    my $N = new App::IRC::Bot::Shoze::Db::Sessions::Object();
-    for my $k ( keys %{$N} ) {
-        next if $k =~ /^_.*/;
-        $N->$k( $rn->{$k} );
-    }
-    return $N;
+     my $N = new App::IRC::Bot::Shoze::Db::Sessions::Object($s->_parent);
+     return $N->_get_by({user => $user, hostname => $hostname});
 }
+#    $s->_parent->die_if_not_open();
+#    unless ( $s->exists( $user, $hostname ) ) {
+#        $s->LOG("DB::Error Network '$user @ $hostname' doesn't exist");
+#        return undef;
+#    }
+#    my $h     = $s->_parent->handle;
+#    my $query = <<SQL;
+#		SELECT * FROM sessions WHERE user = ? AND hostname = ?;
+#SQL
+#    my $sth = $h->prepare($query)
+#      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
+#    $sth->execute( $user, $hostname )
+#      or die "Cannot execute query '$query' (" . $h->errstr . ")";
+#    my $rn = $sth->fetchrow_hashref;
+#    return undef unless $rn;
+#
+#    my $N = new App::IRC::Bot::Shoze::Db::Sessions::Object();
+#    for my $k ( keys %{$N} ) {
+#        next if $k =~ /^_.*/;
+#        $N->$k( $rn->{$k} );
+#    }
+#    return $N;
+#}
 
 # Delete network by name
 ########################
-sub delete {
-    my ( $s, $id) = @_;
-    $s->_parent->die_if_not_open();
-    my $h     = $s->_parent->handle;
-    my $query = <<SQL;
-		DELETE FROM sessions WHERE id = ?
-SQL
-    my $sth = $h->prepare($query)
-      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute(  $id )
-      or die "Cannot execute query '$query' (" . $h->errstr . ")";
-    return $sth->rows;
-}
+#sub delete {
+#    my ( $s, $id) = @_;
+#    my $N = new App::IRC::Bot::Shoze::Db::Sessions::Object($s->_parent);
+#    return $N->_get($id);
+#     
+##    $s->_parent->die_if_not_open();
+#    my $h     = $s->_parent->handle;
+#    my $query = <<SQL;
+#		DELETE FROM sessions WHERE id = ?
+#SQL
+#    my $sth = $h->prepare($query)
+#      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
+#    $sth->execute(  $id )
+#      or die "Cannot execute query '$query' (" . $h->errstr . ")";
+#    return $sth->rows;
+#}
 
 1;

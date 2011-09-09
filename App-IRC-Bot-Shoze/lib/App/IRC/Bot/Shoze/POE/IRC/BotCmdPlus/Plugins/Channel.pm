@@ -12,7 +12,7 @@ use lib qw(../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;
-use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper;
+use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(:ALL);
 
 our %fields = ( cmd => undef );
 
@@ -112,7 +112,7 @@ sub channel_del {
     };
     my $type;
     ( $type, $channame ) = ( $1, $2 );
-    my $Channel = $db->Channels->get_by( $type, $channame );
+    my $Channel = $db->Channels->get_by( { type => $type, name => $channame } );
     if ( !$Channel ) {
         $irc->yield(
             notice => $Session->nick => "[$cmdname] Channel doesn't exist!" );
@@ -150,7 +150,7 @@ sub channel_add {
     };
     my $type;
     ( $type, $channame ) = ( $1, $2 );
-    my $Channel = $db->Channels->get_by( $type, $channame );
+    my $Channel = $db->Channels->get_by( { type => $type, name => $channame } );
     if ($Channel) {
         $irc->yield( notice => $Session->nick => "[$cmdname] Channel '"
               . $Channel->_usable_name
@@ -193,7 +193,7 @@ sub channel_info {
               "[$cmdname] Invalid channel name $type$name" );
         return PCI_EAT_ALL;
     }
-    my $Channel = $db->Channels->get_by( $type, $name );
+    my $Channel = $db->Channels->get_by( { type => $type, name => $name } );
     unless ($Channel) {
         $irc->yield( notice => $Session->nick =>
               "[$cmdname] Channel $type$name not found!" );
@@ -250,7 +250,7 @@ sub channel_set {
               "[$cmdname] Invalid channel name '$type$name'!" );
         return PCI_EAT_ALL;
     }
-    my $Channel = $db->Channels->get_by( $type, $name );
+    my $Channel = $db->Channels->get_by( { type => $type, name => $name } );
     unless ($Channel) {
         $irc->yield( notice => $Session->nick =>
               "[$cmdname] Channel '$type$name' not found!" );
@@ -355,7 +355,7 @@ sub channel_set_owner {
               . $self->pretty_help($cmdname) );
         return PCI_EAT_ALL;
     };
-    my $Channel = $db->Channels->get_by( $type, $channame );
+    my $Channel = $db->Channels->get_by( { type => $type, name => $channame } );
     unless ($Channel) {
         $irc->yield( notice => $Session->nick =>
               "[$cmdname] No channel named '$type$channame'" );
@@ -460,7 +460,8 @@ sub topic {
     }
     LOG("[$event] Want to set topic on '$channel': $msg");
     return PCI_EAT_NONE unless is_valid_chan_name($channel);
-    my $Channel = $db->Channels->get_by($channel);
+    my ($type, $channame) =~ ($channel =~ /^(#|&)(.*)$/);
+    my $Channel = $db->Channels->get_by({ type => $type, name => $channame });
     LOG("Want to set topic: chan ok");
     return PCI_EAT_NONE unless $Channel;
     my $can = 0;
@@ -504,7 +505,7 @@ sub op {
         next unless is_valid_chan_name($_);
         /^(#|&)(.*)$/;
         my ( $type, $channame ) = ( $1, $2 );
-        my $Channel = $db->Channels->get_by( $type, $channame );
+        my $Channel = $db->Channels->get_by( { type => $type, name => $channame } );
         next unless $Channel;
         my $canop = 0;
         if ( $User->lvl >= 800 ) {

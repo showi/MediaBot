@@ -19,8 +19,9 @@ our @MyExport = qw(_n_error _send_lines
   _register_cmd _unregister_cmd
   BOTLVL CHANLVL);
 
-our @EXPORT_OK = @MyExport;
+#our @EXPORT_OK = @MyExport;
 our @EXPORT    = @MyExport;
+our %EXPORT_TAGS = ( ALL => [@MyExport] );
 
 sub pretty_help {
     my ( $s, $cmd ) = @_;

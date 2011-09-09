@@ -99,7 +99,8 @@ sub set_mode {
                 if ( $$arg eq $irc->nick_name
                     and is_valid_chan_name($target) )
                 {
-                    my $Channel = $db->Channels->get_by($target);
+                    my ($type, $channame) = ($target =~ /^(#|&)(.*)$/);
+                    my $Channel = $db->Channels->get_by({ type => $type, name => $channame });
                     if ( $sign eq '+' ) {
                         $Channel->bot_mode($op);
                     }

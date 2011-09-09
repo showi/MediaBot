@@ -34,6 +34,9 @@ Digest::HMAC
 Digest::SHA256
 POE::Filter::SSL (*)
 
+
+cpan POE POE::Component::IRC POE::Component::IRC::Plugin POE::Component::IRC::Plugin::AutoJoin POE::Component::IRC::Plugin::CycleEmpty POE::Component::IRC::Plugin::Connector POE::Component::Server::TCP POE::Filter::Stream POE::Filter::SSL IRC::Utils HTTP::Status DBI DBD::SQLite Crypt::Passwd::XS Digest::HMAC Digest::SHA256
+
 * CPAN Module manual install
 --------------------------
 
@@ -81,6 +84,16 @@ To install this module, run the following commands:
 	make test
 	make install
 
+
+
+II. Deamon script
+-----------------
+1. Required
+Proc/Daemon.pm 
+2. Edit the script according to yout shoze configuration
+ 
+
+ 
 SUPPORT AND DOCUMENTATION
 
 After installing, you can find documentation for this module with the

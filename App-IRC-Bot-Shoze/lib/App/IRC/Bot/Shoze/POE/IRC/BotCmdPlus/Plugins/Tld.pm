@@ -17,7 +17,7 @@ use App::IRC::Bot::Shoze::String;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper
   qw(_register_cmd _unregister_cmd get_cmd _n_error);
 
-our %fields = ( cmd => undef );
+our %fields = ( cmd => undef);
 
 sub new {
     my ( $proto, $parent ) = @_;
@@ -26,6 +26,10 @@ sub new {
         _permitted => \%fields,
         %fields,
     };
+    my $program = $s->_get_root->_path ."/scripts/tld.pl";
+    unless (-x $program) {
+        die "Error: $program not found or not executable";
+    }
     bless( $s, $class );
     $s->cmd(
         {
@@ -59,6 +63,9 @@ sub S_tld_result {
     my ( $nick, $user, $hostmask ) = parse_user($who);
     my ( $status, $otld, $atld, $type, $info ) = split /#/, $msg;
     LOG("EVENT[tld_result] $nick request tld $atld on channel $where!");
+    if ($status < 0) {
+        $s->_n_error($irc, $where, "Error: Script is missing or not executable" );
+    }
     if ($status) {
         $irc->yield( 'privmsg' => $where => "Error: no match for tld $atld ($otld), $type" );
         return PCI_EAT_ALL;
@@ -87,7 +94,7 @@ sub tld {
     my $data = { 
                 event  => "irc_tld_result",
                 name => "tld",
-                program => "/home/sho/workspace/MediaBot/App-IRC-Bot-Shoze/scripts/tld.pl",
+                program => $s->_get_root->_path . "/scripts/tld.pl",
                 args  => $msg,
                 who   => $who,
                 where => $where->[0],

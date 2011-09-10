@@ -37,8 +37,7 @@ sub new {
     bless( $s, $class );
     $s->_parent($parent);
     $s->alias("SubTask");
-    $s->tasks( []);#'[qw(one two three four five six seven eight nine ten)] );
-
+    $s->tasks( []);
     $s->session(
         POE::Session->create(
             object_states => [
@@ -47,28 +46,6 @@ sub new {
                 ],
               ]
         )
-    );
-#    $s->add_task( { name => "tld", program => "/home/sho/workspace/MediaBot/App-IRC-Bot-Shoze/scripts/tld.pl", args => 'co', callback => 'tld_response'} );
-#    $s->add_task( { name => "tld", program => "/home/sho/workspace/MediaBot/App-IRC-Bot-Shoze/scripts/tld.pl", args => 'jp' } );
-#    $s->add_task( { name => "tld", program => "/home/sho/workspace/MediaBot/App-IRC-Bot-Shoze/scripts/tld.pl", args => 'com' } );
-#    $s->add_task( { name => "tld", program => "/home/sho/workspace/MediaBot/App-IRC-Bot-Shoze/scripts/tld.pl", args => '한국' , action => 'privmsg', where => 'erreur404'} );
-#    $s->add_task( { name => "tld", program => "../scripts/tld.pl", args => 'jp' } );
-#    $s->add_task( { name => "tld", program => "../scripts/tld.pl", args => 'io' } );
-#    $s->add_task(
-#        { name => "tld", program => "../scripts/tld.pl", args => '한국' } )
-#      ;
-        $s->add_task(
-       
-            {
-                name => "tld",
-                program =>
-"/home/sho/workspace/MediaBot/App-IRC-Bot-Shoze/scripts/tld.pl",
-                args  => 'jp',
-                event => 'irc_tld_result',
-                who   => "sho",
-                where => '#erreur404',
-            }
-        
     );
     return $s;
 }
@@ -83,9 +60,6 @@ sub add_task {
     my ( $s, $data ) = @_;
     push @{ $s->tasks }, $data;
     LOG(__PACKAGE__ . '::add_task(' . $s . " ### " .$data->{name} . ')');
-    LOG("###########");
-    #print Dumper $s;
-    LOG("###########");
     unless($s->session) {
             $s->session(
         POE::Session->create(
@@ -98,9 +72,6 @@ sub add_task {
     );
     }
     $poe_kernel->post( $s->session, 'next_task' );
-    
-    #$s->session->kernel->yield("next_task");
-    #$s->start_tasks;
 }
 
 # Start the session that will manage all the children.  The _start and
@@ -130,9 +101,6 @@ sub start_tasks {
         my $next_task = shift @{ $s->tasks };
         last unless defined $next_task;
         LOG("Starting task for $next_task->{name} ...");
-        LOG("#####");
-        #LOG(YAML::Dump($next_task));
-        LOG("#####");
         my $task = POE::Wheel::Run->new(
             Program => sub { do_stuff($next_task) },
             StdoutFilter => POE::Filter::Reference->new(),
@@ -156,26 +124,9 @@ sub do_stuff {
     my $task   = shift;
     my $filter = POE::Filter::Reference->new();
 
-    # Simulate a long, blocking task.
-    sleep( rand 5 );
-
-    #    if (ref($task)) {
-    #        print "Executing sub task: " . $task->{name} . "\n";
-    #    }
-    #    # Generate a bogus result.  Note that this result will be passed by
-    # reference back to the parent process via POE::Filter::Reference.
-    #print STDERR "Event: " . $task->{event} . "\n";
     my $cmd = $task->{program} . " " . $task->{args};
     my $cmdresult = `$cmd`;
     my $cmdstatus = $? . "";
-#    my $result = {
-#        name   => $task->{name} . "",
-#        result => $cmdresult,
-#        status => $cmdstatus,
-#        who => $task->{who} . "",
-#        where => $task->{where} . "",
-#        event => $task->{event} . "" || 'irc_tld_ressult',
-#    };
     my $r = {};
     for my $k (keys %{$task}) {
         next unless defined $task->{$k};
@@ -183,8 +134,6 @@ sub do_stuff {
     }
     $r->{result} = $cmdresult if $cmdresult;
     $r->{status} = $cmdstatus if defined $cmdstatus;
-    #$r->{name} = $task->{name} if $task->{name};    
-    #$result{callback} = $task->{callback} if $task->{callback};
 
     # Generate some output via the filter.  Note the strange use of list
     # references.
@@ -202,21 +151,11 @@ sub task_result {
     my $r = $_[ARG0];
     LOG("Task result");
     LOG(YAML::Dump($_[ARG0]));
-   #print "[$s] Result for $result->{task}: $result->{result} ( $result->{status} )\n";
-#    my $cmd = $s->_get_root->POE->IRC->poco->plugin_get('BotCmdPlus')->get_cmd('tld')->{plugin};
-#    print "CMD: $cmd\n";
-#    $cmd->_callback();# if ref($cmd);
-#print Dumper $r;
 
     $s->_get_root->POE->IRC->poco->send_event(
         $r->{event} => $r->{who} => $r->{where} => $r->{result}
     );
 
-#    if (defined $result->{callback}) {
-#        print "Executing Callback\n";
-#        my $callback = $result->{callback};
-#        $s->$callback($result);
-#    }
 }
 
 # Catch and display information from the child's STDERR.  This was
@@ -246,6 +185,4 @@ sub sig_child {
     LOG("warn $$: Child $pid exited");
 }
 
-# Run until there are no more tasks.
-#$poe_kernel->run();
-#exit 0;
+1;

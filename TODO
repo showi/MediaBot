@@ -1,4 +1,33 @@
-TODO
+[TODO]
 ----
 
-- Remove configuration from file (MediaBot::IRC). The bot must gather information from the database instead.
+1.1 Global
+----------
+ - Put IRC POE Session in Shoze::POE::IRC
+ - Put WS  POE Session in Shoze::POE::WS (Web Service)
+ - Use singleton and pool of objects
+ 
+1.1 REST
+--------
+ - Party Line over HTTPS and IRC
+ - Log channels activities and commands in database 
+ - Dump channel activity to an other channel over HTTPS and IRC
+ - Database replication in Master/Slave mode over HTTPS and IRC 
+   (One to rule dem all) 
+
+Send
+ Channel msg event to files, to other channels, to bots:
+ set_channel(#erreur404);
+ add_files (/log/shoze.erreur404.log)
+ add_bot('bozoo');
+ 
+ On préfère send les infos via https plutôt que irc pour des raison de reliabilité.
+ Fallback sur irc si pas de https
+ 
+ 
+ 
+	
+2. Done
+-------
+- Remove configuration from file (MediaBot::IRC). The bot must gather 
+  informations from the database instead.

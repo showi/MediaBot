@@ -8,7 +8,7 @@ use Carp;
 use POE::Component::IRC::Plugin qw(:ALL);
 
 use lib qw(../../../../../);
-use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
+use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(get_cmd);
@@ -25,7 +25,7 @@ use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Apero;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Tld;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::EasySentence;
 
-our %fields = ( cmd => undef, plugins => undef, irc => undef );
+our %fields = ( _parent => undef, cmd => undef, plugins => undef, irc => undef );
 
 sub new {
     my ( $proto, $parent ) = @_;
@@ -35,6 +35,7 @@ sub new {
         %fields,
     };
     bless( $s, $class );
+    $s->_parent($parent);
     $s->cmd(
         {
             'plugin_reload' => {
@@ -83,7 +84,7 @@ sub _load_plugin {
         my $name   = ucfirst( $_ );
         my $plugin = "App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::$name";
         LOG("Adding plugin $name");
-        $s->irc->plugin_add( "BotCmdPlus_$name", $plugin->new );
+        $s->irc->plugin_add( "BotCmdPlus_$name", $plugin->new($s) );
     }
 }
 

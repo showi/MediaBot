@@ -17,7 +17,7 @@ use App::IRC::Bot::Shoze::String;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper
   qw(_register_cmd _unregister_cmd get_cmd _n_error);
 
-our %fields = ( cmd => undef);
+our %fields = ( cmd => undef, _parent => undef);
 
 sub new {
     my ( $proto, $parent ) = @_;
@@ -26,11 +26,13 @@ sub new {
         _permitted => \%fields,
         %fields,
     };
+    
+    bless( $s, $class );
+    $s->_parent($parent);
     my $program = $s->_get_root->_path ."/scripts/tld.pl";
     unless (-x $program) {
         die "Error: $program not found or not executable";
     }
-    bless( $s, $class );
     $s->cmd(
         {
             'tld' => {
@@ -87,9 +89,9 @@ sub tld {
 
     my $cmd;
     ( $cmd, $msg ) = split( /\s+/, str_chomp($msg) );
-    unless ( $msg =~ /^[\w\d]{2,5}$/ ) {
-        return $s->_n_error( $irc, $Session->nick, "Invalid tld '$msg'" );
-    }
+#    unless ( $msg =~ /^[\w\d]{2,5}$/ ) {
+#        return $s->_n_error( $irc, $Session->nick, "Invalid tld '$msg'" );
+#    }
     my $SubTask = $irc->{Shoze}->POE->SubTask;
     my $data = { 
                 event  => "irc_tld_result",

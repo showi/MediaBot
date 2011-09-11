@@ -55,7 +55,8 @@ sub S_324 {
     my ( $chan, $mode, @args ) = ( $1, $3, split( /\s+/, str_chomp($4) ) );
     LOG("Channel $1 have mode $2");
     my $db      = $irc->{database};
-    my $Channel = $db->Channels->get_by($chan);
+    my ($type, $channame) = ($chan =~ /^(#|&)(.*)$/);
+    my $Channel = $db->Channels->get_by({type => $type, name => $channame});
     return PCI_EAT_NONE unless $Channel;
     return PCI_EAT_NONE unless $Channel->auto_mode;
 
@@ -132,7 +133,8 @@ sub S_join {
     my ( $nick, $user, $hostmask ) = parse_user($who);
     if ( $irc->nick_name eq $nick ) {
         my $db      = $irc->{database};
-        my $Channel = $db->Channels->get_by($where);
+        my ($type, $channame) = ($where =~ /^(#|&)(.*)$/);
+        my $Channel = $db->Channels->get_by({type => $type, name => $channame});
         return PCI_EAT_NONE unless $Channel;
         $Channel->bot_joined(1);
         $Channel->bot_mode(undef);
@@ -147,10 +149,11 @@ sub S_invite {
     my $db = $irc->{database};
 
     my ( $who, $where ) = ( ${ $_[0] }, ${ $_[1] } );
-    my $Channel = $db->Channels->get_by($where);
+     my ($type, $channame) = ($where =~ /^(#|&)(.*)$/);
+    my $Channel = $db->Channels->get_by({type => $type, name => $channame});
     return PCI_EAT_NONE unless $Channel;
     return PCI_EAT_NONE if $Channel->bot_joined;
-    my $TmpSession = new App::IRC::Bot::Shoze::Db::Sessions::Object();
+    my $TmpSession = new App::IRC::Bot::Shoze::Db::Sessions::Object($db);
     $TmpSession->parse_who($who);
     my $Session =
       $db->Sessions->get( $TmpSession->nick, $TmpSession->user,
@@ -177,7 +180,8 @@ sub S_part {
     my $db = $irc->{database};
 
     if ( $irc->nick_name eq $nick ) {
-        my $Channel = $db->Channels->get_by($where);
+        my ($type, $channame) = ($where =~ /^(#|&)(.*)$/);
+        my $Channel = $db->Channels->get_by({type => $type, name => $channame});
         unless ($Channel) {
             WARN("Do not find channel '$where' in database");
             return PCI_EAT_ALL;

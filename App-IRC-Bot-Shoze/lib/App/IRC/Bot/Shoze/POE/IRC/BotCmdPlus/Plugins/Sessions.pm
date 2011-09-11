@@ -102,7 +102,7 @@ sub _default {
         LOG("Updating session");
         $db->Sessions->update($Session);
         if ( $Session->ignore ) {
-            LOG( "Ignoring " . $Session->pretty );
+            LOG( "Ignoring " . $Session->_pretty );
 #            $irc->yield( notice => $Session->nick =>
 #                  "You re boring... keep quiet please!" );
             return PCI_EAT_ALL;

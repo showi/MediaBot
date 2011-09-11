@@ -39,7 +39,7 @@ my %fields = (
 
     #Commands => undef,
     #Sessions => undef,
-    IRC => undef,
+    IRC     => undef,
     SubTask => undef,
 );
 
@@ -62,7 +62,8 @@ sub new {
     };
     bless( $s, $class );
     $s->_parent($parent);
-    $s->SubTask(new App::IRC::Bot::Shoze::POE::SubTask($s));
+    $s->SubTask( new App::IRC::Bot::Shoze::POE::SubTask($s) );
+
     # IRC
     ######
     if ( $s->_parent->Config->irc->{enable} ) {
@@ -160,28 +161,27 @@ sub _start {
 
         # Our plugins system
         $irc->plugin_add( 'BotCmdPlus',
-            new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus() );
+            new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus($s) );
 
         $irc->plugin_add( 'BotCmdPlus_Sessions',
-            new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Sessions()
-        );
+            new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Sessions(
+                $s) );
 
         $irc->plugin_add( 'BotCmdPlus_Dispatch',
-            new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Dispatch()
-        );
+            new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Dispatch(
+                $s) );
 
-
-            
         $irc->plugin_add(
             'BotCmdPlus_PluginsManagement',
             new
               App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::PluginsManagement(
+                $s
               )
         );
-        
+
         $irc->plugin_add( 'Apero',
-            new App::IRC::Bot::Shoze::POE::IRC::Apero() );
-            
+            new App::IRC::Bot::Shoze::POE::IRC::Apero($s) );
+
         # End of our plugins
         my %channels;
         for ( $irc->{database}->Channels->list ) {

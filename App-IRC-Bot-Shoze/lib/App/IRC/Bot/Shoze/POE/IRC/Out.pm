@@ -42,7 +42,7 @@ sub join {
     };
     my ( $type, $name ) = ( $1, $2 );
     my $db = $s->_get_root->Db;
-    my $Channel = $db->Channels->get_by( $type, $name );
+    my $Channel = $db->Channels->get_by( { type => $type, name => $name } );
     unless ($Channel) {
         WARN("Cannot join unregistered channel $type$name.");
         return BOT_CHAN_UNREGISTERED;
@@ -73,7 +73,7 @@ sub part {
     };
     my ( $type, $name ) = ( $1, $2 );
     my $db = $s->_get_root->Db;
-    my $Channel = $db->Channels->get_by( $type, $name );
+    my $Channel = $db->Channels->get_by( {type => $type, name => $name} );
     unless ($Channel) {
         WARN("Cannot part unregistered channel $type$name.");
         return BOT_CHAN_UNREGISTERED;
@@ -90,4 +90,5 @@ sub part {
     $s->_parent->poco->yield(part => $channame);
     return BOT_OK;
 }
+
 1;

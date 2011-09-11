@@ -41,7 +41,7 @@ $otld = decode( 'utf8', $ARGV[0] );
 $tld = domain_to_ascii($otld);
 
 
-unless ( $tld =~ /^[\w\d-]{2,15}$/ ) {
+unless ( $tld =~ /^[\w\d-]{2,30}$/ ) {
     myexit( 1, $SCRIPT_NAME . ', invalid tld format "' . $tld . '"' );
 }
 

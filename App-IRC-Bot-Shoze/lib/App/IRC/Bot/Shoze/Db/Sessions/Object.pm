@@ -6,7 +6,7 @@ use warnings;
 use Carp;
 
 use lib qw(../../../);
-use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
+use App::IRC::Bot::Shoze::Class qw(DESTROY);
 use App::IRC::Bot::Shoze::Db::SynchObject qw(:ALL);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;

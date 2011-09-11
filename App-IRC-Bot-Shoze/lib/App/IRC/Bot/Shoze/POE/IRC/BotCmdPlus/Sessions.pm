@@ -1,4 +1,4 @@
-package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Sessions;
+package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Sessions;
 
 use strict;
 use warnings;

@@ -194,7 +194,7 @@ sub S_part {
     }
     else {
         my $NewSession = $db->Sessions->get( $nick, $user, $hostmask );
-        $db->Sessions->delete( $NewSession->id );
+        $NewSession->_delete;
     }
     return PCI_EAT_NONE;
 }

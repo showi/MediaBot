@@ -56,17 +56,6 @@ sub S_mode {
     my ( $who, $where, $mode ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my ( $nick, $user, $host ) = parse_user($who);
     LOG("$who wanna set $mode on $where");
-
-    #    if ( is_valid_chan_name($where) ) {
-    #        my $Channel = $db->Channels->get_by($where);
-    #        if (    $nick ne $irc->nick_name
-    #            and $Channel
-    #            and $Channel->bot_mode
-    #            and $Channel->bot_mode eq 'o' )
-    #        {
-    #            $irc->yield( 'mode', $Channel->_usable_name );
-    #        }
-    #    }
     $self->set_mode( $irc, $who, $where, $mode, splice( @_, 3, $#_ ) );
     return PCI_EAT_ALL;
 }

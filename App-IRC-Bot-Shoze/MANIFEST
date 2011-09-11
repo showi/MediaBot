@@ -31,6 +31,7 @@ lib/App/IRC/Bot/Shoze/Db/ChannelUsers/Object.pm
 lib/App/IRC/Bot/Shoze/Log.pm
 lib/App/IRC/Bot/Shoze/POE.pm
 lib/App/IRC/Bot/Shoze/POE/IRC.pm
+lib/App/IRC/Bot/Shoze/POE/WS.pm
 lib/App/IRC/Bot/Shoze/POE/SubTask.pm
 lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus.pm
 lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Channel.pm

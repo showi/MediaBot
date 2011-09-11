@@ -1,4 +1,4 @@
-package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Dispatch;
+package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Dispatch;
 
 use strict;
 use warnings;

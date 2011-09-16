@@ -40,13 +40,6 @@ sub PCI_register {
     $irc->plugin_add( 'BotCmdPlus_Dispatch',
         new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Dispatch($s) );
    
-#    $irc->plugin_add(
-#        'BotCmdPlus_PluginsManagement',
-#        new
-#          App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::PluginsManagement(
-#            $s
-#          )
-#    );
     return 1;
 }
 
@@ -57,13 +50,6 @@ sub PCI_unregister {
 
     $irc->plugin_del( 'BotCmdPlus_Dispatch',
         new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Dispatch($s) );
-#        $irc->plugin_del(
-#        'BotCmdPlus_PluginsManagement',
-#        new
-#          App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::PluginsManagement(
-#            $s
-#          )
-#    );
     delete $s->{cmd};
     return 1;
 }

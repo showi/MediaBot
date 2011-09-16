@@ -5,7 +5,9 @@ use warnings;
 
 use Carp;
 
-use lib qw(../../);
+use IRC::Utils qw(:ALL);
+
+use lib qw(../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
 use App::IRC::Bot::Shoze::Db::Networks::Object qw();
 use App::IRC::Bot::Shoze::Log;
@@ -13,7 +15,7 @@ use App::IRC::Bot::Shoze::Log;
 our $AUTOLOAD;
 
 our %fields = (
-    handle  => undef,
+    _handle => undef,
     _parent => undef,
 );
 
@@ -21,7 +23,7 @@ our %fields = (
 #############
 sub new {
     my ( $proto, $parent ) = @_;
-    DEBUG( "Creating new " . __PACKAGE__ );
+    DEBUG( "Creating new " . __PACKAGE__ , 6);
     croak "No parent specified" unless ref $parent;
     my $class = ref($proto) || $proto;
     my $s = {
@@ -33,91 +35,33 @@ sub new {
     return $s;
 }
 
-# Network exists?
-##############
-sub exists {
-    my ( $s, $name ) = @_;
-    $s->_parent->die_if_not_open();
-    my $h     = $s->_parent->handle;
-    my $query = <<SQL;
-		SELECT * FROM networks WHERE name= ?
-SQL
-    my $sth = $h->prepare($query)
-      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute($name)
-      or die "Cannot execute query '$query' (" . $h->errstr . ")";
-    my $row = $sth->fetch;
-    return $row if $row;
-    return 0;
+sub list {
+    my $s = shift;
+    my $C = new App::IRC::Bot::Shoze::Db::Networks::Object( $s->_parent );
+    return $C->_list();
 }
 
-# Create network
-#############
-sub create {
-    my ( $s, $name, $description ) = @_;
-    $s->_parent->die_if_not_open();
-    if ( $s->exists($name) ) {
-        $s->LOG("DB::Error Network '$name' already exists");
-        return 1;
-    }
-    my $h     = $s->_parent->handle;
-    my $query = <<SQL;
-		INSERT INTO networks (name, description)
-		VALUES (?, ?)
-SQL
-    my $sth = $h->prepare($query)
-      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute( $name, $description )
-      or die "Cannot execute query '$query' (" . $h->errstr . ")";
-    return 0;
-}
-
-# Get network by name
-#####################
 sub get {
-    my ( $s, $name ) = @_;
-    $s->_parent->die_if_not_open();
-    unless ( $s->exists($name) ) {
-        $s->LOG("DB::Error Network '$name' doesn't exist");
-        return undef;
-    }
-    my $h     = $s->_parent->handle;
-    my $query = <<SQL;
-		SELECT * FROM networks WHERE name= ?;
-SQL
-    my $sth = $h->prepare($query)
-      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute($name)
-      or die "Cannot execute query '$query' (" . $h->errstr . ")";
-    my $rn = $sth->fetchrow_hashref;
-    return undef unless $rn;
-    my $N = new App::IRC::Bot::Shoze::Db::Networks::Object();
-
-    for my $k ( keys %{$N} ) {
-        next if $k =~ /^_.*/;
-        $N->$k( $rn->{$k} );
-    }
-    return $N;
+    my ( $s, $id ) = @_;
+    DEBUG( __PACKAGE__ . "::get($id)", 3);
+    my $C = new App::IRC::Bot::Shoze::Db::Networks::Object( $s->_parent );
+    return $C->_get( $id );
 }
 
-# Delete network by name
-########################
-sub delete {
-    my ( $s, $name ) = @_;
-    $s->_parent->die_if_not_open();
-    unless ( $s->exists($name) ) {
-        $s->LOG("DB::Error Cannot remove non existing network '$name'");
-        return 1;
-    }
-    my $h     = $s->_parent->handle;
-    my $query = <<SQL;
-		DELETE FROM networks WHERE name= ? 
-SQL
-    my $sth = $h->prepare($query)
-      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute($name)
-      or die "Cannot execute query '$query' (" . $h->errstr . ")";
-    return 0;
+sub get_by {
+    my ( $s, $hash ) = @_;
+    DEBUG( __PACKAGE__ . "::get_by($hash)", 3);
+    my $C = new App::IRC::Bot::Shoze::Db::Networks::Object( $s->_parent );
+    return $C->_get_by( $hash );
 }
+
+sub create {
+    my ( $s, $trigger, $text) = @_;
+    my $A = new App::IRC::Bot::Shoze::Db::Networks::Object( $s->_parent );
+    $A->trigger($trigger);
+    $A->text($text);
+    return $A->_create();
+}
+
 
 1;

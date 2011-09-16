@@ -28,6 +28,10 @@ lib/App/IRC/Bot/Shoze/Db/EasySentence.pm
 lib/App/IRC/Bot/Shoze/Db/EasySentence/Object.pm
 lib/App/IRC/Bot/Shoze/Db/ChannelUsers.pm
 lib/App/IRC/Bot/Shoze/Db/ChannelUsers/Object.pm
+lib/App/IRC/Bot/Shoze/Db/ChannelAutoMode.pm
+lib/App/IRC/Bot/Shoze/Db/ChannelAutoMode/Object.pm
+lib/App/IRC/Bot/Shoze/Db/ChannelUserList.pm
+lib/App/IRC/Bot/Shoze/Db/ChannelUserList/Object.pm
 lib/App/IRC/Bot/Shoze/Log.pm
 lib/App/IRC/Bot/Shoze/POE.pm
 lib/App/IRC/Bot/Shoze/POE/IRC.pm
@@ -36,6 +40,8 @@ lib/App/IRC/Bot/Shoze/POE/SubTask.pm
 lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus.pm
 lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Channel.pm
 lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelUser.pm
+lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelAutoMode.pm
+lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelUserList.pm
 lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Dispatch.pm
 lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Help.pm
 lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Info.pm

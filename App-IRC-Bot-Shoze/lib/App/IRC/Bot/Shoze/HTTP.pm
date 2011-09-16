@@ -1,4 +1,4 @@
-package App::IRC::Bot::Shoze::REST;
+package App::IRC::Bot::Shoze::HTTP;
 
 # Restfull authentication
 # http://broadcast.oreilly.com/2009/12/principles-for-standardized-rest-authentication.html
@@ -15,10 +15,10 @@ use Digest::SHA;
 use YAML qw'freeze thaw Bless';
 use URI qw(URI);
 
-use lib qw(../);
+use lib qw(../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
 use App::IRC::Bot::Shoze::Log;
-use App::IRC::Bot::Shoze::REST::Channels;
+use App::IRC::Bot::Shoze::HTTP::Channels;
 
 our $AUTOLOAD;
 
@@ -39,17 +39,27 @@ sub new {
     };
     bless( $s, $class );
     $s->_parent($parent);
-    $s->Channels( new App::IRC::Bot::Shoze::REST::Channels($s) );
+    $s->Channels( new App::IRC::Bot::Shoze::HTTP::Channels($s) );
     return $s;
 }
 
 sub request {
     my ( $s, $host, $port, $ressource, $action, $apikey, $apikey_private, $format ) = @_;
-    my $module = ucfirst($ressource);
+#    my $module = ucfirst($ressource);
+#    $module =~ s/^(.*)\/+$/$1/;
+#    $module =~s /\//::/g;
+#    $module = "App::IRC::Bot::Shoze::HTTP$module";
+#    my $res = eval "require $module";
+#    unless($res) {
+#        print "Cannot load module $module\n";
+#        return
+#    } else {
+#        print "Module $module loaded\n";
+#    }
     $format = 'html' unless $format;
 
-    croak "Invalid ressource $ressource ($module)"
-      unless ( defined $s->{$module} );
+#    croak "Invalid ressource $ressource ($module)"
+#      unless ( defined $s->{$module} );
     my @dactions = qw(get create delete list);
     croak "Invalid action $action"
       unless grep ( $action, @dactions );
@@ -58,7 +68,7 @@ sub request {
     my $uri = new URI();
     $uri->scheme('https');
     $uri->host("$host:$port");
-    $uri->path("$ressource/");
+    $uri->path("$ressource");
 
     if ( $action eq 'list' ) {
         $r->method('GET');
@@ -156,7 +166,9 @@ sub sign_uri {
 
 sub dispatch {
     my ( $s, $http_request ) = @_;
+
     my $uri   = $http_request->uri;    #URI->new( $http_request->uri );
+        LOG("Get HTTP request: $uri");
     my %param = $uri->query_form;
 
     my $time = time;
@@ -178,8 +190,9 @@ sub dispatch {
     return $s->bad_request_badsignature
       unless ( $param{signature} eq $insignature );
 
-    $http_request->uri->path =~ m|^/(([\w\d][\w\d_-]*)/)(([\d]+)/)?$|
+    $http_request->uri->path =~ m|^[\w\d/_-]+$|
       or do {
+        LOG ("Bad request\n");
         my $r = HTTP::Response->new( 400, "Malformed request!" );
         $r->push_header( 'Content-type', 'text/html' );
         $r->content( "

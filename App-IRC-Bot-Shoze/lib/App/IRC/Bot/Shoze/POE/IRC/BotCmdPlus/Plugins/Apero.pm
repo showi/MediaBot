@@ -26,48 +26,6 @@ sub new {
     bless( $s, $class );
     $s->cmd(
         {
-#            'apero_add' => {
-#                access   => 'msg',
-#                lvl      => 800,
-#                help_cmd => '!apero.add <name> <trigger>',
-#                help_description => 'Add a new apero',
-#            },
-#            'apero_del' => {
-#                access   => 'msg',
-#                lvl      => 800,
-#                help_cmd => '!apero.del <name>',
-#                help_description => 'Deleting a give apero',
-#            },
-#            'apero_list' => {
-#                access   => 'msg',
-#                lvl      => 800,
-#                help_cmd => '!apero.list',
-#                help_description => 'List apero',
-#            },
-#            'apero_set' => {
-#                access           => 'msg',
-#                lvl              => 800,
-#                help_cmd         => '!apero.set <name> <trigger> <value>',
-#                help_description => 'Setting trigger for apero (require reloading)',
-#            },
-#            'apero_set_text' => {
-#                access           => 'msg',
-#                lvl              => 800,
-#                help_cmd         => '!apero.set.text <name> <index> <text>',
-#                help_description => 'Setting text at index',
-#            },
-#            'apero_set_chantext' => {
-#                access           => 'msg',
-#                lvl              => 800,
-#                help_cmd         => '!apero.set.chantext <name> <index> <text>',
-#                help_description => 'Setting channel text at index',
-#            },
-#            'apero_info' => {
-#                access           => 'msg',
-#                lvl              => 800,
-#                help_cmd         => '!apero.info <name>',
-#                help_description => 'Information about a given apero',
-#            },
         }
     );
     return $s;

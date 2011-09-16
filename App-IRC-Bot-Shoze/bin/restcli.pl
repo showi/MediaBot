@@ -4,11 +4,11 @@ package Dumb;
 
 use Carp;
 
-use lib qw(../);
+use lib qw(../lib/);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
 use App::IRC::Bot::Shoze::Config;
 use App::IRC::Bot::Shoze::Db;
-use App::IRC::Bot::Shoze::REST;
+use App::IRC::Bot::Shoze::HTTP;
 
 our $AUTOLOAD;
 
@@ -16,7 +16,7 @@ our %fields = (
     _path  => undef,
     Config => undef,
     Db     => undef,
-    REST   => undef,
+    HTTP   => undef,
 );
 
 # Constructor
@@ -34,7 +34,7 @@ sub new {
     $s->_path("/srv/shoze/");
     $s->Config( new App::IRC::Bot::Shoze::Config($s) );
     $s->Db( new App::IRC::Bot::Shoze::Db($s) );
-    $s->REST( new App::IRC::Bot::Shoze::REST($s) );
+    $s->HTTP( new App::IRC::Bot::Shoze::HTTP($s) );
     return $s;
 }
 1;
@@ -63,7 +63,8 @@ my $ua = LWP::UserAgent->new(
 sub request {
     my ( $ressource, $action ) = @_;
     my $request =
-    $Dumb->REST->request( $host, $port, $ressource, $action, $apikey, $apikey_private );
+    $Dumb->HTTP->request( $host, $port, $ressource, $action, $apikey, $apikey_private );
+    print "Requesting: " . $request->uri . "\n";
     my $response = $ua->request($request);
     if ( $response->is_success ) {
         my $res = $response->decoded_content;
@@ -82,8 +83,8 @@ my $term = new Term::ShellUI(
             desc    => "listing channel",
             maxargs => 0,
             proc    => sub { 
-                if (my $r = request( 'channels', 'list' )) {
-                    print "Listing channels:\n";
+                if (my $r = request( '/rest/db/user/../', 'list' )) {
+                    print "Listing users:\n";
                     print "-----------------\n";
                     for (@{$r}) {
                         print " - " . $_->{type}.$_->{name} . " (" . $_->{user_name} . ")\n";

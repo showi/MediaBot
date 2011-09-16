@@ -16,7 +16,8 @@ use App::IRC::Bot::Shoze::String;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(:ALL);
 use App::IRC::Bot::Shoze::Db::EasySentence::Object;
 
-our %fields = ( cmd => undef, kind => undef, _parent => undef, authtypes => undef, );
+our %fields =
+  ( cmd => undef, kind => undef, _parent => undef, authtypes => undef, );
 
 ###############################################################################
 sub new {
@@ -31,7 +32,7 @@ sub new {
     $s->kind( {} );
     $s->kind->{insulte} = 1;
     my @auth = qw(proverbe insulte carambar);
-    $s->authtypes(\@auth);
+    $s->authtypes( \@auth );
     $s->cmd(
         {
             'insulte' => {
@@ -75,12 +76,12 @@ sub sentence_add {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'sentence_add';
     my $PCMD    = $s->get_cmd($cmdname);
-    my $db      = $irc->{database};
+    my $db      = App::IRC::Bot::Shoze::Db->new;
 
     $msg = str_chomp($msg);
     my ( $cmd, $type, @sentauthor ) = split( /\s+/, $msg );
-   
-    unless ( grep ( /$type/, @{$s->authtypes}) && @sentauthor ) {
+
+    unless ( grep ( /$type/, @{ $s->authtypes } ) && @sentauthor ) {
         return $s->_n_error( $irc, $Session->nick,
             "Invalid sentence type 'type', must be proverbe|insulte|carambar" );
     }
@@ -116,26 +117,27 @@ sub sentence_list {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'sentence_list';
     my $PCMD    = $s->get_cmd($cmdname);
-    my $db      = $irc->{database};
+    my $db      = App::IRC::Bot::Shoze::Db->new;
 
     $msg = str_chomp($msg);
     my ( $cmd, $type, @pattern ) = split /\s+/, $msg;
     my $pattern = join ' ', @pattern;
     LOG("$cmdname: $type @pattern");
-    unless ( grep ( /$type/, @{$s->authtypes})) {
+    unless ( grep ( /$type/, @{ $s->authtypes } ) ) {
         return $s->_n_error( $irc, $Session->nick,
             "Invalid sentence type 'type', must be proverbe|insulte|carambar" );
     }
     my @list;
-   if ($pattern) {
-        @list = $db->Sentences->list_match($type, {text => $pattern});
-   } else {
+    if ($pattern) {
+        @list = $db->Sentences->list_match( $type, { text => $pattern } );
+    }
+    else {
         @list = $db->Sentences->list($type);
-   }
+    }
     my $str = "Listing '$type' sentences:\n";
     for (@list) {
         $str .= '[' . $_->id . '] ';
-        $str .= '<<'.$_->author.'>>  ' if $_->author;
+        $str .= '<<' . $_->author . '>>  ' if $_->author;
         $str .= $_->text . "\n";
     }
     $s->_send_lines( $irc, 'notice', $Session->nick, split( /\n/, $str ) );
@@ -148,7 +150,7 @@ sub insulte {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'insulte';
     my $PCMD    = $self->get_cmd($cmdname);
-    my $db      = $irc->{database};
+    my $db      = App::IRC::Bot::Shoze::Db->new;
 
     my @list = $db->Sentences->list('insulte');
     unless (@list) {
@@ -171,7 +173,7 @@ sub carambar {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'carambar';
     my $PCMD    = $self->get_cmd($cmdname);
-    my $db      = $irc->{database};
+    my $db      = App::IRC::Bot::Shoze::Db->new;
 
     my @list = $db->Sentences->list('carambar');
     unless (@list) {
@@ -195,7 +197,7 @@ sub proverbe {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'proverbe';
     my $PCMD    = $self->get_cmd($cmdname);
-    my $db      = $irc->{database};
+    my $db      = App::IRC::Bot::Shoze::Db->new;
 
     my @list = $db->Sentences->list('proverbe');
     unless (@list) {

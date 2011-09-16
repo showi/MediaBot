@@ -52,7 +52,7 @@ sub PCI_unregister {
 
 sub S_mode {
     my ( $self, $irc ) = splice @_, 0, 2;
-    my $db = $irc->{database};
+    my $db = App::IRC::Bot::Shoze::Db->new;
     my ( $who, $where, $mode ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my ( $nick, $user, $host ) = parse_user($who);
     LOG("$who wanna set $mode on $where");
@@ -64,7 +64,7 @@ sub set_mode {
     my ( $s, $irc ) = splice @_, 0, 2;
     my ( $who, $target, $mode, @args ) = @_;
     my ( $nick, $user, $host ) = parse_user($who);
-    my $db = $irc->{database};
+    my $db = App::IRC::Bot::Shoze::Db->new;
     $mode = unparse_mode_line($mode);
     if ( $nick ne $irc->nick_name ) {
         LOG("Event on mode $mode");
@@ -88,8 +88,9 @@ sub set_mode {
                 if ( $$arg eq $irc->nick_name
                     and is_valid_chan_name($target) )
                 {
-                    my ($type, $channame) = ($target =~ /^(#|&)(.*)$/);
-                    my $Channel = $db->Channels->get_by({ type => $type, name => $channame });
+                    my ( $type, $channame ) = ( $target =~ /^(#|&)(.*)$/ );
+                    my $Channel = $db->Channels->get_by(
+                        { type => $type, name => $channame } );
                     if ( $sign eq '+' ) {
                         $Channel->bot_mode($op);
                     }
@@ -97,7 +98,10 @@ sub set_mode {
                         $Channel->bot_mode(undef);
                     }
                     $Channel->_update;
-                    if ( $sign eq '+' and  $op eq 'o' and $nick ne $irc->nick_name ) {
+                    if (    $sign eq '+'
+                        and $op eq 'o'
+                        and $nick ne $irc->nick_name )
+                    {
                         $irc->yield( 'mode', $Channel->_usable_name );
                     }
                 }

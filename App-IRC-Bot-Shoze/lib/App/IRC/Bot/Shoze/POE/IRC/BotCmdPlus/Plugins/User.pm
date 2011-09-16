@@ -46,15 +46,16 @@ sub new {
                 help_description => 'Add a new user',
             },
             'user_del' => {
-                access   => 'msg',
-                lvl      => 800,
-                help_cmd => '!user.del <user name>',
+                access           => 'msg',
+                lvl              => 800,
+                help_cmd         => '!user.del <user name>',
                 help_description => 'Delete a given user',
             },
             'user_set' => {
-                access           => 'msg',
-                lvl              => 800,
-                help_cmd         => '!user.set <username> <hostmask|pending|lvl> <value>',
+                access => 'msg',
+                lvl    => 800,
+                help_cmd =>
+                  '!user.set <username> <hostmask|pending|lvl> <value>',
                 help_description => 'Adding user',
             },
             'user_list' => {
@@ -80,7 +81,7 @@ sub login {
     my $cmdname = 'login';
     my $PCMD    = $self->get_cmd($cmdname);
     my $C       = $irc->plugin_get('BotCmdPlus');
-    my $db      = $irc->{database};
+    my $db      = App::IRC::Bot::Shoze::Db->new;
 
     if ( $Session->user_id ) {
         $irc->yield( notice => $Session->nick => "[$cmdname] Already logged" );
@@ -89,17 +90,20 @@ sub login {
     my ( $cmd, $user, $password ) = split( /\s+/, $msg );
     LOG("We need to authenticate user '$user' with password '$password'");
 
-    $User = $db->Users->get_by({ name => $user});
+    $User = $db->Users->get_by( { name => $user } );
     unless ($User) {
-        $irc->yield( notice => $Session->nick => "[$cmdname] Invalid username" );
+        $irc->yield(
+            notice => $Session->nick => "[$cmdname] Invalid username" );
         return PCI_EAT_ALL;
     }
-    unless(matches_mask($User->hostmask, $who)) {
-              $irc->yield( notice => $Session->nick => "[$cmdname] Hostmask doesn't match"  );
-        return PCI_EAT_ALL;  
+    unless ( matches_mask( $User->hostmask, $who ) ) {
+        $irc->yield(
+            notice => $Session->nick => "[$cmdname] Hostmask doesn't match" );
+        return PCI_EAT_ALL;
     }
     unless ( $db->Users->check_password( $User, $password ) ) {
-        $irc->yield( notice => $Session->nick => "[$cmdname] Invalid password" );
+        $irc->yield(
+            notice => $Session->nick => "[$cmdname] Invalid password" );
         return PCI_EAT_ALL;
     }
     $irc->yield( notice => $Session->nick => "[$cmdname] Ok you're in" );
@@ -114,7 +118,7 @@ sub logout {
     my $cmdname = 'logout';
     my $PCMD    = $self->get_cmd($cmdname);
     my $C       = $irc->plugin_get('BotCmdPlus');
-    my $db      = $irc->{database};
+    my $db      = App::IRC::Bot::Shoze::Db->new;
 
     unless ( defined $Session->user_id ) {
         $irc->yield(
@@ -132,7 +136,7 @@ sub user_set {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'user_set';
     my $PCMD    = $self->get_cmd($cmdname);
-    my $db      = $irc->{database};
+    my $db      = App::IRC::Bot::Shoze::Db->new;
 
     if ( $User->lvl < $PCMD->{lvl} ) {
         $irc->yield( notice => $Session->nick =>
@@ -147,7 +151,7 @@ sub user_set {
         return PCI_EAT_ALL;
     }
     my $UserTarget;
-    unless ( $UserTarget = $db->Users->get_by({name =>$name}) ) {
+    unless ( $UserTarget = $db->Users->get_by( { name => $name } ) ) {
         $irc->yield( notice => $Session->nick =>
               "[$cmdname] Username '$name' doesn't exist!" );
         return PCI_EAT_ALL;
@@ -159,12 +163,14 @@ sub user_set {
         $value = abs( int($value) );
         if ( $value >= $User->lvl ) {
             $irc->yield( notice => $Session->nick =>
-                  "[$cmdname] You cannot set user lvl higher or equal than yours" );
+"[$cmdname] You cannot set user lvl higher or equal than yours"
+            );
             return PCI_EAT_ALL;
         }
-        if ($UserTarget->lvl >= $User->lvl) {
+        if ( $UserTarget->lvl >= $User->lvl ) {
             $irc->yield( notice => $Session->nick =>
-                  "[$cmdname] You cannot set user lvl to user with same lvl or above!" );
+"[$cmdname] You cannot set user lvl to user with same lvl or above!"
+            );
             return PCI_EAT_ALL;
         }
     }
@@ -179,6 +185,7 @@ sub user_set {
     }
     $UserTarget->$key($value);
     my $res = $UserTarget->_update();
+
     #$db->Users->set( $UserTarget->id, $key, $value );
     if ($res) {
         $irc->yield( notice => $Session->nick =>
@@ -195,7 +202,7 @@ sub user_add {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'user_add';
     my $PCMD    = $self->get_cmd($cmdname);
-    my $db      = $irc->{database};
+    my $db      = App::IRC::Bot::Shoze::Db->new;
 
     my ( $cmd, $name, $password, $hostmask ) = split /\s+/, $msg;
     unless ( is_valid_nick_name($name) ) {
@@ -204,7 +211,7 @@ sub user_add {
         return PCI_EAT_ALL;
     }
     my $NewUser;
-    if ( $NewUser = $db->Users->get_by({name =>$name}) ) {
+    if ( $NewUser = $db->Users->get_by( { name => $name } ) ) {
         $irc->yield( notice => $Session->nick =>
               "[$cmdname] Username '$name' already exist!" );
         return PCI_EAT_ALL;
@@ -216,11 +223,12 @@ sub user_add {
     }
     if ($hostmask) {
         $hostmask = normalize_mask($hostmask);
-    } else {
-     $hostmask = "*!*@*" unless $hostmask;    
+    }
+    else {
+        $hostmask = "*!*@*" unless $hostmask;
     }
     LOG("Adding user $name with password $password [$hostmask]");
-    my $res = $db->Users->create($name, $password, $hostmask);
+    my $res = $db->Users->create( $name, $password, $hostmask );
     if ($res) {
         $irc->yield( notice => $Session->nick =>
               "[$cmdname] Successfully created user '$name'" );
@@ -236,7 +244,7 @@ sub user_del {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'user_del';
     my $PCMD    = $self->get_cmd($cmdname);
-    my $db      = $irc->{database};
+    my $db      = App::IRC::Bot::Shoze::Db->new;
 
     my ( $cmd, $name ) = split /\s+/, $msg;
     unless ( is_valid_nick_name($name) ) {
@@ -245,7 +253,7 @@ sub user_del {
         return PCI_EAT_ALL;
     }
     my $TargetUser;
-    unless ( $TargetUser = $db->Users->get_by({name => $name}) ) {
+    unless ( $TargetUser = $db->Users->get_by( { name => $name } ) ) {
         $irc->yield( notice => $Session->nick =>
               "[$cmdname] Username '$name' doesn't exist!" );
         return PCI_EAT_ALL;
@@ -273,7 +281,7 @@ sub user_list {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'user_list';
     my $PCMD    = $self->get_cmd($cmdname);
-    my $db      = $irc->{database};
+    my $db      = App::IRC::Bot::Shoze::Db->new;
 
     my @list = $db->Users->list;
     unless (@list) {
@@ -284,7 +292,7 @@ sub user_list {
     $irc->yield( notice => $Session->nick => "[$cmdname] Listing user " );
     for my $User (@list) {
         my $str = " - ";
-        $str .= "[".$User->lvl."] " . $User->name . " / " . $User->hostmask;
+        $str .= "[" . $User->lvl . "] " . $User->name . " / " . $User->hostmask;
         $str .= " [IsBot]" if $User->is_bot;
         $str .= " [Pending]" if $User->pending;
         $irc->yield( notice => $Session->nick => $str );
@@ -297,16 +305,16 @@ sub user_info {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'user_info';
     my $PCMD    = $self->get_cmd($cmdname);
-    my $db      = $irc->{database};
+    my $db      = App::IRC::Bot::Shoze::Db->new;
 
     print "msg: $msg\n";
     my $name = ( split( /\s+/, $msg ) )[1];
     $name =~ /^([\w\d_-]+)$/ or do {
-        $irc->yield(
-            notice => $Session->nick => "[$cmdname] Invalid user name '$name'!" );
+        $irc->yield( notice => $Session->nick =>
+              "[$cmdname] Invalid user name '$name'!" );
         return PCI_EAT_ALL;
     };
-    my $TargetUser = $db->Users->get_by( { name => $name} );
+    my $TargetUser = $db->Users->get_by( { name => $name } );
     unless ($TargetUser) {
         $irc->yield( notice => $Session->nick =>
               "[$cmdname] User named $name not found!" );
@@ -315,10 +323,10 @@ sub user_info {
     my $out = "User information [$name]\n";
     $out .= "lvl: " . $TargetUser->lvl . "\n";
     $out .= "hostmask: " . $TargetUser->hostmask . "\n";
-    $out .= "pending: " . ($TargetUser->pending ? "Yes" : "No") . "\n";
-    $out .= "is bot: " . ($TargetUser->is_bot? "Yes": "No") . "\n";
-    $out .= "created on: " . localtime(int $TargetUser->created_on) . "\n";
-    
+    $out .= "pending: " . ( $TargetUser->pending ? "Yes" : "No" ) . "\n";
+    $out .= "is bot: " . ( $TargetUser->is_bot ? "Yes" : "No" ) . "\n";
+    $out .= "created on: " . localtime( int $TargetUser->created_on ) . "\n";
+
     my @lines = split( /\n/, $out );
     $self->_send_lines( $irc, 'notice', $Session->nick, @lines );
     return PCI_EAT_ALL;

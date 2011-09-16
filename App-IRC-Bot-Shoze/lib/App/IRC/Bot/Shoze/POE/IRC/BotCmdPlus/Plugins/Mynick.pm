@@ -65,9 +65,6 @@ sub PCI_unregister {
 sub S_433 {
     my ( $self, $irc ) = splice @_, 0, 2;
 
-    #my ( $who, $where ) = ( ${ $_[0] }, ${ $_[1] } );
-    #my ( $nick, $user, $hostmask ) = parse_user($who);
-    #my $oldnick = (split(/\s+/, ${$_[1]}))[0];
     my $newnick;
     if ($irc->nick_name eq $irc->{Config}->bot->{nick}) {
         $newnick = $irc->nick_name . int(rand(100));

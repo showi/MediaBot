@@ -5,7 +5,7 @@ use warnings;
 
 use Carp;
 
-use lib qw(.);
+use lib qw(lib/);
 
 use App::IRC::Bot::Shoze;
 use App::IRC::Bot::Shoze::Log;
@@ -20,7 +20,7 @@ my $group = 'sho';
 my $BASE_PATH = "/srv/shoze/";
 my $LOG_PATH = $BASE_PATH . "log/";
 
-$App::IRC::Bot::Shoze::Debug = 9;
+$App::IRC::Bot::Shoze::Log::Debug = 9;
 
 
 ###########################################
@@ -86,8 +86,8 @@ $App::IRC::Bot::Shoze::Log::logfile = $LOG_FILE;
 
 App::IRC::Bot::Shoze::Log::flush();
 LOG("----- Starting Shoze -----");
-LOG("Debug level: " . $App::IRC::Bot::Shoze::Debug)
-    if $App::IRC::Bot::Shoze::Debug;
+LOG("Debug level: " . $App::IRC::Bot::Shoze::Log::Debug)
+    if $App::IRC::Bot::Shoze::Log::Debug;
 my $b = new App::IRC::Bot::Shoze($BASE_PATH);
 $SIG{'INT'} = sub {print "\nBye!"; $b->POE->stop(); $b = undef; print "Bye\n";};
 $b->POE->run();

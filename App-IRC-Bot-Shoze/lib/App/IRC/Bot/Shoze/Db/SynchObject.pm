@@ -12,18 +12,14 @@ our @TAGS =
   qw(_add_permitted_field _init_fields 
   _get _get_by _create _delete _delete_by 
   _update _update_by 
-  _list _list_match _pretty AUTOLOAD synched is_synch);
+  _list _list_match _list_by _pretty AUTOLOAD synched is_synch);
 our @ISA         = qw(Exporter);
 our @EXPORT_OK   = @TAGS;
 our %EXPORT_TAGS = ( ALL => [@TAGS] );
 
-use lib qw(../../);
-
-#use MediaBot::Db::Channels::Object qw();
+use lib qw(../../../../../);
 
 use App::IRC::Bot::Shoze::Class qw(DESTROY);
-
-#use MediaBot::Db::Class qw(AUTOLOAD synched is_synch);
 use App::IRC::Bot::Shoze::Log;
 
 use Data::Dumper;
@@ -41,8 +37,7 @@ our %fields = (
 #############
 sub new {
     my ( $proto, $object_name, $object_db ) = @_;
-    print "Proto: $proto\n";
-    DEBUG( "Creating new " . __PACKAGE__ );
+    DEBUG( "Creating new " . __PACKAGE__, 6);
     croak "No database object passed as first argument" unless ref($object_db);
     my $class = ref($proto) || $proto;
     my $s = {
@@ -52,7 +47,6 @@ sub new {
     bless( $s, $class );
     $s->_object_name($object_name);
     $s->_object_db($object_db);
-    ##print Dumper $s;
     return $s;
 }
 
@@ -72,8 +66,6 @@ sub AUTOLOAD {
     $name =~ s/.*://;    # strip fully-qualified portion
     my $type = ref($self) 
         or croak "$self is not an object (AUTOLOAD: $name)";
-    
-   
     unless ( exists $self->{_permitted}->{$name} ) {
         croak "Can't access `$name' field in class $type";
     }
@@ -117,7 +109,6 @@ sub is_synch {
 sub _add_permitted_field {
     my ( $s, $name ) = @_;
     $s->{_permitted}->{$name} = 1;
-
 }
 
 ###############################################################################
@@ -125,8 +116,9 @@ sub _get {
     my ( $s, $id ) = @_;
     $s->_object_db->die_if_not_open();
     my $h     = $s->_object_db->handle;
+    
     my $query = "SELECT * FROM  " . $s->_object_name . " WHERE id = ?;";
-    DEBUG( "[" . $s->_object_name . "] GET Query: $query", 1 );
+    DEBUG( "[" . $s->_object_name . "] GET Query: $query", 4 );
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
     $sth->execute($id)
@@ -138,7 +130,6 @@ sub _get {
         next if $k =~ /^_/;
         $s->{_permitted}->{$k} = 1
           unless defined $s->{_permitted}->{$k};
-        ##print "key: $k\n";
         $s->$k( $rn->{$k} );
     }
     $s->synched;
@@ -150,13 +141,13 @@ sub _delete {
     my ( $s ) = @_;
     $s->_object_db->die_if_not_open();
     my $h     = $s->_object_db->handle;
+    
     my $query = "DELETE FROM  " . $s->_object_name . " WHERE id = ?;";
-    DEBUG( "[" . $s->_object_name . "] DELETE Query: $query", 3 );
+    DEBUG( "[" . $s->_object_name . "] DELETE Query: $query", 4 );
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
     $sth->execute($s->id)
       or die "Cannot execute query '$query' (" . $h->errstr . ")";
-    #$s->_init_fields;
     return $sth->rows;
 }
 
@@ -165,6 +156,7 @@ sub _delete_by {
     my ( $s, $kv) = @_;
     $s->_object_db->die_if_not_open();
     my $h     = $s->_object_db->handle;
+    
     my $query = "DELETE FROM  " . $s->_object_name . " WHERE";
     my @args;
     for my $k(keys %{$kv}) {
@@ -172,7 +164,7 @@ sub _delete_by {
         push @args, $kv->{$k};
     }
     $query =~ s/^(.*)AND\s*/$1/;
-    DEBUG( "[" . $s->_object_name . "] DELETE Query: $query", 3 );
+    DEBUG( "[" . $s->_object_name . "] DELETE Query: $query", 4 );
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
     $sth->execute(@args)
@@ -186,6 +178,7 @@ sub _get_by {
     croak "Not an hash ref" unless ref($kv) =~ /^HASH/;
     $s->_object_db->die_if_not_open();
     my $h     = $s->_object_db->handle;
+    
     my $query = "SELECT * FROM  " . $s->_object_name . " WHERE ";
     my @args;
     for my $k ( keys %{$kv} ) {
@@ -194,7 +187,7 @@ sub _get_by {
         push @args, $kv->{$k};
     }
     $query =~ s/^(.*)\s+AND\s+/$1/;
-    DEBUG( "[" . $s->_object_name . "] GET_BY Query: $query", 3 );
+    DEBUG( "[" . $s->_object_name . "] GET_BY Query: $query", 4 );
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
     $sth->execute(@args)
@@ -216,15 +209,14 @@ sub _list {
     my ( $s) = @_;
     $s->_object_db->die_if_not_open();
     my $h     = $s->_object_db->handle;
+    
     my $query = "SELECT * FROM  " . $s->_object_name . ";";
-    DEBUG( "[" . $s->_object_name . "] LIST Query: $query", 3 );
+    DEBUG( "[" . $s->_object_name . "] LIST Query: $query", 4 );
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
     $sth->execute()
       or die "Cannot execute query '$query' (" . $h->errstr . ")";
-
     my @list;
-
     while ( my $rn = $sth->fetchrow_hashref ) {
         my $O = $s->new( $s->_object_db, $s->_object_name, $s->_object_db );
         for my $k ( keys %{$rn} ) {
@@ -233,16 +225,45 @@ sub _list {
         }
         $O->synched;
         push @list, $O;
-        #print $O->_pretty . "\n";
     }
     return @list;
 }
-
+###############################################################################
+sub _list_by {
+    my ( $s, $matches ) = @_;
+    $s->_object_db->die_if_not_open();
+    my $h     = $s->_object_db->handle;
+    
+    my $query = "SELECT * FROM  " . $s->_object_name . " WHERE";
+    my @args;
+    for my $k (keys %{$matches}) {
+        $query .= " $k = ? AND";
+        push @args, $matches->{$k};
+    }
+    $query =~ s/^(.*)\s+AND/$1/;
+    DEBUG( "[" . $s->_object_name . "] LIST Query: $query", 4 );
+    my $sth = $h->prepare($query)
+      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
+    $sth->execute(@args)
+      or die "Cannot execute query '$query' (" . $h->errstr . ")";
+    my @list;
+    while ( my $rn = $sth->fetchrow_hashref ) {
+        my $O = $s->new( $s->_object_db, $s->_object_name, $s->_object_db );
+        for my $k ( keys %{$rn} ) {
+            next if $k =~ /^_/;
+            $O->$k( $rn->{$k} );
+        }
+        $O->synched;
+        push @list, $O;
+    }
+    return @list;
+}
 ###############################################################################
 sub _list_match {
     my ( $s, $matches ) = @_;
     $s->_object_db->die_if_not_open();
     my $h     = $s->_object_db->handle;
+    
     my $query = "SELECT * FROM  " . $s->_object_name . " WHERE";
     my @args;
     for my $k (keys %{$matches}) {
@@ -250,14 +271,12 @@ sub _list_match {
         push @args, $matches->{$k};
     }
     $query =~ s/^(.*)\s+AND/$1/;
-    DEBUG( "[" . $s->_object_name . "] LIST Query: $query", 3 );
+    DEBUG( "[" . $s->_object_name . "] LIST Query: $query", 4 );
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
     $sth->execute(@args)
       or die "Cannot execute query '$query' (" . $h->errstr . ")";
-
     my @list;
-
     while ( my $rn = $sth->fetchrow_hashref ) {
         my $O = $s->new( $s->_object_db, $s->_object_name, $s->_object_db );
         for my $k ( keys %{$rn} ) {
@@ -266,7 +285,6 @@ sub _list_match {
         }
         $O->synched;
         push @list, $O;
-        #print $O->_pretty . "\n";
     }
     return @list;
 }
@@ -276,9 +294,9 @@ sub _create {
     my ($s) = @_;
     return if $s->is_synch;
     $s->_object_db->die_if_not_open();
-
     my $h = $s->_object_db->handle;
     my @args;
+    
     my $query = "INSERT INTO " . $s->_object_name . " (";
     for my $k ( keys %{ $s->{_permitted} } ) {
         $k =~ /^_/ and next;
@@ -286,7 +304,6 @@ sub _create {
         if (defined $s->{$k}) {
         $query .= "$k, ";
         push @args, $s->$k;
-        #DEBUG("PARAMS $k => " . $s->$k);
         }
     }
     $query =~ s/^(.*),\s*$/$1/;
@@ -297,7 +314,7 @@ sub _create {
     }
     $query =~ s/^(.*),\s*$/$1/;
     $query .= ");";
-    DEBUG( "[" . $s->_object_name . "] CREATE Query: $query", 3 );
+    DEBUG( "[" . $s->_object_name . "] CREATE Query: $query", 4 );
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
     $sth->execute(@args)
@@ -311,9 +328,9 @@ sub _update {
     my ($s) = @_;
     return if $s->is_synch;
     $s->_object_db->die_if_not_open();
-
     my $h = $s->_object_db->handle;
     my @args;
+    
     my $query = "UPDATE " . $s->_object_name . " SET ";
     for my $k ( keys %{ $s->{_changed} } ) {
         $k =~ /^_/ and next;
@@ -324,7 +341,7 @@ sub _update {
     $query =~ s/^(.*),$/$1/;
     $query .= " WHERE id = ?";
     push @args, $s->id;
-    DEBUG( "[" . $s->_object_name . "] GET Query: $query", 3 );
+    DEBUG( "[" . $s->_object_name . "] GET Query: $query", 4 );
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
     $sth->execute(@args)
@@ -338,9 +355,9 @@ sub _update_by {
     my ($s, $kv) = @_;
     return if $s->is_synch;
     $s->_object_db->die_if_not_open();
-
     my $h = $s->_object_db->handle;
     my @args;
+    
     my $query = "UPDATE " . $s->_object_name . " SET ";
     for my $k ( keys %{ $s->{_changed} } ) {
         $k =~ /^_/ and next;
@@ -350,14 +367,12 @@ sub _update_by {
     }
     $query =~ s/^(.*),$/$1/;
     $query .= " WHERE";
-    #my @where_args;
     for my $key(keys %{$kv}) {
         $query .= " $key = ? AND";
         push @args, $kv->{$key};
     }
     $query =~ s/^(.*)AND\s*/$1/;
-    #push @args, $s->id;
-    DEBUG( "[" . $s->_object_name . "] GET Query: $query", 3 );
+    DEBUG( "[" . $s->_object_name . "] GET Query: $query", 4 );
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
     $sth->execute(@args)
@@ -370,6 +385,8 @@ sub _update_by {
 sub _pretty {
     my $s   = shift;
     my $str = '-' x 25 . "\n";
+    $str.= 'SQL TABLE: ' . $s->_object_name . "\n";
+    $str.= '-' x 25 . "\n";
     for my $k ( sort keys %{ $s->{_permitted} } ) {
         next if $k =~ /^_/;
         $str .= "  $k: ";

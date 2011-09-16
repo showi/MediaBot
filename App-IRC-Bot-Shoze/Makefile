@@ -193,12 +193,20 @@ TO_INST_PM = lib/App/IRC/Bot/Shoze.pm \
 	lib/App/IRC/Bot/Shoze/Db.pm \
 	lib/App/IRC/Bot/Shoze/Db/Apero.pm \
 	lib/App/IRC/Bot/Shoze/Db/Apero/Object.pm \
+	lib/App/IRC/Bot/Shoze/Db/ChannelAutoMode.pm \
+	lib/App/IRC/Bot/Shoze/Db/ChannelAutoMode/Object.pm \
+	lib/App/IRC/Bot/Shoze/Db/ChannelUserList.pm \
+	lib/App/IRC/Bot/Shoze/Db/ChannelUserList/Object.pm \
 	lib/App/IRC/Bot/Shoze/Db/ChannelUsers.pm \
 	lib/App/IRC/Bot/Shoze/Db/ChannelUsers/Object.pm \
 	lib/App/IRC/Bot/Shoze/Db/Channels.pm \
 	lib/App/IRC/Bot/Shoze/Db/Channels/Object.pm \
 	lib/App/IRC/Bot/Shoze/Db/EasySentence.pm \
 	lib/App/IRC/Bot/Shoze/Db/EasySentence/Object.pm \
+	lib/App/IRC/Bot/Shoze/Db/Links.pm \
+	lib/App/IRC/Bot/Shoze/Db/Links/Object.pm \
+	lib/App/IRC/Bot/Shoze/Db/NetworkNicks.pm \
+	lib/App/IRC/Bot/Shoze/Db/NetworkNicks/Object.pm \
 	lib/App/IRC/Bot/Shoze/Db/Networks.pm \
 	lib/App/IRC/Bot/Shoze/Db/Networks/Object.pm \
 	lib/App/IRC/Bot/Shoze/Db/ServerCapabilities.pm \
@@ -207,6 +215,9 @@ TO_INST_PM = lib/App/IRC/Bot/Shoze.pm \
 	lib/App/IRC/Bot/Shoze/Db/SynchObject.pm \
 	lib/App/IRC/Bot/Shoze/Db/Users.pm \
 	lib/App/IRC/Bot/Shoze/Db/Users/Object.pm \
+	lib/App/IRC/Bot/Shoze/HTTP.pm \
+	lib/App/IRC/Bot/Shoze/HTTP/Channels.pm \
+	lib/App/IRC/Bot/Shoze/HTTP/rest/db/user.pm \
 	lib/App/IRC/Bot/Shoze/Log.pm \
 	lib/App/IRC/Bot/Shoze/POE.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC.pm \
@@ -216,8 +227,10 @@ TO_INST_PM = lib/App/IRC/Bot/Shoze.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Helper.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Apero.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Channel.pm \
+	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelAutoMode.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelEvent.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelUser.pm \
+	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelUserList.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/DumpChannel.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/EasySentence.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Help.pm \
@@ -231,8 +244,6 @@ TO_INST_PM = lib/App/IRC/Bot/Shoze.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC/Out.pm \
 	lib/App/IRC/Bot/Shoze/POE/SubTask.pm \
 	lib/App/IRC/Bot/Shoze/POE/WS.pm \
-	lib/App/IRC/Bot/Shoze/REST.pm \
-	lib/App/IRC/Bot/Shoze/REST/Channels.pm \
 	lib/App/IRC/Bot/Shoze/String.pm
 
 PM_TO_BLIB = lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/EasySentence.pm \
@@ -241,6 +252,8 @@ PM_TO_BLIB = lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/EasySentence.pm \
 	blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Sessions.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Info.pm \
 	blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Info.pm \
+	lib/App/IRC/Bot/Shoze/Db/NetworkNicks.pm \
+	blib/lib/App/IRC/Bot/Shoze/Db/NetworkNicks.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Mode.pm \
 	blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Mode.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Helper.pm \
@@ -265,12 +278,16 @@ PM_TO_BLIB = lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/EasySentence.pm \
 	blib/lib/App/IRC/Bot/Shoze/Db/Networks/Object.pm \
 	lib/App/IRC/Bot/Shoze/Config.pm \
 	blib/lib/App/IRC/Bot/Shoze/Config.pm \
+	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelAutoMode.pm \
+	blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelAutoMode.pm \
 	lib/App/IRC/Bot/Shoze/Db/Sessions/Object.pm \
 	blib/lib/App/IRC/Bot/Shoze/Db/Sessions/Object.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Mynick.pm \
 	blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Mynick.pm \
 	lib/App/IRC/Bot/Shoze/Db/Apero/Object.pm \
 	blib/lib/App/IRC/Bot/Shoze/Db/Apero/Object.pm \
+	lib/App/IRC/Bot/Shoze/Db/Links/Object.pm \
+	blib/lib/App/IRC/Bot/Shoze/Db/Links/Object.pm \
 	lib/App/IRC/Bot/Shoze/Db/Apero.pm \
 	blib/lib/App/IRC/Bot/Shoze/Db/Apero.pm \
 	lib/App/IRC/Bot/Shoze/Db/Users.pm \
@@ -293,28 +310,44 @@ PM_TO_BLIB = lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/EasySentence.pm \
 	blib/lib/App/IRC/Bot/Shoze/Db/Users/Object.pm \
 	lib/App/IRC/Bot/Shoze/Db/ChannelUsers.pm \
 	blib/lib/App/IRC/Bot/Shoze/Db/ChannelUsers.pm \
+	lib/App/IRC/Bot/Shoze/HTTP/rest/db/user.pm \
+	blib/lib/App/IRC/Bot/Shoze/HTTP/rest/db/user.pm \
 	lib/App/IRC/Bot/Shoze/POE/SubTask.pm \
 	blib/lib/App/IRC/Bot/Shoze/POE/SubTask.pm \
 	lib/App/IRC/Bot/Shoze/Db/EasySentence.pm \
 	blib/lib/App/IRC/Bot/Shoze/Db/EasySentence.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus.pm \
 	blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus.pm \
-	lib/App/IRC/Bot/Shoze/REST.pm \
-	blib/lib/App/IRC/Bot/Shoze/REST.pm \
+	lib/App/IRC/Bot/Shoze/HTTP/Channels.pm \
+	blib/lib/App/IRC/Bot/Shoze/HTTP/Channels.pm \
 	lib/App/IRC/Bot/Shoze/Db/Channels.pm \
 	blib/lib/App/IRC/Bot/Shoze/Db/Channels.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelEvent.pm \
 	blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelEvent.pm \
+	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelUserList.pm \
+	blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelUserList.pm \
 	lib/App/IRC/Bot/Shoze/Log.pm \
 	blib/lib/App/IRC/Bot/Shoze/Log.pm \
 	lib/App/IRC/Bot/Shoze/Constants.pm \
 	blib/lib/App/IRC/Bot/Shoze/Constants.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC/Apero.pm \
 	blib/lib/App/IRC/Bot/Shoze/POE/IRC/Apero.pm \
+	lib/App/IRC/Bot/Shoze/Db/NetworkNicks/Object.pm \
+	blib/lib/App/IRC/Bot/Shoze/Db/NetworkNicks/Object.pm \
+	lib/App/IRC/Bot/Shoze/Db/ChannelAutoMode.pm \
+	blib/lib/App/IRC/Bot/Shoze/Db/ChannelAutoMode.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/User.pm \
 	blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/User.pm \
+	lib/App/IRC/Bot/Shoze/HTTP.pm \
+	blib/lib/App/IRC/Bot/Shoze/HTTP.pm \
 	lib/App/IRC/Bot/Shoze/Db/EasySentence/Object.pm \
 	blib/lib/App/IRC/Bot/Shoze/Db/EasySentence/Object.pm \
+	lib/App/IRC/Bot/Shoze/Db/Links.pm \
+	blib/lib/App/IRC/Bot/Shoze/Db/Links.pm \
+	lib/App/IRC/Bot/Shoze/Db/ChannelUserList/Object.pm \
+	blib/lib/App/IRC/Bot/Shoze/Db/ChannelUserList/Object.pm \
+	lib/App/IRC/Bot/Shoze/Db/ChannelAutoMode/Object.pm \
+	blib/lib/App/IRC/Bot/Shoze/Db/ChannelAutoMode/Object.pm \
 	lib/App/IRC/Bot/Shoze/Db/SynchObject.pm \
 	blib/lib/App/IRC/Bot/Shoze/Db/SynchObject.pm \
 	lib/App/IRC/Bot/Shoze/Db/ChannelUsers/Object.pm \
@@ -325,8 +358,8 @@ PM_TO_BLIB = lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/EasySentence.pm \
 	blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Help.pm \
 	lib/App/IRC/Bot/Shoze/Db/Channels/Object.pm \
 	blib/lib/App/IRC/Bot/Shoze/Db/Channels/Object.pm \
-	lib/App/IRC/Bot/Shoze/REST/Channels.pm \
-	blib/lib/App/IRC/Bot/Shoze/REST/Channels.pm \
+	lib/App/IRC/Bot/Shoze/Db/ChannelUserList.pm \
+	blib/lib/App/IRC/Bot/Shoze/Db/ChannelUserList.pm \
 	lib/App/IRC/Bot/Shoze/Db/Sessions.pm \
 	blib/lib/App/IRC/Bot/Shoze/Db/Sessions.pm \
 	lib/App/IRC/Bot/Shoze/POE/IRC.pm \
@@ -1011,6 +1044,7 @@ pm_to_blib : $(FIRST_MAKEFILE) $(TO_INST_PM)
 	  lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/EasySentence.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/EasySentence.pm \
 	  lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Sessions.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Sessions.pm \
 	  lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Info.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Info.pm \
+	  lib/App/IRC/Bot/Shoze/Db/NetworkNicks.pm blib/lib/App/IRC/Bot/Shoze/Db/NetworkNicks.pm \
 	  lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Mode.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Mode.pm \
 	  lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Helper.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Helper.pm \
 	  lib/App/IRC/Bot/Shoze/POE.pm blib/lib/App/IRC/Bot/Shoze/POE.pm \
@@ -1023,38 +1057,49 @@ pm_to_blib : $(FIRST_MAKEFILE) $(TO_INST_PM)
 	  lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelUser.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelUser.pm \
 	  lib/App/IRC/Bot/Shoze/Db/Networks/Object.pm blib/lib/App/IRC/Bot/Shoze/Db/Networks/Object.pm \
 	  lib/App/IRC/Bot/Shoze/Config.pm blib/lib/App/IRC/Bot/Shoze/Config.pm \
+	  lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelAutoMode.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelAutoMode.pm \
 	  lib/App/IRC/Bot/Shoze/Db/Sessions/Object.pm blib/lib/App/IRC/Bot/Shoze/Db/Sessions/Object.pm \
 	  lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Mynick.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Mynick.pm \
 	  lib/App/IRC/Bot/Shoze/Db/Apero/Object.pm blib/lib/App/IRC/Bot/Shoze/Db/Apero/Object.pm \
+	  lib/App/IRC/Bot/Shoze/Db/Links/Object.pm blib/lib/App/IRC/Bot/Shoze/Db/Links/Object.pm \
 	  lib/App/IRC/Bot/Shoze/Db/Apero.pm blib/lib/App/IRC/Bot/Shoze/Db/Apero.pm \
 	  lib/App/IRC/Bot/Shoze/Db/Users.pm blib/lib/App/IRC/Bot/Shoze/Db/Users.pm \
 	  lib/App/IRC/Bot/Shoze/POE/IRC/Out.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC/Out.pm \
 	  lib/App/IRC/Bot/Shoze/Db/Networks.pm blib/lib/App/IRC/Bot/Shoze/Db/Networks.pm \
-	  lib/App/IRC/Bot/Shoze/Db/ServerCapabilities.pm blib/lib/App/IRC/Bot/Shoze/Db/ServerCapabilities.pm \
+	  lib/App/IRC/Bot/Shoze/Db/ServerCapabilities.pm blib/lib/App/IRC/Bot/Shoze/Db/ServerCapabilities.pm 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)/auto'\'', q[$(PM_FILTER)], '\''$(PERM_DIR)'\'')' -- \
 	  lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Channel.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Channel.pm \
 	  lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Tld.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Tld.pm \
-	  lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/PluginsManagement.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/PluginsManagement.pm 
-	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)/auto'\'', q[$(PM_FILTER)], '\''$(PERM_DIR)'\'')' -- \
+	  lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/PluginsManagement.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/PluginsManagement.pm \
 	  lib/App/IRC/Bot/Shoze/Db.pm blib/lib/App/IRC/Bot/Shoze/Db.pm \
 	  lib/App/IRC/Bot/Shoze/Db/Users/Object.pm blib/lib/App/IRC/Bot/Shoze/Db/Users/Object.pm \
 	  lib/App/IRC/Bot/Shoze/Db/ChannelUsers.pm blib/lib/App/IRC/Bot/Shoze/Db/ChannelUsers.pm \
+	  lib/App/IRC/Bot/Shoze/HTTP/rest/db/user.pm blib/lib/App/IRC/Bot/Shoze/HTTP/rest/db/user.pm \
 	  lib/App/IRC/Bot/Shoze/POE/SubTask.pm blib/lib/App/IRC/Bot/Shoze/POE/SubTask.pm \
 	  lib/App/IRC/Bot/Shoze/Db/EasySentence.pm blib/lib/App/IRC/Bot/Shoze/Db/EasySentence.pm \
 	  lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus.pm \
-	  lib/App/IRC/Bot/Shoze/REST.pm blib/lib/App/IRC/Bot/Shoze/REST.pm \
+	  lib/App/IRC/Bot/Shoze/HTTP/Channels.pm blib/lib/App/IRC/Bot/Shoze/HTTP/Channels.pm \
 	  lib/App/IRC/Bot/Shoze/Db/Channels.pm blib/lib/App/IRC/Bot/Shoze/Db/Channels.pm \
 	  lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelEvent.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelEvent.pm \
+	  lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelUserList.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/ChannelUserList.pm \
 	  lib/App/IRC/Bot/Shoze/Log.pm blib/lib/App/IRC/Bot/Shoze/Log.pm \
 	  lib/App/IRC/Bot/Shoze/Constants.pm blib/lib/App/IRC/Bot/Shoze/Constants.pm \
 	  lib/App/IRC/Bot/Shoze/POE/IRC/Apero.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC/Apero.pm \
+	  lib/App/IRC/Bot/Shoze/Db/NetworkNicks/Object.pm blib/lib/App/IRC/Bot/Shoze/Db/NetworkNicks/Object.pm \
+	  lib/App/IRC/Bot/Shoze/Db/ChannelAutoMode.pm blib/lib/App/IRC/Bot/Shoze/Db/ChannelAutoMode.pm \
 	  lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/User.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/User.pm \
+	  lib/App/IRC/Bot/Shoze/HTTP.pm blib/lib/App/IRC/Bot/Shoze/HTTP.pm \
 	  lib/App/IRC/Bot/Shoze/Db/EasySentence/Object.pm blib/lib/App/IRC/Bot/Shoze/Db/EasySentence/Object.pm \
+	  lib/App/IRC/Bot/Shoze/Db/Links.pm blib/lib/App/IRC/Bot/Shoze/Db/Links.pm \
+	  lib/App/IRC/Bot/Shoze/Db/ChannelUserList/Object.pm blib/lib/App/IRC/Bot/Shoze/Db/ChannelUserList/Object.pm \
+	  lib/App/IRC/Bot/Shoze/Db/ChannelAutoMode/Object.pm blib/lib/App/IRC/Bot/Shoze/Db/ChannelAutoMode/Object.pm \
 	  lib/App/IRC/Bot/Shoze/Db/SynchObject.pm blib/lib/App/IRC/Bot/Shoze/Db/SynchObject.pm \
 	  lib/App/IRC/Bot/Shoze/Db/ChannelUsers/Object.pm blib/lib/App/IRC/Bot/Shoze/Db/ChannelUsers/Object.pm \
-	  lib/App/IRC/Bot/Shoze.pm blib/lib/App/IRC/Bot/Shoze.pm \
+	  lib/App/IRC/Bot/Shoze.pm blib/lib/App/IRC/Bot/Shoze.pm 
+	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)/auto'\'', q[$(PM_FILTER)], '\''$(PERM_DIR)'\'')' -- \
 	  lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Help.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC/BotCmdPlus/Plugins/Help.pm \
 	  lib/App/IRC/Bot/Shoze/Db/Channels/Object.pm blib/lib/App/IRC/Bot/Shoze/Db/Channels/Object.pm \
-	  lib/App/IRC/Bot/Shoze/REST/Channels.pm blib/lib/App/IRC/Bot/Shoze/REST/Channels.pm \
+	  lib/App/IRC/Bot/Shoze/Db/ChannelUserList.pm blib/lib/App/IRC/Bot/Shoze/Db/ChannelUserList.pm \
 	  lib/App/IRC/Bot/Shoze/Db/Sessions.pm blib/lib/App/IRC/Bot/Shoze/Db/Sessions.pm \
 	  lib/App/IRC/Bot/Shoze/POE/IRC.pm blib/lib/App/IRC/Bot/Shoze/POE/IRC.pm 
 	$(NOECHO) $(TOUCH) pm_to_blib

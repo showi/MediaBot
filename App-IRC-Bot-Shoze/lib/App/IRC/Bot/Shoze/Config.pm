@@ -14,30 +14,43 @@ use App::IRC::Bot::Shoze::Log;
 
 our $AUTOLOAD;
 
+our $Singleton = undef;
+
 my %fields = (
-    _parent => undef,
-    _path   => 'etc/',
-    irc     => undef,
-    db      => undef,
-    bot     => undef,
-    ws      => undef,
+   # _parent    => undef,
+    _base_path => undef,
+    _path      => 'etc/',
+    irc        => undef,
+    db         => undef,
+    bot        => undef,
+    ws         => undef,
 );
 
 sub new {
-    my ( $proto, $parent ) = @_;
-    DEBUG( "Creating new " . __PACKAGE__ );
+    my ( $proto, $path ) = @_;
+    if ( defined $Singleton ) {
+        return $Singleton;
+    }
+    DEBUG( "Creating new " . __PACKAGE__, 6);
     my $class = ref($proto) || $proto;
     my $s = {
         _permitted => \%fields,
         %fields,
     };
     bless( $s, $class );
-    $s->_parent($parent);
-    $s->read('irc');
-    $s->read('db');
-    $s->read('bot');
-    $s->read('ws');
-    return $s;
+    #$s->_parent($parent);
+    $s->_base_path($path);
+    $s->load_all();
+    $Singleton = $s;
+    return $Singleton;
+}
+
+sub load_all {
+    my $s = shift;
+    for my $k ( keys %{ $s->{_permitted} } ) {
+        next if $k =~ /^_/;
+        $s->read($k);
+    }
 }
 
 sub read {
@@ -46,7 +59,7 @@ sub read {
     croak "Invalid configuration name '$name'"
       if $name =~ /^_.*$/
           or !grep( $name, keys %{ $s->{_permitted} } );
-    my $f = $s->_parent->_path . $s->_path . "$name.yaml";
+    my $f = $s->_base_path . $s->_path . "$name.yaml";
     croak "Configuration file not found '$f'"
       unless -e $f;
     my $y = LoadFile($f);
@@ -54,7 +67,6 @@ sub read {
       unless defined $y;
     $s->$name($y);
     LOG("Configuration file loaded: $f");
-    #print Dumper $s->$name;
     return 0;
 }
 

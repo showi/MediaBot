@@ -1,4 +1,4 @@
-package App::IRC::Bot::Shoze::REST::Channels;
+package App::IRC::Bot::Shoze::HTTP::rest::db::user;
 
 use strict;
 use warnings;
@@ -31,25 +31,6 @@ sub new {
     bless( $s, $class );
     $s->_parent($parent);
     return $s;
-}
-
-sub list {
-    my ($s, $User, $response) = @_;
-    my $db = $s->_get_root->Db;
-    my @data;
-    for($db->Channels->list) {
-       # $content .= "<tr><td>".$_->_usable_name ."</td><td>".$_->owner."</td></tr>";
-        my %h;
-        for my $k (keys %{$_}) {
-            next if $k =~ /^_/;
-            $h{$k} = $_->{$k};
-        }
-        push @data, \%h;
-    }
-    my $ser = freeze(\@data);
-    print "Ser: $ser\n";
-    $response->content($ser);
-    return $response;
 }
 
 1;

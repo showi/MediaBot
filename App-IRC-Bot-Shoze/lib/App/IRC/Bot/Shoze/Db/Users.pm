@@ -59,7 +59,8 @@ sub get_by {
 sub create {
     my ( $s, $name, $password, $hostmask ) = @_;
     my $C = new App::IRC::Bot::Shoze::Db::Users::Object( $s->_parent );
-    my $salt = $s->_get_root->Config->bot->{password_salt};
+    my $Config = App::IRC::Bot::Shoze::Config->new;
+    my $salt = $Config->bot->{password_salt};
     $C->name($name);
     $C->password(Crypt::Passwd::XS::crypt( $password, $salt ));
     print "Create: $hostmask\n";
@@ -76,7 +77,8 @@ sub check_password {
     $s->_parent->die_if_not_open();
     croak "Need User object as first parameter"
       if ( not defined $User or not ref($User) );
-    my $salt = $s->_get_root->Config->bot->{password_salt};
+    my $Config = App::IRC::Bot::Shoze::Config->new;
+    my $salt = $Config->bot->{password_salt};
     my $encrypted = Crypt::Passwd::XS::crypt( $password, $salt );
     if ( $User->password eq $encrypted ) {
         return 1;

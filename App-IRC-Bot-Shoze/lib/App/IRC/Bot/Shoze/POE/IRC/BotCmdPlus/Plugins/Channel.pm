@@ -102,7 +102,7 @@ sub channel_del {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'channel_add';
     my $PCMD    = $self->get_cmd($cmdname);
-    my $db      = $irc->{database};
+    my $db      = App::IRC::Bot::Shoze::Db->new;
 
     my ($channame) = ( split( /\s+/, $msg ) )[1];
     $channame =~ /^(#|&)([\w\d_]+)$/ or do {
@@ -140,7 +140,7 @@ sub channel_add {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'channel_add';
     my $PCMD    = $self->get_cmd($cmdname);
-    my $db      = $irc->{database};
+    my $db      = App::IRC::Bot::Shoze::Db->new;
 
     my ($channame) = ( split( /\s+/, $msg ) )[1];
     $channame =~ /^(#|&)([\w\d_]+)$/ or do {
@@ -178,7 +178,7 @@ sub channel_info {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'channel_info';
     my $PCMD    = $self->get_cmd($cmdname);
-    my $db      = $irc->{database};
+    my $db      = App::IRC::Bot::Shoze::Db->new;
 
     print "msg: $msg\n";
     my $chan = ( split( /\s+/, $msg ) )[1];
@@ -236,7 +236,7 @@ sub channel_set {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'channel_set';
     my $PCMD    = $self->get_cmd($cmdname);
-    my $db      = $irc->{database};
+    my $db      = App::IRC::Bot::Shoze::Db->new;
 
     my ( $cmd, $chan, $key, $value ) = split /\s+/, $msg;
     $chan =~ /^([#&])([^\s]+)$/ or do {
@@ -304,7 +304,7 @@ sub channel_list {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'channel_list';
     my $PCMD    = $self->get_cmd($cmdname);
-    my $db      = $irc->{database};
+    my $db      = App::IRC::Bot::Shoze::Db->new;
 
     my @list = $db->Channels->list;
     unless (@list) {
@@ -337,7 +337,7 @@ sub channel_set_owner {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'channel_set_owner';
     my $PCMD    = $self->get_cmd($cmdname);
-    my $db      = $irc->{database};
+    my $db      = App::IRC::Bot::Shoze::Db->new;
 
     LOG("msg: $msg");
     my ( $channame, $name ) = ( split( /\s+/, $msg ) )[ 1 .. 2 ];
@@ -376,8 +376,7 @@ sub channel_set_owner {
             return PCI_EAT_ALL;
         }
         elsif ( $CurrentOwner->id == $Owner->id ) {
-            $irc->yield( notice => $Session->nick => "[$cmdname] Same owner!" )
-              ;
+            $irc->yield( notice => $Session->nick => "[$cmdname] Same owner!" );
             return PCI_EAT_ALL;
         }
     }
@@ -406,7 +405,7 @@ sub join {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'op';
     my $PCMD    = $self->get_cmd($cmdname);
-    my $db      = $irc->{database};
+    my $db      = App::IRC::Bot::Shoze::Db->new;
 
     my @channels = split /\s+/, $msg;
     shift @channels;    # First argument is the command
@@ -424,7 +423,7 @@ sub part {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'op';
     my $PCMD    = $self->get_cmd($cmdname);
-    my $db      = $irc->{database};
+    my $db      = App::IRC::Bot::Shoze::Db->new;
 
     my @channels = split /\s+/, $msg;
     shift @channels;    # First argument is the command
@@ -442,7 +441,7 @@ sub topic {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'topic';
     my $PCMD    = $self->get_cmd($cmdname);
-    my $db      = $irc->{database};
+    my $db      = App::IRC::Bot::Shoze::Db->new;
 
     my $channel;
     my $topic;
@@ -460,11 +459,12 @@ sub topic {
     }
     LOG("[$event] Want to set topic on '$channel': $msg");
     return PCI_EAT_NONE unless is_valid_chan_name($channel);
-    my ($type, $channame) =~ ($channel =~ /^(#|&)(.*)$/);
-    my $Channel = $db->Channels->get_by({ type => $type, name => $channame });
+    my ( $type, $channame ) =~ ( $channel =~ /^(#|&)(.*)$/ );
+    my $Channel = $db->Channels->get_by( { type => $type, name => $channame } );
     LOG("Want to set topic: chan ok");
     return PCI_EAT_NONE unless $Channel;
     my $can = 0;
+
     if ( $User->lvl >= 800 ) {
         $can = 1;
     }
@@ -494,7 +494,7 @@ sub op {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'op';
     my $PCMD    = $self->get_cmd($cmdname);
-    my $db      = $irc->{database};
+    my $db      = App::IRC::Bot::Shoze::Db->new;
 
     my @channels = split /\s+/, $msg;
     shift @channels;    # First argument is the command
@@ -505,7 +505,8 @@ sub op {
         next unless is_valid_chan_name($_);
         /^(#|&)(.*)$/;
         my ( $type, $channame ) = ( $1, $2 );
-        my $Channel = $db->Channels->get_by( { type => $type, name => $channame } );
+        my $Channel =
+          $db->Channels->get_by( { type => $type, name => $channame } );
         next unless $Channel;
         my $canop = 0;
         if ( $User->lvl >= 800 ) {
@@ -528,7 +529,8 @@ sub deop {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'op';
     my $PCMD    = $self->get_cmd($cmdname);
-    my $db      = $irc->{database};
+    my $db      = App::IRC::Bot::Shoze::Db->new;
+    ;
 
     my $channel = $where->[0];
     if ( $User->lvl >= 800 ) {

@@ -16,6 +16,9 @@ use POE::Component::IRC::Plugin qw(:ALL);
 
 use lib qw(../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
+
+use App::IRC::Bot::Shoze::Config;
+use App::IRC::Bot::Shoze::Db;
 use App::IRC::Bot::Shoze::Constants;
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::POE::IRC::Out;
@@ -32,6 +35,7 @@ our %fields = (
     Out     => undef,
     session => undef,
     poco    => undef,
+    network_id => undef,
 );
 
 sub new {
@@ -45,7 +49,7 @@ sub new {
     };
     bless( $s, $class );
     $s->_parent($parent);
-    if ( $s->_get_root->Config->irc->{enable} ) {
+    if (App::IRC::Bot::Shoze::Config->new->irc->{enable}) {
         $s->_init_poe();
     }
     return $s;
@@ -53,11 +57,9 @@ sub new {
 
 sub _init_poe () {
     my $s = shift;
-
     LOG("* Connecting to irc network");
     $s->session(
         POE::Session->create(
-            #alias         => 'irc',
             object_states => [
                 $s => { _start        => '_start' },
                 $s => { _stop         => '_stop' },
@@ -65,11 +67,13 @@ sub _init_poe () {
                 $s => { irc_ctcp_ping => 'irc_ctcp_ping' },
                 $s => { lag_o_meter   => 'lag_o_meter' },
             ],
-            heap => {}
+            heap => {
+               Shoze => $s->_get_root,
+            }
         )
-    );
+    ) unless $s->session;
     $s->Out( new App::IRC::Bot::Shoze::POE::IRC::Out($s) )
-      unless $s->Out;
+    unless $s->Out;
 }
 
 sub _stop {
@@ -80,39 +84,32 @@ sub _stop {
 sub _start {
     my ( $kernel, $heap, $s ) = @_[ KERNEL, HEAP, OBJECT ];
 
-    #if ( $s->_parent->Config->irc->{enable} ) {
-
-    my $Shoze = $s->_get_root;
-    LOG("Starting POE::IRC($Shoze)");
-    # We create a new PoCo-IRC object
+    my $Shoze = App::IRC::Bot::Shoze->new;
+    my $Config = App::IRC::Bot::Shoze::Config->new->irc;
+    my $Db = App::IRC::Bot::Shoze::Db->new;
+    
+    my $Network = $Db->Networks->get_by({name => $Config->{servers}->[0]->{network} });
+    croak "Could not find network named " . $Config->{servers}->[0]->{network} . " (check irc.yaml)" 
+        unless $Network;
+    
+    
+    LOG("Starting POE::IRC using network " . $Network->name);
+    
     my $irc = POE::Component::IRC->spawn(
-      
-        nick => $Shoze->Config->irc->{nick}
-          || $Shoze->Config->irc->{altnick}
+        nick => $Config->{nick}
+          || $Config->{altnick}
           || 'shoze',
-        ircname => $Shoze->Config->irc->{name}
+        ircname => $Config->{name}
           || 'shoze',
-
-        #server  => $server,
     ) or croak "Oh noooo! $!";
-    #$s->( new App::IRC::Bot::Shoze::POE::IRC($s) );
+    $irc->{network_id} = $Network->id;
+    $irc->{Network} = $Network;
     $s->poco($irc);
-    $irc->{Shoze}      = $Shoze;
-    $irc->{database}   = $Shoze->Db;
-    $irc->{Config}     = $Shoze->Config;
     $heap->{connector} = POE::Component::IRC::Plugin::Connector->new();
     $irc->plugin_add( 'Connector' => $heap->{connector} );
-
     # Our plugins system
     $irc->plugin_add( 'BotCmdPlus',
         new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus($s) );
-
-#    $irc->plugin_add( 'BotCmdPlus_Sessions',
-#        new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Sessions($s) );
-#
-#    $irc->plugin_add( 'BotCmdPlus_Dispatch',
-#        new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Dispatch($s) );
-
     $irc->plugin_add(
         'BotCmdPlus_PluginsManagement',
         new
@@ -120,12 +117,11 @@ sub _start {
             $s
           )
     );
-
     $irc->plugin_add( 'Apero', new App::IRC::Bot::Shoze::POE::IRC::Apero($s) );
 
     # End of our plugins
     my %channels;
-    for ( $Shoze->Db->Channels->list ) {
+    for ( $Db->NetworkChannels->list($Network) ) {
         LOG( "[IRC] Autojoin " . $_->_usable_name );
         $channels{ $_->_usable_name } = $_->password,;
     }
@@ -139,16 +135,14 @@ sub _start {
         )
     );
 
-    #my $aj = $irc->plugin_get('AutoJoin');
     my $server =
-        $Shoze->Config->irc->{servers}->[0]->{host} . ":"
-      . $Shoze->Config->irc->{servers}->[0]->{port};
+        $Config->{servers}->[0]->{host} . ":"
+      . $Config->{servers}->[0]->{port};
     LOG("* IRC server: $server");
     $irc->yield( register => 'all' );
     $irc->yield( connect =>
-          { Server => $Shoze->Config->irc->{servers}->[0]->{host} } );
+          { Server => $Config->{servers}->[0]->{host} } );
     $kernel->delay( 'lag_o_meter' => 60 );
-
     return;
 }
 

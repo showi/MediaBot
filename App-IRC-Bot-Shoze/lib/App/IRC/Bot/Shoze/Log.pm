@@ -11,8 +11,10 @@ our @EXPORT = qw(LOG DEBUG WARN);
 
 our $logfile = "/var/log/shoze.log";
 
+our $DEBUG = 5;
+
 sub LOG {
-    return unless $App::IRC::Bot::Shoze::DEBUG;
+    return unless $DEBUG;
     my ( $msg, $type ) = @_;
     my $wh;
     my $logfile =  $App::IRC::Bot::Shoze::Log::logfile;
@@ -30,23 +32,23 @@ sub LOG {
 }
 
 sub DEBUG {
-    return unless  $App::IRC::Bot::Shoze::DEBUG;
-    if(defined $_[1]) {return if  $App::IRC::Bot::Shoze::DEBUG < $_[1]};
+    return unless  $DEBUG;
+    if(defined $_[1]) {return if  $DEBUG < $_[1]};
     my $prefix = "DEBUG";
     $prefix.="[".$_[1]."]" if defined $_[1];
     LOG( $_[0], $prefix );
 }
 
 sub WARN {
-    return unless  $App::IRC::Bot::Shoze::DEBUG;
-    if($_[1]) {return if  $App::IRC::Bot::Shoze::DEBUG < $_[1]};
+    return unless  $DEBUG;
+    if($_[1]) {return if  $DEBUG < $_[1]};
     my $prefix = "WARN";
     $prefix.="[".$_[1]."]" if defined $_[1];
     LOG( $_[0], $prefix );
 }
 
 sub flush {
-    return unless  $App::IRC::Bot::Shoze::DEBUG;
+    return unless  $DEBUG;
     my $wh;
     my $logfile =  $App::IRC::Bot::Shoze::Log::logfile;
     open( $wh, ">$logfile" )

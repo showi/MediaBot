@@ -43,28 +43,33 @@ if you don't export anything, such as for a purely object-oriented module.
 =head2 function1
 
 =cut
+use lib qw();
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
 use App::IRC::Bot::Shoze::Config;
 use App::IRC::Bot::Shoze::POE;
 use App::IRC::Bot::Shoze::Db;
-use App::IRC::Bot::Shoze::REST;
+use App::IRC::Bot::Shoze::HTTP;
 use App::IRC::Bot::Shoze::Log;
 
 
 our %fields = (
     _path  => "",
     _debug => 1,
-    Config => undef,
+   # Config => undef,
     POE    => undef,
-    Db     => undef,
+   # Db     => undef,
     Log    => undef,
-    REST   => undef,
+    HTTP   => undef,
 );
 
-#our %App::IRC::Bot::Shoze = undef;
+our $Singleton = undef;
 
 sub new {
     my ( $proto, $path ) = @_;
+    if ($Singleton) {
+        DEBUG("SINGLETON " . __PACKAGE__);
+        return $Singleton;
+    }
     DEBUG( "Creating new " . __PACKAGE__, 5 );
     croak "No configuration path given as first parameter"
         unless $path;
@@ -77,16 +82,20 @@ sub new {
     bless( $s, $class );
     $s->_path($path) if $path;
     $s->read_config($s);
-    $s->Db( new App::IRC::Bot::Shoze::Db($s) );
+    $Singleton = $s;
+    #$s->Db( new App::IRC::Bot::Shoze::Db($s) );
+    new App::IRC::Bot::Shoze::Db($s);
+    
     $s->POE( new App::IRC::Bot::Shoze::POE($s) );
-    $s->REST( new App::IRC::Bot::Shoze::REST($s) );
-
-    return $s;
+    $s->HTTP( new App::IRC::Bot::Shoze::HTTP($s) );
+    return $Singleton;
 }
 
 sub read_config {
     my $s = shift;
-    $s->Config( new App::IRC::Bot::Shoze::Config($s) );
+    #$s->Config( new App::IRC::Bot::Shoze::Config($s) );
+    new App::IRC::Bot::Shoze::Config($s->_path);
+    #$s->Config( new App::IRC::Bot::Shoze::Config($s) );
 }
 
 =head1 AUTHOR

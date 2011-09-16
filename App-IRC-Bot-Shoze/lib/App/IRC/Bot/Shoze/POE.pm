@@ -52,8 +52,8 @@ sub new {
     $s->_parent($parent);
    
     $s->IRC( new App::IRC::Bot::Shoze::POE::IRC($s));
-    #$s->SubTask( new App::IRC::Bot::Shoze::POE::SubTask($s) );
-    #$s->WS( new App::IRC::Bot::Shoze::POE::WS($s) );
+    $s->SubTask( new App::IRC::Bot::Shoze::POE::SubTask($s) );
+    $s->WS( new App::IRC::Bot::Shoze::POE::WS($s) );
     return $s;
 }
 

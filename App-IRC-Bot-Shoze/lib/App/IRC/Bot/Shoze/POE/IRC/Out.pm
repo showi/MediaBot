@@ -38,10 +38,10 @@ sub join {
     my ( $s, $User, $channame ) = @_;
     $channame =~ /^([#&])([\w\d_-]+)$/ or do {
         WARN("Invalid channel name '$channame'");
-        return BOT_CHAN_INVALIDNAME; 
+        return BOT_CHAN_INVALIDNAME;
     };
     my ( $type, $name ) = ( $1, $2 );
-    my $db = $s->_get_root->Db;
+    my $db = App::IRC::Bot::Shoze::Db->new;
     my $Channel = $db->Channels->get_by( { type => $type, name => $name } );
     unless ($Channel) {
         WARN("Cannot join unregistered channel $type$name.");
@@ -55,13 +55,13 @@ sub join {
         WARN("Channel $channame is not active, cannot join $channame.");
         return BOT_CHAN_NOTACTIVE;
     }
-    if ($User->lvl < 800 and $User->id != $Channel->owner) {
+    if ( $User->lvl < 800 and $User->id != $Channel->owner ) {
         WARN("User access too low, cannot joinr channel $channame");
-        return BOT_USER_ACCESSDENIED; 
+        return BOT_USER_ACCESSDENIED;
     }
     my $msg = $channame;
-    $msg .= " " .$Channel->password if $Channel->password;
-    $s->_parent->poco->yield(join => $msg);
+    $msg .= " " . $Channel->password if $Channel->password;
+    $s->_parent->poco->yield( join => $msg );
     return BOT_OK;
 }
 
@@ -69,11 +69,11 @@ sub part {
     my ( $s, $User, $channame ) = @_;
     $channame =~ /^([#&])([\w\d_-]+)$/ or do {
         WARN("Invalid channel name '$channame'");
-        return BOT_CHAN_INVALIDNAME; 
+        return BOT_CHAN_INVALIDNAME;
     };
     my ( $type, $name ) = ( $1, $2 );
-    my $db = $s->_get_root->Db;
-    my $Channel = $db->Channels->get_by( {type => $type, name => $name} );
+    my $db = App::IRC::Bot::Shoze::Db->new;
+    my $Channel = $db->Channels->get_by( { type => $type, name => $name } );
     unless ($Channel) {
         WARN("Cannot part unregistered channel $type$name.");
         return BOT_CHAN_UNREGISTERED;
@@ -82,12 +82,12 @@ sub part {
         WARN("Bot is not on  '$type$name'.");
         return BOT_CHAN_NOTJOINED;
     }
-    if ($User->lvl < 800 and $User->id != $Channel->owner) {
+    if ( $User->lvl < 800 and $User->id != $Channel->owner ) {
         WARN("User access too low, cannot joinr channel $channame");
-        return BOT_USER_ACCESSDENIED; 
+        return BOT_USER_ACCESSDENIED;
     }
-  
-    $s->_parent->poco->yield(part => $channame);
+
+    $s->_parent->poco->yield( part => $channame );
     return BOT_OK;
 }
 

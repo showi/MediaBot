@@ -35,11 +35,12 @@ sub new {
 sub PCI_register {
     my ( $self, $irc ) = splice @_, 0, 2;
     $irc->plugin_register( $self, 'SERVER', qw(public) );
-    my @triggers = $irc->{Shoze}->Db->Apero->list;
+    my $db = App::IRC::Bot::Shoze::Db->new;
+    my @triggers = $db->Apero->list;
     $self->triggers( {} );
     for my $A (@triggers) {
         my $t = $A->trigger;
-        DEBUG("Registering trigger $t", 5);
+        DEBUG("Registering trigger $t", 6);
         $self->triggers->{ $A->id } = qr/$t/i;
     }
     return 1;
@@ -53,12 +54,12 @@ sub PCI_unregister {
 
 sub _have_trigger {
     my ( $s, $db, $cmd ) = @_;
-    print "Searching for match for cmd '$cmd'\n";
+    #print "Searching for match for cmd '$cmd'\n";
     for my $id ( keys %{ $s->triggers } ) {
         my $t = $s->triggers->{$id};
-        print "Looking id: $id ($t)\n";
+        #print "Looking id: $id ($t)\n";
         if ( $cmd =~ /$t/i ) {
-            print "Get a match with id: $id\n";
+        #    print "Get a match with id: $id\n";
             return $db->Apero->get($id);
         }
     }
@@ -68,7 +69,7 @@ sub _have_trigger {
 sub S_public {
     my ( $self, $irc ) = splice @_, 0, 2;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
-    my $db = $irc->{Shoze}->Db;
+    my $db = App::IRC::Bot::Shoze::Db->new;
     my ( $nick, $name, $hostmask ) = parse_user($who);
 
     my $prefix = substr $msg, 0, 1;
@@ -85,11 +86,11 @@ sub S_public {
     my $A = $self->_have_trigger( $db, $cmd );
     return PCI_EAT_NONE unless $A;
 
-    print "Got trigger for $params[0]\n";
-    print $A->text . "\n";
+    #print "Got trigger for $params[0]\n";
+    #print $A->text . "\n";
     my @target = @params;
     my $type   = 'user';
-    print "Num Arg:" . $#params . "\n";
+    #print "Num Arg:" . $#params . "\n";
     if ( $#params == 0 ) {
         $type = 'chan' if grep /^#[^\s]+$/, $params[0];
     }
@@ -113,9 +114,9 @@ sub S_public {
     else {
         @choices = split( /\|/, $A->text );
     }
-    print "Choice0: " . $choices[0] . "\n";
+    #print "Choice0: " . $choices[0] . "\n";
     $str = $choices[ int( rand( $#choices + 1 ) ) ];
-    print "Str before: $str\n";
+    #print "Str before: $str\n";
     if ( $type eq 'users' ) {
         my $people;
         my $be = $#target - 1;
@@ -130,7 +131,7 @@ sub S_public {
         my $one = $target[0];
         $str =~ s/%WHO%/$one/g;
     }
-    print "type: $type\n";
+    #print "type: $type\n";
     $str =~ s/%NICK%/$nick/g;
     $str =~ s/%CMD%/$ocmd/g;
     $str =~ /%IRAND(\d+)%/ and do {

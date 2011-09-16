@@ -1,4 +1,4 @@
-package App::IRC::Bot::Shoze::Db::Sessions::Object;
+package App::IRC::Bot::Shoze::Db::NetworkSessions::Object;
 
 use strict;
 use warnings;
@@ -16,7 +16,7 @@ our $AUTOLOAD;
 
 our %fields = (
     id           => undef,
-    nick         => undef,
+    nick_id      => undef,
     user         => undef,
     hostname     => undef,
     first_access => undef,
@@ -26,8 +26,8 @@ our %fields = (
     flood_numcmd => undef,
     ignore       => undef,
     user_id      => undef,
-    
-     _object_name => undef,
+
+    _object_name => undef,
     _object_db   => undef,
 );
 
@@ -45,7 +45,7 @@ sub new {
     };
     bless( $s, $class );
     $s->_init_fields;    # DIRTY HACK
-    $s->_object_name('sessions');
+    $s->_object_name('network_sessions');
     $s->_object_db($object_db);
     return $s;
 }
@@ -58,6 +58,7 @@ sub parse_who {
     $s->hostname($hostname);
     return $s;
 }
+
 #
 #sub sid {
 #    my $s = shift;

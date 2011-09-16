@@ -17,7 +17,7 @@ use App::IRC::Bot::Shoze::String;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper
   qw(_register_cmd _unregister_cmd get_cmd _n_error);
 
-our %fields = ( cmd => undef, _parent => undef);
+our %fields = ( cmd => undef, _parent => undef );
 
 sub new {
     my ( $proto, $parent ) = @_;
@@ -26,11 +26,11 @@ sub new {
         _permitted => \%fields,
         %fields,
     };
-    
+
     bless( $s, $class );
     $s->_parent($parent);
-    my $program = $s->_get_root->_path ."/scripts/tld.pl";
-    unless (-x $program) {
+    my $program = $s->_get_root->_path . "/scripts/tld.pl";
+    unless ( -x $program ) {
         die "Error: $program not found or not executable";
     }
     $s->cmd(
@@ -65,11 +65,13 @@ sub S_tld_result {
     my ( $nick, $user, $hostmask ) = parse_user($who);
     my ( $status, $otld, $atld, $type, $info ) = split /#/, $msg;
     LOG("EVENT[tld_result] $nick request tld $atld on channel $where!");
-    if ($status < 0) {
-        $s->_n_error($irc, $where, "Error: Script is missing or not executable" );
+    if ( $status < 0 ) {
+        $s->_n_error( $irc, $where,
+            "Error: Script is missing or not executable" );
     }
     if ($status) {
-        $irc->yield( 'privmsg' => $where => "Error: no match for tld $atld ($otld), $type" );
+        $irc->yield( 'privmsg' => $where =>
+              "Error: no match for tld $atld ($otld), $type" );
         return PCI_EAT_ALL;
     }
     my $str = "$type $atld ($otld)";
@@ -83,26 +85,23 @@ sub tld {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'tld';
     my $PCMD    = $s->get_cmd($cmdname);
-    my $db      = $irc->{database};
+    my $db      = App::IRC::Bot::Shoze::Db->new;
 
     my ( $nick, $user, $hostmask ) = parse_user($who);
 
     my $cmd;
     ( $cmd, $msg ) = split( /\s+/, str_chomp($msg) );
-#    unless ( $msg =~ /^[\w\d]{2,5}$/ ) {
-#        return $s->_n_error( $irc, $Session->nick, "Invalid tld '$msg'" );
-#    }
     my $SubTask = $irc->{Shoze}->POE->SubTask;
-    my $data = { 
-                event  => "irc_tld_result",
-                name => "tld",
-                program => $s->_get_root->_path . "/scripts/tld.pl",
-                args  => $msg,
-                who   => $who,
-                where => $where->[0],
+    my $data    = {
+        event   => "irc_tld_result",
+        name    => "tld",
+        program => $s->_get_root->_path . "/scripts/tld.pl",
+        args    => $msg,
+        who     => $who,
+        where   => $where->[0],
     };
     LOG("Add to SubTask $SubTask");
-    $SubTask->add_task($data );
+    $SubTask->add_task($data);
     return PCI_EAT_ALL;
 }
 

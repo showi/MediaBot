@@ -72,7 +72,7 @@ sub chanuser_add {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'chanuser_add';
     my $PCMD    = $s->get_cmd($cmdname);
-    my $db      = $irc->{database};
+     my $db = App::IRC::Bot::Shoze::Db->new;
 
     $msg = str_chomp($msg);
     my ( $cmd, $chan, $uname, $lvl ) = split /\s+/, $msg;
@@ -132,7 +132,7 @@ sub chanuser_set {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'chanuser_set';
     my $PCMD    = $s->get_cmd($cmdname);
-    my $db      = $irc->{database};
+    my $db = App::IRC::Bot::Shoze::Db->new;
 
     $msg = str_chomp($msg);
     my ( $cmd, $chan, $uname, $key, $value ) = split /\s+/, $msg;
@@ -207,7 +207,7 @@ sub chanuser_list {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'chanuser_list';
     my $PCMD    = $s->get_cmd($cmdname);
-    my $db      = $irc->{database};
+     my $db = App::IRC::Bot::Shoze::Db->new;
 
     $msg = str_chomp($msg);
     my ( $cmd, $chan, $uname, $lvl ) = split /\s+/, $msg;
@@ -252,7 +252,7 @@ sub chanuser_info {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'chanuser_info';
     my $PCMD    = $s->get_cmd($cmdname);
-    my $db      = $irc->{database};
+     my $db = App::IRC::Bot::Shoze::Db->new;
 
     $msg = str_chomp($msg);
     my ( $cmd, $chan, $uname ) = split /\s+/, $msg;
@@ -296,7 +296,7 @@ sub chanuser_del {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'chanuser_del';
     my $PCMD    = $s->get_cmd($cmdname);
-    my $db      = $irc->{database};
+     my $db = App::IRC::Bot::Shoze::Db->new;
 
     $msg = str_chomp($msg);
     my ( $cmd, $chan, $uname ) = split /\s+/, $msg;

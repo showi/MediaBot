@@ -92,19 +92,19 @@ sub _default {
         return PCI_EAT_NONE;
     }
 
-    my $db         = $irc->{database};
+    my $db = App::IRC::Bot::Shoze::Db->new;
     my $TmpSession = new App::IRC::Bot::Shoze::Db::Sessions::Object($db);
     $TmpSession->parse_who($who);
     my $Session =
-      $db->Sessions->get( $TmpSession->nick, $TmpSession->user,
-        $TmpSession->hostname );
+      $db->Sessions->get_by( { nick => $TmpSession->nick, user => $TmpSession->user,
+        hostname => $TmpSession->hostname });
     unless ($Session) {
         $irc->yield( privmsg => $TmpSession->nick => "# Who are you!" );
         return PCI_EAT_ALL;
     }
     my $User;
     if ( $Session->user_id ) {
-        $User = $db->Users->get( $Session->user_id );
+        $User = $db->Users->get_by( {id  => $Session->user_id } );
     }
     my $pl  = $Master->cmd->{$cmd}->{plugin};
     my $lvl = $Master->cmd->{$cmd}->{lvl};

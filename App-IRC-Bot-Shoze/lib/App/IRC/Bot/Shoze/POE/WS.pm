@@ -9,6 +9,9 @@ use POE::Component::IRC::Plugin qw(:ALL);
 
 use lib qw(../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
+#use App::IRC::Bot::Shoze;
+use App::IRC::Bot::Shoze::Config;
+use App::IRC::Bot::Shoze::Db;
 use App::IRC::Bot::Shoze::Constants;
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::POE::IRC::Out;
@@ -33,7 +36,7 @@ sub new {
     };
     bless( $s, $class );
     $s->_parent($parent);
-    if ( $s->_get_root->Config->ws->{enable} ) {
+    if (App::IRC::Bot::Shoze::Config->new->ws->{enable}) {
         $s->_init_poe();
     }
     return $s;
@@ -42,14 +45,16 @@ sub new {
 sub _init_poe () {
     my $s = shift;
 
+    my $Config = App::IRC::Bot::Shoze::Config->new->ws;
+    my $Shoze = App::IRC::Bot::Shoze->new;
     LOG(    "* Lauching web service "
-          . $s->_parent->Config->ws->{host} . ":"
-          . $s->_parent->Config->ws->{port} );
-    LOG( "Loading SSL certificate from " . $s->_parent->_path . "/data/" );
-    POE::Component::Server::TCP->new(
+          . $Config->{hostname} . ":"
+          . $Config->{port} );
+    LOG( "Loading SSL certificate from " . $Shoze->_path . "/data/" );
+    $s->session(POE::Component::Server::TCP->new(
         Alias => "web_server",
-        Port  => $s->_parent->Config->ws->{port} || 9090,
-        host  => ( $s->_parent->Config->ws->{host} || '127.0.0.1' ),
+        Port  => $Config->{port} || 9090,
+        Hostname  => ( $Config->{hostname} || '127.0.0.1' ),
 
         # You need to have created (self) signed certificates
         # and a corresponding key file to encrypt the data with
@@ -58,8 +63,8 @@ sub _init_poe () {
         ClientFilter => POE::Filter::Stackable->new(
             Filters => [
                 POE::Filter::SSL->new(
-                    crt => $s->_parent->_path . '/data/server.crt',
-                    key => $s->_parent->_path . '/data/server.key'
+                    crt => $Shoze->_path . 'data/server.crt',
+                    key => $Shoze->_path . 'data/server.key'
                 ),
                 POE::Filter::HTTPD->new(),
             ]
@@ -84,9 +89,17 @@ sub _init_poe () {
                 $kernel->yield("shutdown");
                 return;
             }
-            my $response = $s->_parent->REST->dispatch($request);
+            my $response = $Shoze->HTTP->dispatch($request);
             $heap->{client}->put($response);
             $kernel->yield("shutdown");
-        }
-    );
+        },
+        
+        Started => sub {
+            #print Dumper $_[HEAP];
+            LOG("WS Server started on " . $_[HEAP]{listener} . ":");
+            $_[HEAP]{server_status} = 1;
+        },
+   
+        
+    ));
 }

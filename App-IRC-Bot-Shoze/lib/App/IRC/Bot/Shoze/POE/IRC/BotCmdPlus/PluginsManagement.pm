@@ -13,7 +13,6 @@ use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(get_cmd _n_error);
 
-
 our %fields = (
     _parent => undef,
     cmd     => undef,
@@ -43,7 +42,7 @@ sub new {
         }
     );
     my @plugins =
-      qw(mode info user channel channelUser help mynick channelEvent apero easySentence tld);
+      qw(networkChannelUsers);
     $s->plugins( \@plugins );
     return $s;
 }
@@ -86,8 +85,8 @@ sub _load_plugin {
     unless ( $s->loaded->{$name} ) {
         LOG("LOAD: Requiring module '$plugin'");
         my $ret = eval "require $plugin";
-        unless (defined $ret) {
-            carp "Cannot require plugin '$plugin, abort loading!'";
+        unless ( defined $ret ) {
+            carp "Cannot require plugin '$plugin, abort loading! ($?)'";
             return 0;
         }
         $plugin->import();
@@ -123,34 +122,12 @@ sub _unload_all_plugin {
     }
 }
 
-#sub plugin_load {
-#    my ( $s, $Session, $User, $irc, $event ) = splice @_, 0, 5;
-#    my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
-#    my $cmdname = 'plugin_load';
-#    my $PCMD    = $s->get_cmd($cmdname);
-#    my $db      = $irc->{database};
-#
-#    $s->_load_plugin;
-#    return PCI_EAT_ALL;
-#}
-#
-#sub plugin_unload {
-#    my ( $s, $Session, $User, $irc, $event ) = splice @_, 0, 5;
-#    my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
-#    my $cmdname = 'plugin_unload';
-#    my $PCMD    = $s->get_cmd($cmdname);
-#    my $db      = $irc->{database};
-#
-#    $s->_unload_plugin;
-#    return PCI_EAT_ALL;
-#}
-
 sub plugin_reload {
     my ( $s, $Session, $User, $irc, $event ) = splice @_, 0, 5;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'plugin_reload';
     my $PCMD    = $s->get_cmd($cmdname);
-    my $db      = $irc->{database};
+    my $db      = App::IRC::Bot::Shoze::Db->new;
 
     my ( $cmd, $name ) = split /\s+/, $msg;
     unless ( grep @{ $s->{plugins} }, $name ) {
@@ -160,4 +137,5 @@ sub plugin_reload {
     $s->_reload_plugin($name);
     return PCI_EAT_ALL;
 }
+
 1;

@@ -23,7 +23,7 @@ our %fields = (
 #############
 sub new {
     my ( $proto, $parent ) = @_;
-    DEBUG( "Creating new " . __PACKAGE__ );
+    DEBUG( "Creating new " . __PACKAGE__, 6);
     croak "No parent specified" unless ref $parent;
     my $class = ref($proto) || $proto;
     my $s = {

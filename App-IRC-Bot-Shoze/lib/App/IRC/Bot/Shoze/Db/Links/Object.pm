@@ -1,4 +1,4 @@
-package App::IRC::Bot::Shoze::Db::Apero::Object;
+package App::IRC::Bot::Shoze::Db::Links::Object;
 
 use strict;
 use warnings;
@@ -14,19 +14,22 @@ our $AUTOLOAD;
 
 our %fields = (
     id      => undef,
-    name    => undef,
-    trigger => undef,
-    text    => undef,
-    chantext => undef,
-    msg_type => undef,
-
+    network_id => undef,
+    lvl => undef,
+    hostmask => undef,
+    nick => undef,
+    on_ws => undef,
+    on_irc => undef,
+    ipv4 => undef,
+    port => undef,
+    
     _object_name => undef,
     _object_db   => undef,
 );
 
 sub new {
     my ( $proto, $object_db ) = @_;
-    DEBUG( "Creating new " . __PACKAGE__ , 6);
+    DEBUG( "Creating new " . __PACKAGE__ , 5);
     croak "No database object passed as first parameter" unless ref($object_db);
     my $class = ref($proto) || $proto;
     my $s = {
@@ -36,7 +39,7 @@ sub new {
 
     bless( $s, $class );
     $s->_init_fields();    # DIRTY HACK VALUES IS SET TO 1 on init ...
-    $s->_object_name('apero');
+    $s->_object_name('links');
     $s->_object_db($object_db);
     return $s;
 }

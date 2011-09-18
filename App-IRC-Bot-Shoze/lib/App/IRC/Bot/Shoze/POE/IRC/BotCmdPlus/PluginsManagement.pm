@@ -42,7 +42,7 @@ sub new {
         }
     );
     my @plugins =
-      qw(networkChannelUsers);
+      qw(networkChannelUsers users info);
     $s->plugins( \@plugins );
     return $s;
 }

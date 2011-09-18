@@ -8,7 +8,7 @@ use Exporter;
 
 use POE::Component::IRC::Plugin qw(:ALL);
 
-use lib qw(../../../../);
+use lib qw(../../../../../../../);
 use App::IRC::Bot::Shoze::Log;
 
 our @ISA = qw(Exporter);
@@ -104,6 +104,10 @@ sub CHANLVL {
 
 sub _get_session {
     my ( $s, $db, $Nick, $user, $hostname ) = @_;
+    croak "Need Db Object as first parameter"
+      unless ref($db) =~ /Shoze::Db/;
+    croak "Need Nick Object as second parameter"
+      unless ref($Nick) =~ /Db::Nicks::Object/;
     my $Session = $db->NetworkSessions->get_by(
         $Nick,
         {
@@ -122,7 +126,9 @@ sub _get_session {
 # Create or return Nick object from database for a given Network
 sub _get_nick {
     my ( $s, $db, $Network, $nick ) = @_;
-        croak "Need Network Object as first parameter"
+    croak "Need Db Object as first parameter"
+      unless ref($db) =~ /Shoze::Db/;
+    croak "Need Network Object as second parameter"
       unless ref($Network) =~ /Db::Networks::Object/;
 
     my $Nick = $db->NetworkNicks->get_by( $Network, { nick => $nick } );
@@ -173,19 +179,25 @@ sub _del_channel_user {
     croak "Need Nick Object as second parameter"
       unless ref($Nick) =~ /Db::NetworkNicks::Object/;
 
-
-    my $ChanUser = $db->NetworkChannelUsers->get_by($Channel, {nick_id => $Nick->id } );
+    my $ChanUser =
+      $db->NetworkChannelUsers->get_by( $Channel, { nick_id => $Nick->id } );
     unless ($ChanUser) {
-        WARN("User '".$Nick->nick."' not found for channel '".$Channel->name."'");
+        WARN(   "User '"
+              . $Nick->nick
+              . "' not found for channel '"
+              . $Channel->name
+              . "'" );
         return PCI_EAT_NONE;
     }
     unless ( $ChanUser->_delete ) {
-        WARN(   "Cannot delete user '".$Nick->nick."' from channel ("
+        WARN(   "Cannot delete user '"
+              . $Nick->nick
+              . "' from channel ("
               . $Channel->_usable_name
               . ")" );
         return PCI_EAT_NONE;
     }
-    LOG($Nick->nick . " removed from channel " . $Channel->name);
+    LOG( $Nick->nick . " removed from channel " . $Channel->name );
     return PCI_EAT_NONE;
 }
 

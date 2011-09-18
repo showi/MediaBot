@@ -11,7 +11,7 @@ use POE;
 
 use IRC::Utils ':ALL';
 
-use lib qw(../../../);
+use lib qw(../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD _get_root DESTROY);
 use App::IRC::Bot::Shoze::Constants qw(:ALL);
 use App::IRC::Bot::Shoze::Log;
@@ -56,7 +56,7 @@ sub join {
         return BOT_CHAN_NOTACTIVE;
     }
     if ( $User->lvl < 800 and $User->id != $Channel->owner ) {
-        WARN("User access too low, cannot joinr channel $channame");
+        WARN("User access too low, cannot join channel $channame");
         return BOT_USER_ACCESSDENIED;
     }
     my $msg = $channame;

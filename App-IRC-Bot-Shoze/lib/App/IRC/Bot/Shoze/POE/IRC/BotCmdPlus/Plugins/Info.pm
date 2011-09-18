@@ -8,7 +8,7 @@ use Carp;
 use POE;
 use POE::Component::IRC::Plugin qw(:ALL);
 
-use lib qw(../../../../../);
+use lib qw(../../../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;
@@ -40,7 +40,7 @@ sub new {
 }
 
 sub version {
-    my ( $self, $Session, $User, $irc, $event ) = splice @_, 0, 5;
+    my ( $self, $Session,  $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'version';
     my $PCMD    = $self->get_cmd($cmdname);

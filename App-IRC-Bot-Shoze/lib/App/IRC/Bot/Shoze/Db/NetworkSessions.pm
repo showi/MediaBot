@@ -10,6 +10,7 @@ use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
 use App::IRC::Bot::Shoze::Db::NetworkSessions::Object qw();
 use App::IRC::Bot::Shoze::Log;
 
+use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(_get_nick);
 our $AUTOLOAD;
 
 our %fields = (
@@ -56,8 +57,9 @@ sub create {
 ###############################################################################
 sub update {
     my ( $s, $Session ) = @_;
-    croak "Need Nick object as first parameter"
+    croak "Need Session object as first parameter"
       unless ref($Session) =~ /Db::NetworkSessions::Object/;
+
     my $h    = $s->_parent->handle;
     my $time = time;
     if ( $Session->ignore ) {
@@ -98,6 +100,58 @@ SQL
     $sth->execute($tlimit)
       or die "Cannot execute query '$query' (" . $h->errstr . ")";
     return 0;
+
+}
+
+###############################################################################
+# Get session with extend informations from user table if user's logged
+###############################################################################
+sub get_extended {
+    my ( $s, $Network, $nick, $user, $hostname ) = @_;
+    my $db = App::IRC::Bot::Shoze::Db->new;
+    my $Nick = $s->_get_nick( $db, $Network, $nick );
+    unless ($Nick) {
+        WARN( "Cannot get nick '$nick' for network " . $Network->name );
+        return undef;
+    }
+    my $h     = $db->handle;
+    my $query = <<SQL;
+    SELECT ns.last_access AS last_access, ns.ignore AS ignore, 
+    ns.flood_numcmd AS flood_numcmd, ns.flood_end AS flood_end, 
+    ns.flood_start AS flood_start, ns.user AS user, ns.hostname AS hostname,
+    ns.id AS id, ns.first_access AS first_access, ns.nick_id AS nick_id, 
+    ns.user_id AS user_id, nn.nick AS nick, u.name AS user_name, u.lvl AS user_lvl,
+    u.pending AS user_pending, u.hostmask AS user_hostmask, u.password AS user_password,
+    u.is_bot AS user_is_bot, u.created_on AS user_created_on
+    FROM network_sessions AS ns, network_nicks AS nn
+    LEFT JOIN users AS u ON ns.user_id = u.id
+    WHERE ns.nick_id = nn.id AND nn.nick = ? AND ns.user = ? AND ns.hostname = ?
+SQL
+    LOG( __PACKAGE__ . "::get_extended: " . $query, 5 );
+    LOG( __PACKAGE__ . " params: $nick, $user, $hostname" );
+    my $sth = $h->prepare($query)
+      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
+    $sth->execute( $nick, $user, $hostname )
+      or die "Cannot execute query '$query' (" . $h->errstr . ")";
+    LOG( "Rows: " . $sth->rows );
+
+    #return undef if  $sth->rows < 1;
+    LOG( __PACKAGE__ . " got result" );
+    my $r = $sth->fetchrow_hashref;
+    my $S = new App::IRC::Bot::Shoze::Db::NetworkSessions::Object($db);
+    for my $k ( keys %{$S} ) {
+        next if $k =~ /^_.*/;
+        $S->$k( $r->{$k} );
+    }
+    my @extf = qw(
+      nick user_name user_lvl user_pending user_hostmask user_password user_is_bot user_created_on
+    );
+    for (@extf) {
+        $S->_add_permitted_field($_);
+        $S->$_( $r->{$_} );
+    }
+    $S->synched;
+    return $S;
 
 }
 

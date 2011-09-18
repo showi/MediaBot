@@ -56,7 +56,7 @@ sub S_324 {
     LOG("Channel $1 have mode $2");
     my $db = App::IRC::Bot::Shoze::Db->new;
     my ( $type, $channame ) = ( $chan =~ /^(#|&)(.*)$/ );
-    my $Channel = $db->Channels->get_by( { type => $type, name => $channame } );
+    my $Channel = $db->NetworkChannels->get_by($irc->{Network},  { type => $type, name => $channame } );
     return PCI_EAT_NONE unless $Channel;
     return PCI_EAT_NONE unless $Channel->auto_mode;
 
@@ -135,7 +135,7 @@ sub S_join {
         my $db = App::IRC::Bot::Shoze::Db->new;
         my ( $type, $channame ) = ( $where =~ /^(#|&)(.*)$/ );
         my $Channel =
-          $db->Channels->get_by( { type => $type, name => $channame } );
+          $db->NetworkChannels->get_by( $irc->{Network}, { type => $type, name => $channame } );
         return PCI_EAT_NONE unless $Channel;
         $Channel->bot_joined(1);
         $Channel->bot_mode(undef);
@@ -151,11 +151,12 @@ sub S_invite {
 
     my ( $who, $where ) = ( ${ $_[0] }, ${ $_[1] } );
     my ( $type, $channame ) = ( $where =~ /^(#|&)(.*)$/ );
-    my $Channel = $db->Channels->get_by( { type => $type, name => $channame } );
+    my $Channel = $db->NetworkChannels->get_by($irc->{Network}, { type => $type, name => $channame } );
     return PCI_EAT_NONE unless $Channel;
     return PCI_EAT_NONE if $Channel->bot_joined;
-    my $TmpSession = new App::IRC::Bot::Shoze::Db::Sessions::Object($db);
-    $TmpSession->parse_who($who);
+#    my $TmpSession = new App::IRC::Bot::Shoze::Db::Sessions::Object($db);
+#    $TmpSession->parse_who($who);
+    my ($nick, $user, $hostname) = parse_user($who);
     my $Session =
       $db->Sessions->get( $TmpSession->nick, $TmpSession->user,
         $TmpSession->hostname );
@@ -183,7 +184,7 @@ sub S_part {
     if ( $irc->nick_name eq $nick ) {
         my ( $type, $channame ) = ( $where =~ /^(#|&)(.*)$/ );
         my $Channel =
-          $db->Channels->get_by( { type => $type, name => $channame } );
+          $db->NetworkChannels->get_by($irc->{Network}, { type => $type, name => $channame } );
         unless ($Channel) {
             WARN("Do not find channel '$where' in database");
             return PCI_EAT_ALL;

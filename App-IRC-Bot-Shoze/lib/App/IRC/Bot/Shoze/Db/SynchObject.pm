@@ -296,7 +296,13 @@ sub _create {
     $s->_object_db->die_if_not_open();
     my $h = $s->_object_db->handle;
     my @args;
-    
+    my $time = time;
+    if ($s->{_permitted}->{created_on}) {
+        $s->created_on($time);
+    }
+    if ($s->{_permitted}->{updated_on}) {
+        $s->updated_on($time);
+    }
     my $query = "INSERT INTO " . $s->_object_name . " (";
     for my $k ( keys %{ $s->{_permitted} } ) {
         $k =~ /^_/ and next;
@@ -330,7 +336,9 @@ sub _update {
     $s->_object_db->die_if_not_open();
     my $h = $s->_object_db->handle;
     my @args;
-    
+    if ($s->{_permitted}->{updated_on}) {
+        $s->updated_on(time);
+    }
     my $query = "UPDATE " . $s->_object_name . " SET ";
     for my $k ( keys %{ $s->{_changed} } ) {
         $k =~ /^_/ and next;

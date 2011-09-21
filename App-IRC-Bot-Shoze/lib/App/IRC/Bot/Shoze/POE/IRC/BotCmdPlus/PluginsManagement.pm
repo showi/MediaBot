@@ -7,7 +7,7 @@ use Carp;
 
 use POE::Component::IRC::Plugin qw(:ALL);
 
-use lib qw(../../../../../../../../);
+use lib qw(../../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;
@@ -42,7 +42,7 @@ sub new {
         }
     );
     my @plugins =
-      qw(networkChannelUsers users info);
+      qw(users info networkChannels networkChannelUsers networkChannelLogs channelUser help tld easySentence);
     $s->plugins( \@plugins );
     return $s;
 }

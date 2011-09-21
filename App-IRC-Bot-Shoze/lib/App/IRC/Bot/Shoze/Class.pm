@@ -3,9 +3,9 @@ use strict;
 use warnings;
 use Carp;
 
-use lib qw(..);
 use Exporter;
 
+use lib qw(../../../../);
 use App::IRC::Bot::Shoze::Log;
 
 our @ISA       = qw(Exporter);

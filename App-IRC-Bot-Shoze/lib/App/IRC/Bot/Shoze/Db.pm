@@ -16,12 +16,13 @@ use App::IRC::Bot::Shoze::Db::Networks;
 use App::IRC::Bot::Shoze::Db::NetworkNicks;
 use App::IRC::Bot::Shoze::Db::NetworkChannels;
 use App::IRC::Bot::Shoze::Db::NetworkChannelUsers;
+use App::IRC::Bot::Shoze::Db::NetworkChannelLogs;
 use App::IRC::Bot::Shoze::Db::NetworkSessions;
 
 use App::IRC::Bot::Shoze::Db::ChannelUsers;
 use App::IRC::Bot::Shoze::Db::Apero;
 use App::IRC::Bot::Shoze::Db::EasySentence;
-use App::IRC::Bot::Shoze::Db::ChannelAutoMode;
+use App::IRC::Bot::Shoze::Db::ChannelAutoUserMode;
 
 our $AUTOLOAD;
 
@@ -31,17 +32,18 @@ our %fields = (
     handle  => undef,
     is_open => undef,
 
-    Networks            => undef,
-    NetworkNicks        => undef,
-    NetworkSessions     => undef,
-    NetworkChannels     => undef,
-    NetworkChannelUsers => undef,
-    
-    Users           => undef,
-    ChannelUsers    => undef,
-    Apero           => undef,
-    Sentences       => undef,
-    ChannelAutoMode => undef,
+    Networks            => undef, # Networks(undernet, efnet...)
+    NetworkNicks        => undef, # All nicks connected to a particular network
+    NetworkSessions     => undef, # Association of nick, user and hostname. Logged user set user_id here
+    NetworkChannels     => undef, # All channels managed by the bot
+    NetworkChannelUsers => undef, # All user that have joined the channel, it's user known by the bot...
+    NetworkChannelLogs  => undef, # Permit to log channel msg to other channel, to a file or into database.
+
+    Users               => undef, # Users known by the bot
+    ChannelUsers        => undef, # User linked to channels managed by the bot
+    Apero               => undef, # Funny sentences triggered by !{command}
+    Sentences           => undef, # Sentence like proverbe, carambar ... 
+    ChannelAutoUserMode => undef, # Permit to voice, op and ban user based on their hostmask
 );
 
 # Constructor
@@ -62,14 +64,21 @@ sub new {
     $s->Networks( new App::IRC::Bot::Shoze::Db::Networks($s) );
     $s->NetworkNicks( new App::IRC::Bot::Shoze::Db::NetworkNicks($s) );
     $s->NetworkSessions( new App::IRC::Bot::Shoze::Db::NetworkSessions($s) );
-    $s->Users( new App::IRC::Bot::Shoze::Db::Users($s) );
     $s->NetworkChannels( new App::IRC::Bot::Shoze::Db::NetworkChannels($s) );
-    $s->ChannelUsers( new App::IRC::Bot::Shoze::Db::ChannelUsers($s) );
-    $s->Apero( new App::IRC::Bot::Shoze::Db::Apero($s) );
-    $s->Sentences( new App::IRC::Bot::Shoze::Db::EasySentence($s) );
-    $s->ChannelAutoMode( new App::IRC::Bot::Shoze::Db::ChannelAutoMode($s) );
+    $s->NetworkChannelLogs(
+        new App::IRC::Bot::Shoze::Db::NetworkChannelLogs($s) );
     $s->NetworkChannelUsers(
         new App::IRC::Bot::Shoze::Db::NetworkChannelUsers($s) );
+
+    $s->ChannelAutoUserMode(
+        new App::IRC::Bot::Shoze::Db::ChannelAutoUserMode($s) );
+    $s->ChannelUsers( new App::IRC::Bot::Shoze::Db::ChannelUsers($s) );
+
+    $s->Users( new App::IRC::Bot::Shoze::Db::Users($s) );
+
+    $s->Apero( new App::IRC::Bot::Shoze::Db::Apero($s) );
+    $s->Sentences( new App::IRC::Bot::Shoze::Db::EasySentence($s) );
+
     $s->init();
     $Singleton = $s;
     return $Singleton;

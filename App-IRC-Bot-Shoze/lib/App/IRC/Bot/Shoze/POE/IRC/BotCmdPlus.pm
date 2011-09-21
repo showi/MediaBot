@@ -7,7 +7,7 @@ use Carp;
 use POE;
 use POE::Component::IRC::Plugin qw(:ALL);
 
-use lib qw(../../../);
+use lib qw(../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
 use App::IRC::Bot::Shoze::Constants;
 use App::IRC::Bot::Shoze::Log;

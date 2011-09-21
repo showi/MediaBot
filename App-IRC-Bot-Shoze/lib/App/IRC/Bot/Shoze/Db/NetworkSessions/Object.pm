@@ -5,7 +5,7 @@ use warnings;
 
 use Carp;
 
-use lib qw(../../../);
+use lib qw(../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(DESTROY);
 use App::IRC::Bot::Shoze::Db::SynchObject qw(:ALL);
 use App::IRC::Bot::Shoze::Log;
@@ -26,7 +26,9 @@ our %fields = (
     flood_numcmd => undef,
     ignore       => undef,
     user_id      => undef,
-
+    updated_on   => undef,
+    created_on   => undef,
+    
     _object_name => undef,
     _object_db   => undef,
 );

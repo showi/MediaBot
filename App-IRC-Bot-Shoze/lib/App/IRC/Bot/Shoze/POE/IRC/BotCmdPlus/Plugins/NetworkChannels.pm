@@ -110,19 +110,24 @@ sub channel_del {
     my $cmdname = 'channel_add';
     my $PCMD    = $s->get_cmd($cmdname);
     my $db      = App::IRC::Bot::Shoze::Db->new;
- 
+
     my ($channame) = ( split( /\s+/, $msg ) )[1];
     $channame =~ /^(#|&)([\w\d_]+)$/ or do {
-        return $s->_n_error($irc, $Session->nick, "[$cmdname] Invalid syntax, ");
+        return $s->_n_error( $irc, $Session->nick,
+            "[$cmdname] Invalid syntax, " );
     };
     my $type;
     ( $type, $channame ) = ( $1, $2 );
-    my $Channel = $db->NetworkChannels->get_by($irc->{Network}, { type => $type, name => $channame } );
+    my $Channel =
+      $db->NetworkChannels->get_by( $irc->{Network},
+        { type => $type, name => $channame } );
     if ( !$Channel ) {
-        return $s->_n_error($irc, $Session->nick, "[$cmdname] Channel doesn't exist!" );
+        return $s->_n_error( $irc, $Session->nick,
+            "[$cmdname] Channel doesn't exist!" );
     }
+      
     LOG("Deleting channel '$channame'");
-     if ( $Channel->_delete ) {
+    if ( $db->NetworkChannels->delete($Channel)) {
         $irc->yield( notice => $Session->nick =>
               "[$cmdname] Channel $type$channame deleted." );
         my $aj = $irc->plugin_get('AutoJoin');
@@ -130,8 +135,8 @@ sub channel_del {
         $irc->yield( part => "$type$channame" );
     }
     else {
-       return $s->_n_error($irc, $Session->nick,
-              "[$cmdname] Cannot delete channel $type$channame" );
+        return $s->_n_error( $irc, $Session->nick,
+            "[$cmdname] Cannot delete channel $type$channame" );
     }
     return PCI_EAT_ALL;
 }
@@ -145,19 +150,24 @@ sub channel_add {
 
     my ($channame) = ( split( /\s+/, $msg ) )[1];
     $channame =~ /^(#|&)([\w\d_]+)$/ or do {
-        return $s->_n_error($irc, $Session->nick, "[$cmdname] Invalid syntax, "
-              . $s->pretty_help($cmdname) );
+        return $s->_n_error( $irc, $Session->nick,
+            "[$cmdname] Invalid syntax, " . $s->pretty_help($cmdname) );
     };
     my $type;
     ( $type, $channame ) = ( $1, $2 );
-    my $Channel = $db->Channels->get_by( { type => $type, name => $channame } );
+    my $Channel =
+      $db->NetworkChannels->get_by( $irc->{Network},
+        { type => $type, name => $channame } );
     if ($Channel) {
-        return $s->_n_error($irc, $Session->nick, "[$cmdname] Channel '"
+        return $s->_n_error( $irc, $Session->nick,
+                "[$cmdname] Channel '"
               . $Channel->_usable_name
               . "' already exist!" );
     }
     LOG("Creating channel '$channame'");
-    $Channel = $db->NetworkChannels->create( $irc->{Network}, $type, $channame, $Session->user_id );
+    $Channel =
+      $db->NetworkChannels->create( $irc->{Network}, $type, $channame,
+        $Session->user_id );
     if ($Channel) {
         $irc->yield( notice => $Session->nick =>
               "[$cmdname] Channel $type$channame created." );
@@ -166,14 +176,14 @@ sub channel_add {
         $irc->yield( join => "$type$channame" );
     }
     else {
-       return $s->_n_error($irc, $Session->nick,
-              "[$cmdname] Cannot create channel $type$channame" );
+        return $s->_n_error( $irc, $Session->nick,
+            "[$cmdname] Cannot create channel $type$channame" );
     }
     return PCI_EAT_ALL;
 }
 
 sub channel_info {
-    my ( $s, $Session, $User, $irc, $event ) = splice @_, 0, 4;
+    my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'channel_info';
     my $PCMD    = $s->get_cmd($cmdname);
@@ -182,22 +192,29 @@ sub channel_info {
     print "msg: $msg\n";
     my $chan = ( split( /\s+/, $msg ) )[1];
     $chan =~ /^([#&])([^\s]+)/ or do {
-        return $s->_n_error($irc, $Session->nick, "[$cmdname] Invalid channel name!" );
+        return $s->_n_error( $irc, $Session->nick,
+            "[$cmdname] Invalid channel name!" );
     };
     my ( $type, $name ) = ( $1, $2 );
     unless ( is_valid_chan_name("$type$name") ) {
-        return $s->_n_error($irc, $Session->nick, "[$cmdname] Invalid channel name $type$name" );
+        return $s->_n_error( $irc, $Session->nick,
+            "[$cmdname] Invalid channel name $type$name" );
     }
-    my $Channel = $db->NetworkChannels->get_by( $irc->{Network}, { type => $type, name => $name } );
+    my $Channel =
+      $db->NetworkChannels->get_by( $irc->{Network},
+        { type => $type, name => $name } );
     unless ($Channel) {
-        return $s->_n_error($irc, $Session->nick,
-              "[$cmdname] Channel $type$name not found!" );
+        return $s->_n_error( $irc, $Session->nick,
+            "[$cmdname] Channel $type$name not found!" );
     }
     my $Owner;
     if ( $Channel->owner ) {
         $Owner = $db->Users->get( $Channel->owner );
     }
-    my $out = "Channel information [$type$name] ";
+    my $out =
+        "Channel information [$type$name] ("
+      . localtime( int $Channel->created_on )
+      . ")";
     $out .= ( $Owner ? " (" . $Owner->name . ")\n" : "\n" );
     $out .= " - bot mode_____: "
       . ( $Channel->bot_mode ? "+" . $Channel->bot_mode : "" ) . "\n";
@@ -219,7 +236,8 @@ sub channel_info {
     $out .= " - active_______: " . ( $Channel->active ? "yes" : "no" ) . "\n";
     $out .=
       " - bot joined___: " . ( $Channel->bot_joined ? "yes" : "no" ) . "\n";
-
+$out .=
+      " - updated on___: " .  localtime( int $Channel->updated_on ) . "\n";
     my @lines = split( /\n/, $out );
     $s->_send_lines( $irc, 'notice', $Session->nick, @lines );
     return PCI_EAT_ALL;
@@ -234,22 +252,26 @@ sub channel_set {
 
     my ( $cmd, $chan, $key, $value ) = split /\s+/, $msg;
     $chan =~ /^([#&])([^\s]+)$/ or do {
-        return $s->_n_error($irc, $Session->nick, "[$cmdname] Invalid channel name!" );
+        return $s->_n_error( $irc, $Session->nick,
+            "[$cmdname] Invalid channel name!" );
     };
     my ( $type, $name ) = ( $1, $2 );
     unless ( is_valid_chan_name("$type$name") ) {
-        return $s->_n_error($irc, $Session->nick,,
-              "[$cmdname] Invalid channel name '$type$name'!" );
+        return $s->_n_error( $irc, $Session->nick,,
+            "[$cmdname] Invalid channel name '$type$name'!" );
     }
-    my $Channel = $db->NetworkChannels->get_by($irc->{Network}, { type => $type, name => $name } );
+    my $Channel =
+      $db->NetworkChannels->get_by( $irc->{Network},
+        { type => $type, name => $name } );
     unless ($Channel) {
-        return $s->_n_error($irc, $Session->nick,
-              "[$cmdname] Channel '$type$name' not found!" );
+        return $s->_n_error( $irc, $Session->nick,
+            "[$cmdname] Channel '$type$name' not found!" );
     }
     my @akeys =
       qw(ulimit auto_mode auto_topic auto_op auto_voice active topic password  mode);
     unless ( grep /^$key$/, @akeys ) {
-        return $s->_n_error($irc, $Session->nick, "[$cmdname] Invalid key $key" );
+        return $s->_n_error( $irc, $Session->nick,
+            "[$cmdname] Invalid key $key" );
     }
 
     if ( $key eq 'ulimit' ) {
@@ -281,8 +303,8 @@ sub channel_set {
           if $mode_change and $Channel->auto_mode;
     }
     else {
-        return $s->_n_error($irc, $Session->nick,
-              "[$cmdname] Cannot set $key to $value" );
+        return $s->_n_error( $irc, $Session->nick,
+            "[$cmdname] Cannot set $key to $value" );
     }
     return PCI_EAT_ALL;
 }
@@ -294,9 +316,10 @@ sub channel_list {
     my $PCMD    = $s->get_cmd($cmdname);
     my $db      = App::IRC::Bot::Shoze::Db->new;
 
-    my @list = $db->NetworkChannels->list($irc->{$Network});
+    my @list = $db->NetworkChannels->list( $irc->{Network} );
     unless (@list) {
-        return $s->_n_error($irc, $Session->nick, "[$cmdname] No channel in database " );
+        return $s->_n_error( $irc, $Session->nick,
+            "[$cmdname] No channel in database " );
         return PCI_EAT_ALL;
     }
     $irc->yield( notice => $Session->nick => "[$cmdname] Listing channel " );
@@ -329,29 +352,32 @@ sub channel_set_owner {
     LOG("msg: $msg");
     my ( $channame, $name ) = ( split( /\s+/, $msg ) )[ 1 .. 2 ];
     $channame =~ /^(#|&)([\w\d_-]+)$/ or do {
-        return $s->_n_error($irc, $Session->nick, "[$cmdname] Invalid channel name, "
-              . $s->pretty_help($cmdname) );
+        return $s->_n_error( $irc, $Session->nick,
+            "[$cmdname] Invalid channel name, " . $s->pretty_help($cmdname) );
     };
     my $type;
     ( $type, $channame ) = ( $1, $2 );
     $name =~ /^[\w\d_-]+$/ or do {
-        return $s->_n_error($irc, $Session->nick,"[$cmdname] Invalid user name, "
-              . $s->pretty_help($cmdname) );
+        return $s->_n_error( $irc, $Session->nick,
+            "[$cmdname] Invalid user name, " . $s->pretty_help($cmdname) );
     };
-    my $Channel = $db->Channels->get_by( { type => $type, name => $channame } );
+    my $Channel = $db->NetworkChannels->get_by($irc->{Network}, { type => $type, name => $channame } );
     unless ($Channel) {
-        return $s->_n_error($irc, $Session->nick,
-              "[$cmdname] No channel named '$type$channame'" );
+        return $s->_n_error( $irc, $Session->nick,
+            "[$cmdname] No channel named '$type$channame'" );
     }
     my $Owner = $db->Users->get_by( { name => $name } );
     unless ($Owner) {
-        return $s->_n_error($irc, $Session->nick,"[$cmdname] No user named '$name'" );
+        return $s->_n_error( $irc, $Session->nick,
+            "[$cmdname] No user named '$name'" );
         return PCI_EAT_ALL;
     }
     my $CurrentOwner;
     if ( $Channel->owner ) {
         $CurrentOwner = $db->Users->get( $Channel->owner );
-        if ( ( $Session->user_lvl != 1000 ) and ( $CurrentOwner->lvl >= $Session->user_lvl ) ) {
+        if (    ( $Session->user_lvl != 1000 )
+            and ( $CurrentOwner->lvl >= $Session->user_lvl ) )
+        {
             $irc->yield( notice => $Session->nick =>
                   "[$cmdname] You cannot change this channel owner!" );
             return PCI_EAT_ALL;
@@ -382,7 +408,7 @@ sub channel_set_owner {
 }
 
 sub join {
-    my ( $self, $Session, $User, $irc, $event ) = splice @_, 0, 5;
+    my ( $self, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'op';
     my $PCMD    = $self->get_cmd($cmdname);
@@ -394,13 +420,14 @@ sub join {
         push @channels, $where->[0];
     }
     for (@channels) {
-        $irc->{Shoze}->POE->IRC->Out->join( $User, $_ );
+        #$irc->{Shoze}->POE->IRC->Out->join( $User, $_ );
+        WARN(__PACKAGE__."::join NOT IMPLEMENTED");
     }
     return PCI_EAT_ALL;
 }
 
 sub part {
-    my ( $self, $Session, $User, $irc, $event ) = splice @_, 0, 5;
+    my ( $self, $Session,  $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'op';
     my $PCMD    = $self->get_cmd($cmdname);
@@ -412,13 +439,13 @@ sub part {
         push @channels, $where->[0];
     }
     for (@channels) {
-        $irc->{Shoze}->POE->IRC->Out->part( $User, $_ );
+        WARN(__PACKAGE__."::part NOT IMPLEMENTED");
     }
     return PCI_EAT_ALL;
 }
 
 sub topic {
-    my ( $self, $Session, $User, $irc, $event ) = splice @_, 0, 5;
+    my ( $self, $Session,  $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'topic';
     my $PCMD    = $self->get_cmd($cmdname);
@@ -441,22 +468,22 @@ sub topic {
     LOG("[$event] Want to set topic on '$channel': $msg");
     return PCI_EAT_NONE unless is_valid_chan_name($channel);
     my ( $type, $channame ) =~ ( $channel =~ /^(#|&)(.*)$/ );
-    my $Channel = $db->Channels->get_by( { type => $type, name => $channame } );
+    my $Channel = $db->NetworkChannels->get_by( $irc->{Network},{ type => $type, name => $channame } );
     LOG("Want to set topic: chan ok");
     return PCI_EAT_NONE unless $Channel;
     my $can = 0;
 
-    if ( $User->lvl >= 800 ) {
+    if ( $Session->user_lvl >= 800 ) {
         $can = 1;
     }
-    elsif ( $User->id == $Channel->owner ) {
+    elsif ( $Session->user_id == $Channel->owner ) {
         $can = 1;
     }
     else {
         return PCI_EAT_NONE;
     }
     $Channel->topic($topic);
-    $Channel->topic_setby( $User->id );
+    $Channel->topic_setby( $Session->user_id );
     $Channel->topic_seton(time);
     unless ( $Channel->_update ) {
         WARN("Cannot update channel $channel with new topic informations");
@@ -464,14 +491,14 @@ sub topic {
     }
     if ($topic) {
         $topic .=
-          " (" . $User->name . "/" . localtime( $Channel->topic_seton ) . ")";
+          " (" . $Session->user_name . "/" . localtime( $Channel->topic_seton ) . ")";
     }
     $irc->yield( 'topic' => $channel => $topic );
     return PCI_EAT_ALL;
 }
 
 sub op {
-    my ( $self, $Session, $User, $irc, $event ) = splice @_, 0, 5;
+    my ( $self, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'op';
     my $PCMD    = $self->get_cmd($cmdname);
@@ -487,13 +514,13 @@ sub op {
         /^(#|&)(.*)$/;
         my ( $type, $channame ) = ( $1, $2 );
         my $Channel =
-          $db->Channels->get_by( { type => $type, name => $channame } );
+          $db->NetworkChannels->get_by( $irc->{Network}, { type => $type, name => $channame } );
         next unless $Channel;
         my $canop = 0;
-        if ( $User->lvl >= 800 ) {
+        if ( $Session->user_lvl >= 800 ) {
             $canop = 1;
         }
-        elsif ( $Channel->owner and ( $User->id == $Channel->owner ) ) {
+        elsif ( $Channel->owner and ( $Session->user_id == $Channel->owner ) ) {
             $canop = 1;
         }
         else {
@@ -506,16 +533,15 @@ sub op {
 }
 
 sub deop {
-    my ( $self, $Session, $User, $irc, $event ) = splice @_, 0, 5;
+    my ( $self, $Session,  $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'op';
     my $PCMD    = $self->get_cmd($cmdname);
     my $db      = App::IRC::Bot::Shoze::Db->new;
-    ;
 
     my $channel = $where->[0];
-    if ( $User->lvl >= 800 ) {
-        LOG( $User->name . "800+ request deop on $channel" );
+    if ( $Session->user_lvl >= 800 ) {
+        LOG( $Session->user_name . "800+ request deop on $channel" );
         $self->deop_who_on( $irc, $Session->nick, $channel );
         return PCI_EAT_ALL;
     }

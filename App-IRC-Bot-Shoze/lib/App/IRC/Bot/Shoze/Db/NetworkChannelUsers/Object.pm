@@ -16,9 +16,9 @@ our %fields = (
     id         => undef,
     nick_id    => undef,
     channel_id => undef,
+    mode       => undef,
     created_on => undef,
     updated_on => undef,
-    mode       => undef,
 
     _object_name => undef,
     _object_db   => undef,

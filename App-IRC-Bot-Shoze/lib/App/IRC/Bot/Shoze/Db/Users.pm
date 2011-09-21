@@ -8,7 +8,7 @@ use Carp;
 use IRC::Utils qw(:ALL);
 use Crypt::Passwd::XS;
 
-use lib qw(../../);
+use lib qw(../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
 use App::IRC::Bot::Shoze::Db::Users::Object qw();
 use App::IRC::Bot::Shoze::Log;

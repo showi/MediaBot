@@ -18,7 +18,7 @@ use POE qw(
 
 use Data::Dumper;
 
-use lib qw(../../../../../../);
+use lib qw(../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::Constants;

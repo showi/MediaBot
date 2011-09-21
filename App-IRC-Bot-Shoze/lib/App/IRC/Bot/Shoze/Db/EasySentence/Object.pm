@@ -5,7 +5,7 @@ use warnings;
 
 use Carp;
 
-use lib qw(../../../);
+use lib qw(../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(DESTROY);
 use App::IRC::Bot::Shoze::Db::SynchObject qw(:ALL);
 use App::IRC::Bot::Shoze::Log;
@@ -13,10 +13,12 @@ use App::IRC::Bot::Shoze::Log;
 our $AUTOLOAD;
 
 our %fields = (
-    id     => undef,
-    text   => undef,
-    author => undef,
-    tags   => undef,
+    id         => undef,
+    text       => undef,
+    author     => undef,
+    tags       => undef,
+    updated_on => undef,
+    created_on => undef,
 
     _object_name => undef,
     _object_db   => undef,

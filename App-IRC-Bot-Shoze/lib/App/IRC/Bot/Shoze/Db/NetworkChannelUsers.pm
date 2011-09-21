@@ -59,8 +59,8 @@ sub create {
     my $C  = new App::IRC::Bot::Shoze::Db::NetworkChannelUsers::Object($db);
     $C->channel_id( $Channel->id );
     $C->nick_id( $Nick->id );
-    $C->created_on($time);
-    $C->updated_on($time);
+#    $C->created_on($time);
+#    $C->updated_on($time);
     return $C->_create;
 }
 
@@ -145,6 +145,7 @@ SQL
     }
     return @list;
 }
+
 
 sub empty {
     my ($s) = @_;

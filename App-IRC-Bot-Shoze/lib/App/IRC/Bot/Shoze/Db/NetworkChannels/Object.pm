@@ -19,7 +19,6 @@ our %fields = (
     password    => undef,
     auto_topic  => undef,
     ulimit      => undef,
-    created_on  => undef,
     id          => undef,
     auto_op     => undef,
     owner       => undef,
@@ -33,6 +32,8 @@ our %fields = (
     type        => undef,
     created_by  => undef,
     network_id  => undef,
+    updated_on => undef,
+    created_on => undef,
     
     _object_name => undef,
     _object_db   => undef,

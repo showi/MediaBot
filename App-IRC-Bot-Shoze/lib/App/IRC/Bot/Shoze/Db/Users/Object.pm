@@ -5,7 +5,7 @@ use warnings;
 
 use Carp;
 
-use lib qw(../../../);
+use lib qw(../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(DESTROY);
 use App::IRC::Bot::Shoze::Db::SynchObject qw(:ALL);
 use App::IRC::Bot::Shoze::Log;
@@ -13,19 +13,20 @@ use App::IRC::Bot::Shoze::Log;
 our $AUTOLOAD;
 
 our %fields = (
-    id            => undef,
-    apikey  => undef,
+    id             => undef,
+    apikey         => undef,
     apikey_private => undef,
-    hostmask => undef,
-    pending => undef,
-    lvl => undef,
-    name => undef,
-    password => undef,
-    is_bot => undef,
-    created_on => undef,
+    hostmask       => undef,
+    pending        => undef,
+    lvl            => undef,
+    name           => undef,
+    password       => undef,
+    is_bot         => undef,
+    updated_on     => undef,
+    created_on     => undef,
     
-    _object_name => undef,
-    _object_db   => undef,
+    _object_name   => undef,
+    _object_db     => undef,
 );
 
 sub new {
@@ -40,7 +41,7 @@ sub new {
     };
 
     bless( $s, $class );
-    $s->_init_fields(); # DIRTY HACK VALUES IS SET TO 1 on init ...
+    $s->_init_fields();    # DIRTY HACK VALUES IS SET TO 1 on init ...
     $s->_object_name('users');
     $s->_object_db($object_db);
     return $s;
@@ -49,7 +50,7 @@ sub new {
 sub _usable_name {
     my $s = shift;
     return $s->type . $s->name;
-    
-} 
+
+}
 
 1;

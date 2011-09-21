@@ -11,7 +11,7 @@ use IRC::Utils qw(:ALL);
 
 use Data::Dumper;
 
-use lib qw(../../../../../);
+use lib qw(../../../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;
@@ -158,11 +158,11 @@ sub S_invite {
 #    $TmpSession->parse_who($who);
     my ($nick, $user, $hostname) = parse_user($who);
     my $Session =
-      $db->Sessions->get( $TmpSession->nick, $TmpSession->user,
-        $TmpSession->hostname );
+      $db->Sessions->get_extended( $nick, $user,
+        $hostname );
 
     unless ($Session) {
-        $irc->yield( privmsg => $TmpSession->nick => "# Who are you!" );
+        $irc->yield( privmsg => $nick => "# Who are you!" );
         return PCI_EAT_ALL;
     }
     my $User;

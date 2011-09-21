@@ -9,7 +9,7 @@ use POE::Component::IRC::Plugin qw(:ALL);
 
 use Data::Dumper;
 
-use lib qw(../../../../../);
+use lib qw(../../../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;
@@ -30,7 +30,7 @@ sub new {
             'help' => {
                 access           => 'msg',
                 lvl              => 0,
-                help_cmd         => '!help',
+                help_cmd         => '!help [regexp]',
                 help_description => 'Listing available command',
             },
         }
@@ -39,17 +39,27 @@ sub new {
 }
 
 sub help {
-    my ( $self, $Session, $User, $irc, $event ) = splice @_, 0, 5;
+    my ( $self, $Session,  $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'help';
     my $PCMD    = $self->get_cmd($cmdname);
     my $C       = $irc->plugin_get('BotCmdPlus');
     my $mylvl   = 0;
-    $mylvl = $User->lvl if ($User);
-
+    
+    my ($cmd, $match) = split(/\s+/, $msg);
+    if ($match =~ /^[\w\d]+$/) {
+        $match = qr/$match/;  
+    }else {
+      $match = undef;
+    }
+    $mylvl = $Session->user_lvl if ($Session->user_id);
     $irc->yield( notice => $Session->nick => "[$cmdname] Listing command:" );
+    
     #print Dumper $C->cmd;
     for my $cmd ( sort keys %{ $C->cmd } ) {
+        if ($match) {
+            next unless $cmd =~ /$match/i;
+        }
         my $plugin = $C->cmd->{$cmd}->{plugin}->cmd->{$cmd};
 #        LOG( "Show cmd '$cmd': " . $plugin->{lvl} );
 #        LOG( "Show cmd '$cmd': " . $plugin->{help_cmd} );

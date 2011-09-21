@@ -65,7 +65,7 @@ sub create {
     my $A = new App::IRC::Bot::Shoze::Db::NetworkNicks::Object( $s->_parent );
     $A->network_id( $Network->id );
     $A->nick($nick);
-    $A->created_on(time);
+#    $A->created_on(time);
     return $A->_create();
 }
 

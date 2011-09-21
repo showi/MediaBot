@@ -17,7 +17,8 @@ Version 0.01
 =cut
 
 our $PROGRAMNAME  = "Shoze";
-our $VERSION      = "0.0.6";
+our $VERSION      = "0.0.7";
+our $VERSIONNAME  = "regeneration";
 our $LASTVERSION  = "1314675373";
 our $PROGRAMBIRTH = "1313893570";
 our $DEBUG        = 1;
@@ -43,7 +44,7 @@ if you don't export anything, such as for a purely object-oriented module.
 =head2 function1
 
 =cut
-use lib qw();
+use lib qw(../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
 use App::IRC::Bot::Shoze::Config;
 use App::IRC::Bot::Shoze::POE;
@@ -55,9 +56,7 @@ use App::IRC::Bot::Shoze::Log;
 our %fields = (
     _path  => "",
     _debug => 1,
-   # Config => undef,
     POE    => undef,
-   # Db     => undef,
     Log    => undef,
     HTTP   => undef,
 );
@@ -83,7 +82,6 @@ sub new {
     $s->_path($path) if $path;
     $s->read_config($s);
     $Singleton = $s;
-    #$s->Db( new App::IRC::Bot::Shoze::Db($s) );
     new App::IRC::Bot::Shoze::Db($s);
     
     $s->POE( new App::IRC::Bot::Shoze::POE($s) );

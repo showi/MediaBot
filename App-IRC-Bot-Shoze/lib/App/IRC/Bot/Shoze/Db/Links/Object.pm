@@ -5,7 +5,7 @@ use warnings;
 
 use Carp;
 
-use lib qw(../../../);
+use lib qw(../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(DESTROY);
 use App::IRC::Bot::Shoze::Db::SynchObject qw(:ALL);
 use App::IRC::Bot::Shoze::Log;
@@ -13,23 +13,25 @@ use App::IRC::Bot::Shoze::Log;
 our $AUTOLOAD;
 
 our %fields = (
-    id      => undef,
+    id         => undef,
     network_id => undef,
-    lvl => undef,
-    hostmask => undef,
-    nick => undef,
-    on_ws => undef,
-    on_irc => undef,
-    ipv4 => undef,
-    port => undef,
-    
+    lvl        => undef,
+    hostmask   => undef,
+    nick       => undef,
+    on_ws      => undef,
+    on_irc     => undef,
+    ipv4       => undef,
+    port       => undef,
+    updated_on => undef,
+    created_on => undef,
+
     _object_name => undef,
     _object_db   => undef,
 );
 
 sub new {
     my ( $proto, $object_db ) = @_;
-    DEBUG( "Creating new " . __PACKAGE__ , 5);
+    DEBUG( "Creating new " . __PACKAGE__, 5 );
     croak "No database object passed as first parameter" unless ref($object_db);
     my $class = ref($proto) || $proto;
     my $s = {

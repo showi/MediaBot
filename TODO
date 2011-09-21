@@ -3,11 +3,9 @@
 
 1.1 Global
 ----------
- - Put IRC POE Session in Shoze::POE::IRC
- - Put WS  POE Session in Shoze::POE::WS (Web Service)
- - Use singleton and pool of objects
  
-1.1 REST
+
+1.2 REST
 --------
  - Party Line over HTTPS and IRC
  - Log channels activities and commands in database 
@@ -31,3 +29,7 @@ Send
 -------
 - Remove configuration from file (MediaBot::IRC). The bot must gather 
   informations from the database instead.
+- Put IRC POE Session in Shoze::POE::IRC (done)
+- Put WS  POE Session in Shoze::POE::WS (Web Service) (done)
+- Use singleton and pool of objects (done)
+  

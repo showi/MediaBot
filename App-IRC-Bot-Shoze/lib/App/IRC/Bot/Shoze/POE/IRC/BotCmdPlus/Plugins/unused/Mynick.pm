@@ -9,7 +9,7 @@ use POE::Component::IRC::Plugin qw(:ALL);
 
 use Data::Dumper;
 
-use lib qw(../../../../../);
+use lib qw(../../../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;

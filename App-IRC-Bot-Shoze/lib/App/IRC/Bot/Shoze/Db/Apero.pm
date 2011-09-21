@@ -7,7 +7,7 @@ use Carp;
 
 use IRC::Utils qw(:ALL);
 
-use lib qw(../../);
+use lib qw(../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
 use App::IRC::Bot::Shoze::Db::Apero::Object qw();
 use App::IRC::Bot::Shoze::Log;

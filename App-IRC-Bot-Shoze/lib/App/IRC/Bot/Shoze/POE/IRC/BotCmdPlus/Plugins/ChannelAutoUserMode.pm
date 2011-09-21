@@ -1,4 +1,4 @@
-package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::ChannelAutoMode;
+package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::ChannelAutoUserMode;
 
 use strict;
 use warnings;
@@ -10,7 +10,7 @@ use Data::Dumper;
 use POE::Component::IRC::Plugin qw(:ALL);
 use IRC::Utils qw(:ALL);
 
-use lib qw(../../../../../);
+use lib qw(../../../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;
@@ -56,7 +56,7 @@ sub S_join {
         return PCI_EAT_NONE;
     }
     my @AutoMode =
-      $db->ChannelAutoMode->list_by( { channel_id => $Channel->id, } );
+      $db->ChannelUserAutoMode->list_by( { channel_id => $Channel->id, } );
     for (@AutoMode) {
         if ( matches_mask( $_->hostmask, $who ) ) {
             LOG( "AutoMode match hostmask '" . $_->hostmask . "'" );

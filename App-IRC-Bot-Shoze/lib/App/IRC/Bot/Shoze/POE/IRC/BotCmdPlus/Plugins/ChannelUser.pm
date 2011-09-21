@@ -1,3 +1,9 @@
+###############################################################################
+# The plugin allow admin and channel owner to link user to channel and
+# manage their rights.
+# TODO: Find another name so we want confuse this plugin with 
+# NetworkChannelUsers who store current people who have joined this channel
+##############################################################################
 package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::ChannelUser;
 
 use strict;
@@ -8,7 +14,7 @@ use Carp;
 use POE::Component::IRC::Plugin qw(:ALL);
 use IRC::Utils qw(:ALL);
 
-use lib qw(../../../../../);
+use lib qw(../../../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;
@@ -68,7 +74,7 @@ sub new {
 
 ###############################################################################
 sub chanuser_add {
-    my ( $s, $Session, $User, $irc, $event ) = splice @_, 0, 5;
+    my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'chanuser_add';
     my $PCMD    = $s->get_cmd($cmdname);
@@ -81,13 +87,13 @@ sub chanuser_add {
         return $s->_n_error( $irc, $Session->nick,
             "Invalid channel name '$chan'" );
     }
-    my ($type, $channame) = ($chan =~ /^(#|&)(.*)$/);
-    my $Channel = $db->Channels->get_by({ type => $type, name => $channame });
+    my ($type, $channame) = splitchannel($chan);
+    my $Channel = $db->NetworkChannels->get_by($irc->{Network}, { type => $type, name => $channame });
     unless ($Channel) {
         return $s->_n_error( $irc, $Session->nick,
             "Channel '$chan' not found" );
     }
-    if ( ( $Channel->owner != $User->id ) or ( $User->lvl < 800 ) ) {
+    if ( ( $Channel->owner != $Session->user_id ) or ( $Session->user_lvl < 800 ) ) {
         return $s->_n_error( $irc, $Session->nick,
             "You can't add user to channel '$chan'" );
     }
@@ -114,7 +120,6 @@ sub chanuser_add {
         $setlvl = 500;
     }
     $ChannelUser->lvl($setlvl);
-    $ChannelUser->created_on(time);
     unless ( $ChannelUser->_create ) {
         return $s->_n_error( $irc, $Session->nick,
             "Cannot link user '$uname' to channel '$chan'" );
@@ -128,7 +133,7 @@ sub chanuser_add {
 
 ###############################################################################
 sub chanuser_set {
-    my ( $s, $Session, $User, $irc, $event ) = splice @_, 0, 5;
+    my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'chanuser_set';
     my $PCMD    = $s->get_cmd($cmdname);
@@ -147,12 +152,12 @@ sub chanuser_set {
             "Invalid channel name '$chan'" );
     }
     my ($type, $channame) = ($chan =~ /^(#|&)(.*)$/);
-    my $Channel = $db->Channels->get_by({ type => $type, name => $channame });
+    my $Channel = $db->NetworkChannels->get_by($irc->{Network}, { type => $type, name => $channame });
     unless ($Channel) {
         return $s->_n_error( $irc, $Session->nick,
             "Channel '$chan' not found" );
     }
-    if ( ( $Channel->owner != $User->id ) or ( $User->lvl < 800 ) ) {
+    if ( ( $Channel->owner != $Session->user_id ) or ( $Session->user_lvl < 800 ) ) {
         return $s->_n_error( $irc, $Session->nick,
             "You can't set key '$key' to channel '$chan'" );
     }
@@ -161,7 +166,7 @@ sub chanuser_set {
         return $s->_n_error( $irc, $Session->nick, "Unknow user '$uname'" );
     }
     my $MeChanUser = $db->ChannelUsers->get_by(
-        { channel_id => $Channel->id, user_id => $User->id } );
+        { channel_id => $Channel->id, user_id => $Session->user_id } );
     my $TChanUser = $db->ChannelUsers->get_by(
         { channel_id => $Channel->id, user_id => $TUser->id } );
     if ( $key eq "lvl" ) {
@@ -203,7 +208,7 @@ sub chanuser_set {
 
 ###############################################################################
 sub chanuser_list {
-    my ( $s, $Session, $User, $irc, $event ) = splice @_, 0, 5;
+    my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'chanuser_list';
     my $PCMD    = $s->get_cmd($cmdname);
@@ -222,7 +227,7 @@ sub chanuser_list {
         return $s->_n_error( $irc, $Session->nick,
             "Channel '$chan' not found" );
     }
-    if ( ( $Channel->owner != $User->id ) or ( $User->lvl < 800 ) ) {
+    if ( ( $Channel->owner != $Session->user_id ) or ( $Session->user_lvl < 800 ) ) {
         return $s->_n_error( $irc, $Session->nick,
             "You can't list user linked to channel '$chan'" );
     }
@@ -248,7 +253,7 @@ sub chanuser_list {
 
 ###############################################################################
 sub chanuser_info {
-    my ( $s, $Session, $User, $irc, $event ) = splice @_, 0, 5;
+    my ( $s, $Session,  $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'chanuser_info';
     my $PCMD    = $s->get_cmd($cmdname);
@@ -262,12 +267,12 @@ sub chanuser_info {
             "Invalid channel name '$chan'" );
     }
     my ($type, $channame) = ($chan =~ /^(#|&)(.*)$/);
-    my $Channel = $db->Channels->get_by({ type => $type, name => $channame });
+    my $Channel = $db->NetworkChannels->get_by($irc->{Network}, { type => $type, name => $channame });
     unless ($Channel) {
         return $s->_n_error( $irc, $Session->nick,
             "Channel '$chan' not found" );
     }
-    if ( ( $Channel->owner != $User->id ) or ( $User->lvl < 800 ) ) {
+    if ( ( $Channel->owner != $Session->user_id ) or ( $Session->user_lvl < 800 ) ) {
         return $s->_n_error( $irc, $Session->nick,
             "You can't get information on user '$uname' for channel '$chan'" );
     }
@@ -292,7 +297,7 @@ sub chanuser_info {
 
 ###############################################################################
 sub chanuser_del {
-    my ( $s, $Session, $User, $irc, $event ) = splice @_, 0, 5;
+    my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'chanuser_del';
     my $PCMD    = $s->get_cmd($cmdname);
@@ -305,13 +310,13 @@ sub chanuser_del {
         return $s->_n_error( $irc, $Session->nick,
             "Invalid channel name '$chan'" );
     }
-    my ($type, $channame) = ($chan =~ /^(#|&)(.*)$/);
-    my $Channel = $db->Channels->get_by($chan);
+    my ($type, $channame) = splitchannel($chan);
+    my $Channel = $db->NetworkChannels->get_by($irc->{Network}, {type => $type, name => $channame});
     unless ($Channel) {
         return $s->_n_error( $irc, $Session->nick,
             "Channel '$chan' not found" );
     }
-    if ( ( $Channel->owner != $User->id ) or ( $User->lvl < 800 ) ) {
+    if ( ( $Channel->owner != $Session->user_id ) or ( $Session->user_lvl < 800 ) ) {
         return $s->_n_error( $irc, $Session->nick,
             "You can't delete user linked to channel '$chan'" );
     }

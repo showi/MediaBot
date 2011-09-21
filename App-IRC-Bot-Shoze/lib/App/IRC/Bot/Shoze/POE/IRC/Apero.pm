@@ -10,7 +10,7 @@ use IRC::Utils qw(:ALL);
 use Encode qw(encode_utf8 encode decode);
 use Unicode::Normalize;
 
-use lib qw(../../../);
+use lib qw(../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
 use App::IRC::Bot::Shoze::Constants;
 use App::IRC::Bot::Shoze::Log;

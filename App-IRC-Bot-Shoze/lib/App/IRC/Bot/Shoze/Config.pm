@@ -8,7 +8,7 @@ use Carp;
 use YAML qw(LoadFile Dump);
 use Data::Dumper qw(Dumper);
 
-use lib qw(..);
+use lib qw(../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
 use App::IRC::Bot::Shoze::Log;
 

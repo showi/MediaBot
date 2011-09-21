@@ -9,7 +9,7 @@ use POE::Component::IRC::Plugin qw(:ALL);
 use IRC::Utils qw(:ALL);
 use Encode qw(encode_utf8 encode decode);
 
-use lib qw(../../../../../);
+use lib qw(../../../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;
@@ -72,7 +72,7 @@ sub new {
 
 ###############################################################################
 sub sentence_add {
-    my ( $s, $Session, $User, $irc, $event ) = splice @_, 0, 5;
+    my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'sentence_add';
     my $PCMD    = $s->get_cmd($cmdname);
@@ -113,7 +113,7 @@ sub sentence_add {
 
 ###############################################################################
 sub sentence_list {
-    my ( $s, $Session, $User, $irc, $event ) = splice @_, 0, 5;
+    my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'sentence_list';
     my $PCMD    = $s->get_cmd($cmdname);
@@ -146,7 +146,7 @@ sub sentence_list {
 
 ###############################################################################
 sub insulte {
-    my ( $self, $Session, $User, $irc, $event ) = splice @_, 0, 5;
+    my ( $self, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'insulte';
     my $PCMD    = $self->get_cmd($cmdname);
@@ -169,7 +169,7 @@ sub insulte {
 
 ###############################################################################
 sub carambar {
-    my ( $self, $Session, $User, $irc, $event ) = splice @_, 0, 5;
+    my ( $self, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'carambar';
     my $PCMD    = $self->get_cmd($cmdname);
@@ -193,7 +193,7 @@ sub carambar {
 
 ###############################################################################
 sub proverbe {
-    my ( $self, $Session, $User, $irc, $event ) = splice @_, 0, 5;
+    my ( $self, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'proverbe';
     my $PCMD    = $self->get_cmd($cmdname);

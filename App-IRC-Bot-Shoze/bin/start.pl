@@ -5,7 +5,7 @@ use warnings;
 
 use Carp;
 
-use lib qw(lib/);
+use lib qw(../lib/);
 
 use App::IRC::Bot::Shoze;
 use App::IRC::Bot::Shoze::Log;

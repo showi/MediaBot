@@ -10,7 +10,7 @@ use Data::Dumper;
 use POE::Component::IRC::Plugin qw(:ALL);
 use IRC::Utils qw(:ALL);
 
-use lib qw(../../../../../);
+use lib qw(../../../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;
@@ -81,7 +81,7 @@ sub S_tld_result {
 }
 
 sub tld {
-    my ( $s, $Session, $User, $irc, $event ) = splice @_, 0, 5;
+    my ( $s, $Session,  $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'tld';
     my $PCMD    = $s->get_cmd($cmdname);
@@ -91,7 +91,7 @@ sub tld {
 
     my $cmd;
     ( $cmd, $msg ) = split( /\s+/, str_chomp($msg) );
-    my $SubTask = $irc->{Shoze}->POE->SubTask;
+    my $SubTask = App::IRC::Bot::Shoze->new->POE->SubTask;
     my $data    = {
         event   => "irc_tld_result",
         name    => "tld",
@@ -100,7 +100,6 @@ sub tld {
         who     => $who,
         where   => $where->[0],
     };
-    LOG("Add to SubTask $SubTask");
     $SubTask->add_task($data);
     return PCI_EAT_ALL;
 }

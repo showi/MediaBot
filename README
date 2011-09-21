@@ -7,6 +7,9 @@ MediaBot is built on top of POE::Component::IRC. He must provide user and channe
 - Versions
 ----------
 
+0.0.7 2011/09/18 Change in the underlying database to manage different irc network at the same time, track channel user ...
+----------------
+
 0.0.6 2011/08/07 Introduce apero, beeer for everyone !
 ----------------
 

@@ -106,7 +106,7 @@ sub S_part {
     my ($chantype, $channame) = ($channel =~ /^(#|&)(.*)$/);
     my $Channel = $db->NetworkChannels->get_by($Network, {type => $chantype, name => $channame});
     unless($Channel) {
-        WARN("Could not find channel '".$Channel->_usable_name."' in Network " . $Network->name);
+        WARN("Could not find channel '$channel' in Network " . $Network->name);
         return PCI_EAT_NONE;
     }
     if ($nick eq $irc->nick_name) {

@@ -9,8 +9,15 @@ use IRC::Utils qw(:ALL);
 
 use lib qw(../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
-use App::IRC::Bot::Shoze::Db::NetworkChannels::Object qw();
 use App::IRC::Bot::Shoze::Log;
+
+use App::IRC::Bot::Shoze::Db::NetworkChannels::Object qw();
+use App::IRC::Bot::Shoze::Db::NetworkChannelUsers::Object;
+use App::IRC::Bot::Shoze::Db::NetworkChannelLogs::Object;
+use App::IRC::Bot::Shoze::Db::ChannelUsers::Object;
+use App::IRC::Bot::Shoze::Db::ChannelAutoUserMode::Object;
+
+
 
 our $AUTOLOAD;
 
@@ -23,7 +30,7 @@ our %fields = (
 #############
 sub new {
     my ( $proto, $parent ) = @_;
-    DEBUG( "Creating new " . __PACKAGE__, 6);
+    DEBUG( "Creating new " . __PACKAGE__, 6 );
     croak "No parent specified" unless ref $parent;
     my $class = ref($proto) || $proto;
     my $s = {
@@ -31,17 +38,17 @@ sub new {
         %fields,
     };
     bless( $s, $class );
-    
+
     $s->_parent($parent);
     return $s;
 }
 
 ###############################################################################
 sub list {
-    my ($s, $Network) = @_;
-    croak "Need Network object as first parameter " 
-        unless ref($Network) =~ /Db::Networks::Object/;
-    my $db =  App::IRC::Bot::Shoze::Db->new;
+    my ( $s, $Network ) = @_;
+    croak "Need Network object as first parameter "
+      unless ref($Network) =~ /Db::Networks::Object/;
+    my $db = App::IRC::Bot::Shoze::Db->new;
     $db->die_if_not_open();
     my $h     = $db->handle;
     my $query = <<SQL;
@@ -56,23 +63,24 @@ SELECT c.bot_mode AS bot_mode, c.mode AS mode, c.bot_joined AS bot_joined,
 		LEFT JOIN Users AS u ON u.id = c.owner
 		WHERE n.id = ? AND c.network_id = n.id  
 SQL
-    LOG(__PACKAGE__ . "::list $query");
+    LOG( __PACKAGE__ . "::list $query" );
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute($Network->id)
+    $sth->execute( $Network->id )
       or die "Cannot execute query '$query' (" . $h->errstr . ")";
     my @list;
+
     while ( my $r = $sth->fetchrow_hashref ) {
         my $N = new App::IRC::Bot::Shoze::Db::NetworkChannels::Object($db);
         for my $k ( keys %{$N} ) {
             next if $k =~ /^_.*/;
             $N->$k( $r->{$k} );
         }
-        if (defined $r->{user_name}) {
+        if ( defined $r->{user_name} ) {
             my @extf = qw(user_name user_lvl user_is_bot);
-            for(@extf) {
+            for (@extf) {
                 $N->_add_permitted_field($_);
-                $N->$_($r->{$_});
+                $N->$_( $r->{$_} );
             }
         }
         print "Chan:" . $N->_usable_name . "\n";
@@ -85,10 +93,11 @@ SQL
 ###############################################################################
 sub get_by {
     my ( $s, $Network, $type, $name ) = @_;
-        croak "Need Network object as first parameter " 
-        unless ref($Network) =~ /Db::Networks::Object/;
+    croak "Need Network object as first parameter "
+      unless ref($Network) =~ /Db::Networks::Object/;
     $type->{network_id} = $Network->id;
-    my $C = new App::IRC::Bot::Shoze::Db::NetworkChannels::Object( $s->_parent );
+    my $C =
+      new App::IRC::Bot::Shoze::Db::NetworkChannels::Object( $s->_parent );
     return $C->_get_by($type);
 
 }
@@ -96,31 +105,63 @@ sub get_by {
 ###############################################################################
 sub create {
     my ( $s, $Network, $type, $name, $owner ) = @_;
-    croak "Need Network object as first parameter " 
-        unless ref($Network) =~ /Db::Networks::Object/;
-    my $C = new App::IRC::Bot::Shoze::Db::NetworkChannels::Object( $s->_parent );
-    $C->network_id($Network->id);
+    croak "Need Network object as first parameter "
+      unless ref($Network) =~ /Db::Networks::Object/;
+    my $time = time;
+    my $C =
+      new App::IRC::Bot::Shoze::Db::NetworkChannels::Object( $s->_parent );
+    $C->network_id( $Network->id );
     $C->type($type);
     $C->name($name);
     $C->owner($owner);
     $C->created_by($owner);
     $C->active(1);
+
+    #    $C->created_on($time);
+    #    $C->updated_on($time);
     return $C->_create();
 }
 
 ###############################################################################
 sub clear_joined {
-    my ($s, $Network) = @_;
-    my $db =  App::IRC::Bot::Shoze::Db->new;
+    my ( $s, $Network ) = @_;
+    my $db    = App::IRC::Bot::Shoze::Db->new;
     my $h     = $db->handle;
     my $query = <<SQL;
 		UPDATE network_channels SET bot_joined = NULL WHERE network_id = ?;
 SQL
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute($Network->id)
+    $sth->execute( $Network->id )
       or die "Cannot execute query '$query' (" . $h->errstr . ")";
     return $sth->rows;
+}
+
+sub delete {
+    my ( $s, $Channel ) = @_;
+    croak "Need Channel object as first parameter "
+      unless ref($Channel) =~ /Db::NetworkChannels::Object/;
+    my $db = App::IRC::Bot::Shoze::Db->new;
+
+    my $ncu = new App::IRC::Bot::Shoze::Db::NetworkChannelUsers::Object($db);
+    $ncu->_delete_by( { channel_id => $Channel->id } );
+
+    my $ncl = new App::IRC::Bot::Shoze::Db::NetworkChannelLogs::Object($db);
+
+    # Deleting log related to this channel
+    $ncl->_delete_by( { src_channel_id    => $Channel->id } );
+    $ncl->_delete_by( { target_channel_id => $Channel->id } );
+
+    # Deleting users linked to this channel
+    $ncu = new App::IRC::Bot::Shoze::Db::ChannelUsers::Object($db);
+    $ncu->_delete_by( { channel_id => $Channel->id } );
+
+    # Deleting channel auto user mode
+    $ncu = new App::IRC::Bot::Shoze::Db::ChannelAutoUserMode::Object($db);
+    $ncu->_delete_by( { channel_id => $Channel->id } );
+
+    LOG( "Deleting channel '" . $Channel->name . "'" );
+    return $Channel->_delete;
 }
 
 1;

@@ -1,4 +1,4 @@
-package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Tld;
+package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Icecast;
 
 use strict;
 use warnings;
@@ -31,17 +31,17 @@ sub new {
 
     bless( $s, $class );
     $s->_parent($parent);
-    my $program = $s->_get_root->_path . "/scripts/tld.pl";
+    my $program = $s->_get_root->_path . "/scripts/icestats.pl";
     unless ( -x $program ) {
         die "Error: $program not found or not executable";
     }
     $s->cmd(
         {
-            'tld' => {
+            'listeners' => {
                 access           => 'public',
                 lvl              => 0,
-                help_cmd         => '!tld <tld>',
-                help_description => 'Give ue tld',
+                help_cmd         => '!listeners <tld>',
+                help_description => 'Give radiocapsule listeners',
             },
         }
     );
@@ -50,7 +50,7 @@ sub new {
 
 sub PCI_register {
     my ( $s, $irc ) = splice @_, 0, 2;
-    $irc->plugin_register( $s, 'SERVER', qw(tld_result) );
+    $irc->plugin_register( $s, 'SERVER', qw(icecast_listeners_result) );
     $s->_register_cmd($irc);
     return 1;
 }
@@ -61,7 +61,7 @@ sub PCI_unregister {
     return 1;
 }
 
-sub S_tld_result {
+sub S_icecast_listeners_result {
     my ( $s, $irc ) = splice @_, 0, 2;
     my ( $who, $where, $result ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my ( $nick, $user, $hostmask ) = parse_user($who);
@@ -71,25 +71,21 @@ sub S_tld_result {
         $s->_n_error( $irc, $where,
             "Error: Script is missing or not executable" );
     }
-    my $d = $ref;
+    my $d = $ref->{icestats};
     if ( $result->status ) {
-        $irc->yield( 'privmsg' => $where => "Error: no match for tld "
-              . $d->{tld_ascii} . " ("
-              . $d->{tld_origin} . "), "
-              . $d->{type} );
+        $irc->yield( 'privmsg' => $where => "Error: Can't fetch listeners!");
         return PCI_EAT_ALL;
     }
 
-    my $str = $d->{tld_ascii} . " (" . $d->{tld_origin} . "), " . $d->{type};
-    $str .= ": " . $d->{info} if $d->{info};
+    my $str = $d->{host} . " / " . $d->{listeners} . " listeners";
     $irc->yield( 'privmsg' => $where => $str );
     return PCI_EAT_ALL;
 }
 
-sub tld {
+sub listeners {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
-    my $cmdname = 'tld';
+    my $cmdname = 'listeners';
     my $PCMD    = $s->get_cmd($cmdname);
     my $db      = App::IRC::Bot::Shoze::Db->new;
 
@@ -97,10 +93,10 @@ sub tld {
     my $cmd;
     ( $cmd, $msg ) = split( /\s+/, str_chomp($msg) );
     my $request = new App::IRC::Bot::Shoze::POE::SubTask::Request;
-    $request->event('irc_tld_result');
-    $request->name('tld');
-    $request->program( $s->_get_root->_path . "/scripts/tld.pl" );
-    $request->args($msg);
+    $request->event('irc_icecast_listeners_result');
+    $request->name('icecast');
+    $request->program( $s->_get_root->_path . "/scripts/icestats.pl" );
+    #$request->args($msg);
     $request->who($where);
     $request->where( $where->[0] );
     my $SubTask = App::IRC::Bot::Shoze->new->POE->SubTask;

@@ -27,23 +27,45 @@ use App::IRC::Bot::Shoze::Db::ChannelAutoUserMode;
 our $AUTOLOAD;
 
 our $Singleton = undef;
-
-our %fields = (
+our %fields    = (
     handle  => undef,
     is_open => undef,
 
-    Networks            => undef, # Networks(undernet, efnet...)
-    NetworkNicks        => undef, # All nicks connected to a particular network
-    NetworkSessions     => undef, # Association of nick, user and hostname. Logged user set user_id here
-    NetworkChannels     => undef, # All channels managed by the bot
-    NetworkChannelUsers => undef, # All user that have joined the channel, it's user known by the bot...
-    NetworkChannelLogs  => undef, # Permit to log channel msg to other channel, to a file or into database.
+    # Networks(undernet, efnet...)
+    Networks => undef,
 
-    Users               => undef, # Users known by the bot
-    ChannelUsers        => undef, # User linked to channels managed by the bot
-    Apero               => undef, # Funny sentences triggered by !{command}
-    Sentences           => undef, # Sentence like proverbe, carambar ... 
-    ChannelAutoUserMode => undef, # Permit to voice, op and ban user based on their hostmask
+    # All nicks connected to a particular network
+    #(may have been merged with NetworkSession)
+    NetworkNicks => undef,
+
+    # Association of nick, user and hostname. Logged user set user_id here
+    NetworkSessions => undef,
+
+    # All channels managed by the bot
+    NetworkChannels => undef,
+
+    # All user that have joined the channel
+    NetworkChannelUsers => undef,
+
+    # Permit to log channel msg to other channel, file or into database.
+    NetworkChannelLogs =>
+      undef,
+      
+    # Users known by the bot
+    Users        => undef,    
+    
+    # User linked to channels managed by the bot
+    ChannelUsers => undef,   
+    
+    # Funny sentences triggered by !{command} 
+    Apero        => undef,   
+    
+    # Sentence like proverbe, carambar ...
+    Sentences    => undef,     
+    
+    # Permit to voice, op and ban user based on their hostmask
+    ChannelAutoUserMode =>
+      undef,
 );
 
 # Constructor
@@ -54,13 +76,16 @@ sub new {
         return $Singleton;
     }
 
-    DEBUG( "Creating new " . __PACKAGE__, 6 );
+    DEBUG( "Creating new " . __PACKAGE__, 5 );
     my $class = ref($proto) || $proto;
     my $s = {
         _permitted => \%fields,
         %fields,
     };
     bless( $s, $class );
+    $Singleton = $s;
+     
+     # Initialize our database object
     $s->Networks( new App::IRC::Bot::Shoze::Db::Networks($s) );
     $s->NetworkNicks( new App::IRC::Bot::Shoze::Db::NetworkNicks($s) );
     $s->NetworkSessions( new App::IRC::Bot::Shoze::Db::NetworkSessions($s) );
@@ -79,8 +104,8 @@ sub new {
     $s->Apero( new App::IRC::Bot::Shoze::Db::Apero($s) );
     $s->Sentences( new App::IRC::Bot::Shoze::Db::EasySentence($s) );
 
-    $s->init();
-    $Singleton = $s;
+    # Initialize database connection
+    $s->init(); 
     return $Singleton;
 }
 
@@ -89,7 +114,6 @@ sub init {
     my $s = shift;
     my $c = App::IRC::Bot::Shoze::Config->new;
 
-    # my $Shoze = App::IRC::Bot::Shoze->new;
     my $name = $c->{name};
     if ( $c->db->{driver} eq 'dbi:SQLite' ) {
         $name = $c->_base_path . $c->db->{name};
@@ -97,9 +121,7 @@ sub init {
     }
     $s->handle( DBI->connect( $c->db->{driver} . ":dbname=" . $name, "", "" ) );
     croak "DB connection failed (" . $c->db->{name} . ")" unless $s->handle;
-    LOG("--- Database ---");
     LOG( "DB connection success (" . $c->db->{driver} . ":dbname=$name)" );
-    LOG("--- Database ---");
     $s->is_open(1);
     return 0;
 }
@@ -113,7 +135,7 @@ sub close {
 }
 
 # Try to reopen database handle or die, must find better way to handle
-# failure for longtime running service.
+# failure for longtime running service. (USELESSS, do nothing ^^)
 sub die_if_not_open {
     my ($s) = @_;
     $s->init() unless $s->is_open();

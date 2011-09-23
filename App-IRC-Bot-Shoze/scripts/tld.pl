@@ -12,26 +12,31 @@ use Carp;
 use Encode qw(decode encode);
 use Net::IDN::Encode ':all';
 
+use YAML qw(Dump Bless);
 require LWP::UserAgent;
 
 my $SCRIPT_NAME = "tld";
 
 my $otld = "";
-my $tld = "";
+my $tld  = "";
 
 sub myexit {
     my ( $status, $type, $info ) = @_;
-    if ($status) {
-        print "$status#$otld#$tld#$type";
-        exit $status;
+    my $ref = { 
+        tld_origin => $otld,
+        tld_ascii  => $tld,
+        type       => $type,
+    };
+    if($status) {
+        $ref->{status_msg} = $info;
+    } else {
+        $ref->{info} = $info if $info;
     }
-    my $str = "$status#$otld#$tld#$type";
-    $str .= "#$info" if $info;
-    print $str;
+    print Dump $ref;
     exit $status;
 }
 
-unless ($ARGV[0]) {
+unless ( $ARGV[0] ) {
     myexit( 1,
         $SCRIPT_NAME
           . 'require one argument, a top level domanin to match against' );
@@ -39,7 +44,6 @@ unless ($ARGV[0]) {
 
 $otld = decode( 'utf8', $ARGV[0] );
 $tld = domain_to_ascii($otld);
-
 
 unless ( $tld =~ /^[\w\d-]{2,30}$/ ) {
     myexit( 1, $SCRIPT_NAME . ', invalid tld format "' . $tld . '"' );

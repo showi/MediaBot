@@ -66,24 +66,22 @@ our $Singleton = undef;
 sub new {
     my ( $proto, $path ) = @_;
     if ($Singleton) {
-        DEBUG("SINGLETON " . __PACKAGE__);
+        DEBUG("SINGLETON " . __PACKAGE__, 5);
         return $Singleton;
     }
     DEBUG( "Creating new " . __PACKAGE__, 5 );
     croak "No configuration path given as first parameter"
         unless $path;
     my $class = ref($proto) || $proto;
-    print "Class: $class, Path: $path\n";
     my $s = {
         _permitted => \%fields,
         %fields,
     };
     bless( $s, $class );
-    $s->_path($path) if $path;
+    $s->_path($path);
     $s->read_config($s);
     $Singleton = $s;
-    new App::IRC::Bot::Shoze::Db($s);
-    
+    new App::IRC::Bot::Shoze::Db();  
     $s->POE( new App::IRC::Bot::Shoze::POE($s) );
     $s->HTTP( new App::IRC::Bot::Shoze::HTTP($s) );
     return $Singleton;
@@ -91,9 +89,7 @@ sub new {
 
 sub read_config {
     my $s = shift;
-    #$s->Config( new App::IRC::Bot::Shoze::Config($s) );
     new App::IRC::Bot::Shoze::Config($s->_path);
-    #$s->Config( new App::IRC::Bot::Shoze::Config($s) );
 }
 
 =head1 AUTHOR

@@ -1,3 +1,10 @@
+###############################################################################
+# This module permit to launc external command into sub process (fork)
+# On exit the subprocess emit an event that requesting plugin can listen
+# This plugin is a rewrite of a recipe found on POE Cookbook
+#
+# Todo: Write SubTask::Request and SubTask::Response
+###############################################################################
 package App::IRC::Bot::Shoze::POE::SubTask;
 
 use strict;
@@ -15,6 +22,7 @@ use lib qw(../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
 use App::IRC::Bot::Shoze::Constants;
 use App::IRC::Bot::Shoze::Log;
+use App::IRC::Bot::Shoze::POE::SubTask::Result;
 
 use Data::Dumper qw(Dumper);
 
@@ -37,19 +45,9 @@ sub new {
     bless( $s, $class );
     $s->_parent($parent);
     $s->alias("SubTask");
-    $s->tasks( []);
-    $s->session(
-        POE::Session->create(
-            object_states => [
-                $s => [
-                    qw(_start _stop next_task task_result task_done task_debug sig_child)
-                ],
-              ]
-        )
-    );
+    $s->tasks( [] );
     return $s;
 }
-
 
 sub _stop {
     DEBUG( "Deleting session with alias " . $_[OBJECT]->alias, 1 );
@@ -59,17 +57,17 @@ sub _stop {
 sub add_task {
     my ( $s, $data ) = @_;
     push @{ $s->tasks }, $data;
-    LOG(__PACKAGE__ . '::add_task(' . $s . " ### " .$data->{name} . ')');
-    unless($s->session) {
-            $s->session(
-        POE::Session->create(
-            object_states => [
-                $s => [
-                    qw(_start _stop next_task task_result task_done task_debug sig_child)
-                ],
-              ]
-        )
-    );
+    LOG( __PACKAGE__ . '::add_task(' . $s . " ### " . $data->{name} . ')' );
+    unless ( $s->session ) {
+        $s->session(
+            POE::Session->create(
+                object_states => [
+                    $s => [
+                        qw(_start _stop next_task task_result task_done task_debug sig_child)
+                    ],
+                ]
+            )
+        );
     }
     $poe_kernel->post( $s->session, 'next_task' );
 }
@@ -124,22 +122,23 @@ sub do_stuff {
     my $task   = shift;
     my $filter = POE::Filter::Reference->new();
 
-    my $cmd = $task->{program} . " " . $task->{args};
+    my $cmd       = $task->program . " " . $task->args;
     my $cmdresult = `$cmd`;
     my $cmdstatus = $? . "";
-    my $r = {};
-    for my $k (keys %{$task}) {
-        next unless defined $task->{$k};
-        $r->{$k} = $task->{$k};
+    my $r         = {};
+    $r = new App::IRC::Bot::Shoze::POE::SubTask::Result;
+    for my $k ( keys %{$task->{_permitted}} ) {
+        next unless defined $task->$k;
+        $r->$k($task->$k);
     }
-    $r->{result} = $cmdresult if $cmdresult;
-    $r->{status} = $cmdstatus if defined $cmdstatus;
+    $r->data($cmdresult) if $cmdresult;
+    $r->status($cmdstatus) if defined $cmdstatus;
 
     # Generate some output via the filter.  Note the strange use of list
     # references.
 
     #to a true value. To enable deserialization, $Storable::Eval
-    my $output = $filter->put( [ $r ] );
+    my $output = $filter->put( [$r] );
     print @$output;
 }
 
@@ -147,14 +146,11 @@ sub do_stuff {
 # POE::Filter::Reference, the $result is however it was created in the
 # child process.  In this sample, it's a hash reference.
 sub task_result {
-    my $s      = $_[OBJECT];
+    my $s = $_[OBJECT];
     my $r = $_[ARG0];
-    LOG("Task result");
-    LOG(YAML::Dump($_[ARG0]));
 
     $s->_get_root->POE->IRC->poco->send_event(
-        $r->{event} => $r->{who} => $r->{where} => $r->{result}
-    );
+        $r->event => $r->who => $r->where => $r );
 
 }
 

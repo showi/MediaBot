@@ -9,7 +9,7 @@ use lib qw(../../../../);
 use App::IRC::Bot::Shoze::Log;
 
 our @ISA       = qw(Exporter);
-our @EXPORT_OK = qw(AUTOLOAD DESTROY);
+our @EXPORT_OK = qw(AUTOLOAD DESTROY _print);
 our @EXPORT    = qw(_get_root);
 
 our $AUTOLOAD;
@@ -40,6 +40,18 @@ sub _get_root {
     my ($s) = shift;
     return $s unless defined $s->{_parent};
     return $s->_parent->_get_root();
+}
+
+sub _print {
+    my ($s) = shift;
+    my $SEP = '-'x80 . "\n";
+    my $DSEP = '-'x80 . "\n";
+    my $str = $s->__PACKAGE__ . "\n";
+    $str .= $DSEP;
+    for my $k(keys %{$s->{permitted}}) {
+        $str .= "$k: " . $s->$k . "\n";
+    }
+    return $str;
 }
 
 1;

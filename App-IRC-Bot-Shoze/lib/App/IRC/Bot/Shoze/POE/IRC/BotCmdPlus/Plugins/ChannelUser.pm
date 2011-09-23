@@ -33,38 +33,38 @@ sub new {
     bless( $s, $class );
     $s->cmd(
         {
-            'chanuser_add' => {
+            'channel_user_add' => {
                 access   => 'msg',
                 lvl      => 500,
-                help_cmd => '!chanuser.add <channel name> <user name> [lvl]',
+                help_cmd => '!channel.user.add <channel name> <user name> [lvl]',
                 help_description => 'Link user to a given channel',
             },
-            'chanuser_list' => {
+            'channel_user_list' => {
                 access   => 'msg',
                 lvl      => 500,
-                help_cmd => '!chanuser.list <channel name>',
+                help_cmd => '!channel.user.list <channel name>',
                 help_description =>
                   'Listing user\'s linked to a particular channel',
             },
-            'chanuser_del' => {
+            'channel_user_del' => {
                 access   => 'msg',
                 lvl      => 500,
-                help_cmd => '!chanuser.del <channel name> <user>',
+                help_cmd => '!channel.user.del <channel name> <user>',
                 help_description =>
                   'Remove a linked user from a specified channel',
             },
-            'chanuser_set' => {
+            'channel_user_set' => {
                 access => 'msg',
                 lvl    => 500,
                 help_cmd =>
-                  '!chanuser.set <channel name> <user> <lvl|auto_mode> <value>',
+                  '!channel.user.set <channel name> <user> <lvl|auto_mode> <value>',
                 help_description =>
                   'Remove a linked user from a specified channel',
             },
-            'chanuser_info' => {
+            'channel_user_info' => {
                 access           => 'msg',
                 lvl              => 500,
-                help_cmd         => '!chanuser.set <channel name> <user>',
+                help_cmd         => '!channel.user.set <channel name> <user>',
                 help_description => 'Get channel user information',
             },
         }
@@ -73,10 +73,10 @@ sub new {
 }
 
 ###############################################################################
-sub chanuser_add {
+sub channel_user_add {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
-    my $cmdname = 'chanuser_add';
+    my $cmdname = 'channel_user_add';
     my $PCMD    = $s->get_cmd($cmdname);
      my $db = App::IRC::Bot::Shoze::Db->new;
 
@@ -93,7 +93,7 @@ sub chanuser_add {
         return $s->_n_error( $irc, $Session->nick,
             "Channel '$chan' not found" );
     }
-    if ( ( $Channel->owner != $Session->user_id ) or ( $Session->user_lvl < 800 ) ) {
+    if ( ( $Channel->owner != $Session->user_id ) and ( $Session->user_lvl < 800 ) ) {
         return $s->_n_error( $irc, $Session->nick,
             "You can't add user to channel '$chan'" );
     }
@@ -126,16 +126,16 @@ sub chanuser_add {
     }
     else {
         $irc->yield( notice => $Session->nick =>
-              "User '$uname' linked to channel '$chan' with lelve $setlvl" );
+              "User '$uname' linked to channel '$chan' with level $setlvl" );
     }
     return PCI_EAT_ALL;
 }
 
 ###############################################################################
-sub chanuser_set {
+sub channel_user_set {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
-    my $cmdname = 'chanuser_set';
+    my $cmdname = 'channel_user_set';
     my $PCMD    = $s->get_cmd($cmdname);
     my $db = App::IRC::Bot::Shoze::Db->new;
 
@@ -157,7 +157,7 @@ sub chanuser_set {
         return $s->_n_error( $irc, $Session->nick,
             "Channel '$chan' not found" );
     }
-    if ( ( $Channel->owner != $Session->user_id ) or ( $Session->user_lvl < 800 ) ) {
+    if ( ( $Channel->owner != $Session->user_id ) and ( $Session->user_lvl < 800 ) ) {
         return $s->_n_error( $irc, $Session->nick,
             "You can't set key '$key' to channel '$chan'" );
     }
@@ -207,10 +207,10 @@ sub chanuser_set {
 }
 
 ###############################################################################
-sub chanuser_list {
+sub channel_user_list {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
-    my $cmdname = 'chanuser_list';
+    my $cmdname = 'channel_user_list';
     my $PCMD    = $s->get_cmd($cmdname);
      my $db = App::IRC::Bot::Shoze::Db->new;
 
@@ -222,12 +222,12 @@ sub chanuser_list {
             "Invalid channel name '$chan'" );
     }
     my ($type, $channame) = ($chan =~ /^(#|&)(.*)$/);
-    my $Channel = $db->Channels->get_by({ type => $type, name => $channame });
+    my $Channel = $db->NetworkChannels->get_by($irc->{Network}, {type => $type, name => $channame });
     unless ($Channel) {
         return $s->_n_error( $irc, $Session->nick,
             "Channel '$chan' not found" );
     }
-    if ( ( $Channel->owner != $Session->user_id ) or ( $Session->user_lvl < 800 ) ) {
+    if ( ( $Channel->owner != $Session->user_id ) and ( $Session->user_lvl < 800 ) ) {
         return $s->_n_error( $irc, $Session->nick,
             "You can't list user linked to channel '$chan'" );
     }
@@ -236,7 +236,7 @@ sub chanuser_list {
         return $s->_n_error( $irc, $Session->nick,
             "No user linked to '$chan'" );
     }
-    my $str = "Listing user linked to $chan\n";
+    my $str = "Listing user linked to $chan ()\n";
     for (@list) {
         $str .= "["
           . BOTLVL( $_->user_lvl )
@@ -252,10 +252,10 @@ sub chanuser_list {
 }
 
 ###############################################################################
-sub chanuser_info {
+sub channel_user_info {
     my ( $s, $Session,  $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
-    my $cmdname = 'chanuser_info';
+    my $cmdname = 'channel_user_info';
     my $PCMD    = $s->get_cmd($cmdname);
      my $db = App::IRC::Bot::Shoze::Db->new;
 
@@ -296,10 +296,10 @@ sub chanuser_info {
 }
 
 ###############################################################################
-sub chanuser_del {
+sub channel_user_del {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
-    my $cmdname = 'chanuser_del';
+    my $cmdname = 'channel_user_del';
     my $PCMD    = $s->get_cmd($cmdname);
      my $db = App::IRC::Bot::Shoze::Db->new;
 

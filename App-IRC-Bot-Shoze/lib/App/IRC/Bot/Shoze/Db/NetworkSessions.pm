@@ -90,7 +90,7 @@ sub update {
 sub delete_idle {
     my ($s)    = @_;
     my $tlimit = time - 600;
-    my $h      = $s->_parent->handle;
+    my $h      = App::IRC::Bot::Shoze::Db->new->handle;
     my $query  = <<SQL;
 	   DELETE FROM network_sessions 
 	   WHERE first_access < ? AND ignore IS NULL AND user_id IS NULL 

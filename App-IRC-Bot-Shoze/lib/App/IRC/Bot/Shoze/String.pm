@@ -6,7 +6,7 @@ use warnings;
 use Carp;
 use Exporter;
 
-use lib qw(..);
+use lib qw(../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
 
 our @ISA    = qw(Exporter);

@@ -81,7 +81,7 @@ sub S_tld_result {
 }
 
 sub tld {
-    my ( $s, $Session,  $irc, $event ) = splice @_, 0, 4;
+    my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'tld';
     my $PCMD    = $s->get_cmd($cmdname);
@@ -89,6 +89,7 @@ sub tld {
 
     my ( $nick, $user, $hostmask ) = parse_user($who);
 
+    LOG("Wanna some tld ????");
     my $cmd;
     ( $cmd, $msg ) = split( /\s+/, str_chomp($msg) );
     my $SubTask = App::IRC::Bot::Shoze->new->POE->SubTask;

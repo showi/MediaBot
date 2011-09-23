@@ -61,6 +61,10 @@ sub parse_who {
     return $s;
 }
 
+sub get_hostmask {
+    my ($s) = @_;
+    return $s->nick . '!' . $s->user . '@' . $s->hostname;
+}
 #
 #sub sid {
 #    my $s = shift;

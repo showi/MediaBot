@@ -18,12 +18,13 @@ our @MyExport = qw(_n_error _send_lines
   PCI_register PCI_unregister
   _register_cmd _unregister_cmd
   BOTLVL CHANLVL splitchannel _get_nick _get_session
-  _add_channel_user _del_channel_user);
+  _add_channel_user _del_channel_user can_op can_voice);
 
 #our @EXPORT_OK = @MyExport;
 our @EXPORT = @MyExport;
 our %EXPORT_TAGS = ( ALL => [@MyExport] );
 
+###############################################################################
 sub pretty_help {
     my ( $s, $cmd ) = @_;
     croak "Invalid command '$cmd'" unless defined $s->{cmd}->{$cmd};
@@ -31,12 +32,21 @@ sub pretty_help {
       . $s->{cmd}->{$cmd}->{help_description};
 }
 
+###############################################################################
 sub get_cmd {
     my ( $s, $cmd ) = @_;
     croak "Invalid command '$cmd'" unless defined $s->{cmd}->{$cmd};
     return $s->cmd->{$cmd};
 }
 
+###############################################################################
+sub PCI_register {
+    my ( $s, $irc ) = splice @_, 0, 2;
+    $s->_register_cmd($irc);
+    return 1;
+}
+
+###############################################################################
 sub _register_cmd {
     my ( $s, $irc ) = @_;
     my $C = $irc->plugin_get('BotCmdPlus');
@@ -49,12 +59,14 @@ sub _register_cmd {
     }
 }
 
-sub PCI_register {
+###############################################################################
+sub PCI_unregister {
     my ( $s, $irc ) = splice @_, 0, 2;
-    $s->_register_cmd($irc);
+    $s->_unregister_cmd($irc);
     return 1;
 }
 
+###############################################################################
 sub _unregister_cmd {
     my ( $s, $irc ) = @_;
     my $C = $irc->plugin_get('BotCmdPlus');
@@ -63,17 +75,13 @@ sub _unregister_cmd {
     }
 }
 
-sub PCI_unregister {
-    my ( $s, $irc ) = splice @_, 0, 2;
-    $s->_unregister_cmd($irc);
-    return 1;
-}
-
+###############################################################################
 sub splitchannel {
     return ( undef, undef ) unless $_[0];
     return ( $_[0] =~ /^(#|&)(.*)$/ );
 }
 
+###############################################################################
 sub _send_lines {
     my ( $s, $irc, $what, $where, @lines ) = @_;
     for (@lines) {
@@ -81,12 +89,14 @@ sub _send_lines {
     }
 }
 
+###############################################################################
 sub _n_error {
     my ( $s, $irc, $who, $msg ) = @_;
     $irc->yield( "notice" => $who => "Error: $msg" );
     return PCI_EAT_ALL;
 }
 
+###############################################################################
 sub BOTLVL {
     my $lvl = shift;
     return "owner    " if $lvl >= 1000;
@@ -95,6 +105,7 @@ sub BOTLVL {
     return "user     ";
 }
 
+###############################################################################
 sub CHANLVL {
     my $lvl = shift;
     return "owner" if $lvl >= 500;
@@ -102,6 +113,7 @@ sub CHANLVL {
     return "user " if $lvl >= 200;
 }
 
+###############################################################################
 sub _get_session {
     my ( $s, $db, $Nick, $user, $hostname ) = @_;
     croak "Need Db Object as first parameter"
@@ -123,6 +135,7 @@ sub _get_session {
     return $Session;
 }
 
+###############################################################################
 # Create or return Nick object from database for a given Network
 sub _get_nick {
     my ( $s, $db, $Network, $nick ) = @_;
@@ -140,6 +153,7 @@ sub _get_nick {
     return $Nick;
 }
 
+###############################################################################
 sub _add_channel_user {
     my ( $s, $db, $Channel, $Nick, $mode ) = @_;
     croak "Need Channel Object as first parameter"
@@ -169,6 +183,7 @@ sub _add_channel_user {
     }
 }
 
+###############################################################################
 sub _del_channel_user {
     my ( $s, $db, $Channel, $Nick ) = @_;
 
@@ -201,4 +216,66 @@ sub _del_channel_user {
     return PCI_EAT_NONE;
 }
 
+###############################################################################
+sub can_op {
+    my ( $s, $irc, $Session, $Channel ) = @_;
+    my $db       = App::IRC::Bot::Shoze::Db->new;
+    my $hostmask = $Session->get_hostmask;
+    my @CAUM =
+      $db->ChannelAutoUserMode->list_by( { channel_id => $Channel->id } );
+    for (@CAUM) {
+        if ( matches_mask( $_->hostmask, $hostmask ) and $_->mode eq 'o' ) {
+            return 1;
+        }
+    }
+    unless ( $Session->user_id ) {
+        return 0;
+    }
+    if ( $Session->user_lvl >= 800 ) {
+        return 1;
+    }
+    elsif ( $Channel->owner == $Session->user_id ) {
+        return 1;
+    }
+    else {
+        my $ChannelUser = $db->ChannelUsers->get_by(
+            { channel_id => $Channel->id, user_id => $Session->user_id } );
+        if ( $ChannelUser->lvl >= 400 ) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+###############################################################################
+sub can_voice {
+    my ( $s, $irc, $Session, $Channel ) = @_;
+    my $db       = App::IRC::Bot::Shoze::Db->new;
+    my $hostmask = $Session->get_hostmask;
+    my @CAUM =
+      $db->ChannelAutoUserMode->list_by( { channel_id => $Channel->id } );
+    for (@CAUM) {
+        if ( matches_mask( $_->hostmask, $hostmask ) and $_->mode =~ /[ov]/  ) {
+            return 1;
+        }
+    }
+    unless ( $Session->user_id ) {
+        return 0;
+    }
+    if ( $Session->user_lvl >= 800 ) {
+        return 1;
+    }
+    elsif ( $Channel->owner == $Session->user_id ) {
+        return 1;
+    }
+    else {
+        my $ChannelUser = $db->ChannelUsers->get_by(
+            { channel_id => $Channel->id, user_id => $Session->user_id } );
+        if ( $ChannelUser->lvl >= 300 ) {
+            return 1;
+        }
+    }
+    return 0;
+}
+###############################################################################
 1;

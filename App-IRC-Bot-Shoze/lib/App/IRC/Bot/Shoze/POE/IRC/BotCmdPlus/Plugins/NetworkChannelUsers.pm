@@ -37,9 +37,7 @@ sub new {
 sub PCI_register {
     my ( $s, $irc ) = splice @_, 0, 2;
     $irc->plugin_register( $s, 'SERVER',
-        qw(324 353 join part quit connected disconnected) );
-
-    #$s->_register_cmd($irc);
+        qw(324 353 join part quit connected disconnected mode) );
     return 1;
 }
 
@@ -55,7 +53,7 @@ sub _empty {
 
 sub S_connected {
     my ( $s, $irc ) = @_;
-    my $db = App::IRC::Bot::Shoze::Db->new;
+    my $db      = App::IRC::Bot::Shoze::Db->new;
     my $Network = $db->Networks->get( $irc->{network_id} );
     unless ($Network) {
         LOG( "Could not found network with id '" . $irc->{network_id} . "'" );
@@ -79,16 +77,18 @@ sub S_quit {
     my $db = App::IRC::Bot::Shoze::Db->new;
     my ( $nick, $user, $hostname ) = parse_user($who);
     my $Network = $irc->{Network};
-    unless($Network) {
+    unless ($Network) {
         WARN("Could not find Network object");
         return PCI_EAT_NONE;
     }
-    my $Nick = $db->NetworkNicks->get_by($Network, { nick => $nick } );
-    unless($Nick) {
-        WARN("Could not find nick '$nick' Object for Network '".$Network->name."'");
+    my $Nick = $db->NetworkNicks->get_by( $Network, { nick => $nick } );
+    unless ($Nick) {
+        WARN(   "Could not find nick '$nick' Object for Network '"
+              . $Network->name
+              . "'" );
         return PCI_EAT_NONE;
     }
-    $db->NetworkNicks->del($Network, $Nick);
+    $db->NetworkNicks->del( $Network, $Nick );
     return PCI_EAT_NONE;
 }
 
@@ -98,26 +98,30 @@ sub S_part {
     my $db = App::IRC::Bot::Shoze::Db->new;
     my ( $nick, $user, $hostname ) = parse_user($who);
     my $Network = $irc->{Network};
-    my $Nick = $s->_get_nick($db, $Network, $nick);
-    unless($Nick) {
-        WARN("Could not find nick '$nick' in Network " . $Network->name);
+    my $Nick = $s->_get_nick( $db, $Network, $nick );
+    unless ($Nick) {
+        WARN( "Could not find nick '$nick' in Network " . $Network->name );
         return PCI_EAT_NONE;
     }
-    my ($chantype, $channame) = ($channel =~ /^(#|&)(.*)$/);
-    my $Channel = $db->NetworkChannels->get_by($Network, {type => $chantype, name => $channame});
-    unless($Channel) {
-        WARN("Could not find channel '$channel' in Network " . $Network->name);
+    my ( $chantype, $channame ) = ( $channel =~ /^(#|&)(.*)$/ );
+    my $Channel =
+      $db->NetworkChannels->get_by( $Network,
+        { type => $chantype, name => $channame } );
+    unless ($Channel) {
+        WARN(
+            "Could not find channel '$channel' in Network " . $Network->name );
         return PCI_EAT_NONE;
     }
-    if ($nick eq $irc->nick_name) {
+    if ( $nick eq $irc->nick_name ) {
         WARN("We are leaving $channel");
         $Channel->bot_joined(undef);
         $Channel->_update();
-       # return PCI_EAT_NONE;
+
+        # return PCI_EAT_NONE;
     }
-    $s->_del_channel_user( $db, $Channel, $Nick);
+    $s->_del_channel_user( $db, $Channel, $Nick );
     my @list = $db->NetworkChannelUsers->is_on($Nick);
-    if (@list < 1) {
+    if ( @list < 1 ) {
         $Nick->_delete;
     }
     return PCI_EAT_NONE;
@@ -143,10 +147,16 @@ sub S_join {
         WARN("We are not managing channel '$channel'");
         return PCI_EAT_NONE;
     }
-    if ($nick eq $irc->nick_name) {
+    if ( $nick eq $irc->nick_name ) {
         WARN("We are joining $channel");
         $Channel->bot_joined(1);
+        $Channel->mode(undef);
+        $Channel->ulimit(undef);
+        $Channel->password(undef);
         $Channel->_update();
+
+        # Issue mode command on channel
+        $irc->yield( mode => $channel );
         return PCI_EAT_NONE;
     }
     my $Nick = $s->_get_nick( $db, $Network, $nick );
@@ -157,6 +167,114 @@ sub S_join {
     LOG("Nick $Nick");
     $s->_add_channel_user( $db, $Channel, $Nick, "" );
     return PCI_EAT_NONE;
+}
+
+sub S_mode {
+    my ( $s, $irc ) = splice @_, 0, 2;
+    my ( $who, $for, $mode ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
+    my @args = splice( @_, 3, $#_ ) if defined $_[3];
+
+    #@args =  @{ $_[3]} if (defined $_[3] and ref($_[3]) =~ /^SCALAR/);
+
+    unless ( $for =~ /^(&|#)([\w\d_-]+)/ ) {
+        WARN( "User mode changed is not supported by " . __PACKAGE__ );
+        return PCI_EAT_NONE;
+    }
+
+    my $db = App::IRC::Bot::Shoze::Db->new;
+    my ( $type, $name ) = splitchannel($for);
+    my $Channel =
+      $db->NetworkChannels->get_by( $irc->{Network},
+        { type => $type, name => $name } );
+    unless ($Channel) {
+        WARN("$for is not a managed channel!");
+        return PCI_EAT_NONE;
+    }
+    $mode = unparse_mode_line($mode);
+    LOG("Mode change: $who / $for / $mode / @args");
+
+    my ( $sign, $op );
+    my $p   = 1;
+    my $len = length($mode);
+    for ( my $p = 0 ; $p < $len ; $p++ ) {
+        my $tok = substr( $mode, $p, 1 );
+        if ( $tok =~ /^(\+|-)$/ ) {
+            $sign = $tok;
+            next;
+        }
+        else {
+            $op = $tok;
+        }
+        my $arg = "";
+        if ( $op =~ /^[ovk]$/ ) {
+            $arg = ${ shift @args };
+        } elsif ($op eq 'l' and $sign eq '+') {
+            $arg = ${ shift @args };
+        }
+        print "Mode $sign$op on $for with arg $arg\n";
+        if ( $op =~ /^[ov]$/ ) {
+            $s->mode_user( $irc, $Channel, $sign, $op, $arg );
+        }
+        else {
+            $s->mode_channel( $irc, $Channel, $sign, $op, $arg );
+        }
+    }
+    return PCI_EAT_NONE;
+}
+
+sub mode_channel {
+    my ( $s, $irc, $Channel, $sign, $mode, $arg ) = @_;
+
+    if ( $mode eq 'k' ) {
+        if ( $sign eq '+' ) {
+            $Channel->password($arg);
+        }
+        else {
+            $Channel->password(undef);
+        }
+        return $Channel->_update();
+    }
+    elsif ( $mode eq 'l' ) {
+        if ( $sign eq '+' ) {
+            $Channel->ulimit($arg);
+        }
+        else {
+            $Channel->ulimit(undef);
+        }
+        return $Channel->_update();
+    }
+
+    my $cmode = $Channel->mode;
+    if ( $sign eq '+' ) {
+        if ( $cmode !~ /$mode/ ) {
+            $cmode .= $mode;
+        }
+    }
+    else {
+        $cmode =~ s/$mode//;
+    }
+    $Channel->mode($cmode);
+    return $Channel->_update;
+}
+
+sub mode_user {
+    my ( $s, $irc, $Channel, $sign, $mode, $nick ) = @_;
+    my $db = App::IRC::Bot::Shoze::Db->new;
+
+    my $Nick = $db->NetworkNicks->get_by( $irc->{Network}, { nick => $nick } );
+    unless ($Nick) {
+        WARN("nick $nick not found");
+        return 0;
+    }
+    my $NCU =
+      $db->NetworkChannelUsers->get_by( $Channel, { nick_id => $Nick->id } );
+    if ( $sign eq "+" ) {
+        $NCU->mode($mode);
+    }
+    else {
+        $NCU->mode(undef);
+    }
+    return $NCU->_update;
 }
 
 # Names event
@@ -208,11 +326,43 @@ sub S_353 {
 }
 
 # Mode event
-#sub S_324 {
-#    my ( $self, $irc ) = splice @_, 0, 2;
-#    my ( $who, $where ) = ( ${ $_[0] }, ${ $_[1] } );
-#    LOG("Event[324] '$who', '$where '");
-#
+sub S_324 {
+    my ( $self, $irc ) = splice @_, 0, 2;
+    my ( $who, $where ) = ( ${ $_[0] }, ${ $_[1] } );
+    my $db = App::IRC::Bot::Shoze::Db->new;
+
+    LOG("Event[324] '$who', '$where'");
+    my ( $channel, $mode, @args ) = split( /\s+/, $where );
+    my ( $ctype, $cname ) = splitchannel($channel);
+    LOG("Channel $channel have mode $mode");
+    my $Channel =
+      $db->NetworkChannels->get_by( $irc->{Network},
+        { type => $ctype, name => $cname } );
+    unless ($Channel) {
+        WARN("Channel $channel is not managed");
+        return PCI_EAT_NONE;
+    }
+    $mode =~ s/^\+(.*)$/$1/;
+    my $rmode = '';
+    for ( my $p = 0 ; $p < length($mode) ; $p++ ) {
+        my $tok = substr( $mode, $p, 1 );
+        if ( $tok !~ /[kl]/ ) {
+            $rmode .= $tok;
+            next;
+        }
+        else {
+            if ( $tok eq 'k' ) {
+                $Channel->password(shift @args);
+            } elsif($tok eq 'l') {
+                $Channel->ulimit(shift @args);
+            }
+        }
+    }
+    $Channel->mode($rmode);
+    $Channel->_update;
+    return PCI_EAT_NONE;
+}
+
 #    $where =~ /^([#|&][\w\d_-]+)\s+\+(([^\s]+)(\s+.*)?)?$/ or do {
 #        DEBUG("Invalid 324 EVENT\n");
 #        return PCI_EAT_NONE;

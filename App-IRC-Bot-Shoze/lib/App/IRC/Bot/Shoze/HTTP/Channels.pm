@@ -8,7 +8,7 @@ use Carp;
 use HTTP::Response;
 use YAML qw'freeze thaw Bless';
 
-use lib qw(../../);
+use lib qw(../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
 use App::IRC::Bot::Shoze::Log;
 our $AUTOLOAD;

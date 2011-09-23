@@ -23,6 +23,7 @@ use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(:ALL);
 
 our %fields = ( cmd => undef );
 
+###############################################################################
 sub new {
     my ( $proto, $parent ) = @_;
     my $class = ref($proto) || $proto;
@@ -81,6 +82,18 @@ sub new {
                 help_cmd         => '!deop [channel list]',
                 help_description => 'Deop you!',
             },
+            'voice' => {
+                access           => 'public|msg',
+                lvl              => 200,
+                help_cmd         => '!op [channel list]',
+                help_description => 'Give you op!',
+            },
+            'devoice' => {
+                access           => 'public|msg',
+                lvl              => 200,
+                help_cmd         => '!deop [channel list]',
+                help_description => 'Deop you!',
+            },
             'join' => {
                 access           => 'public|msg',
                 lvl              => 500,
@@ -104,6 +117,7 @@ sub new {
     return $s;
 }
 
+###############################################################################
 sub channel_del {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -125,9 +139,9 @@ sub channel_del {
         return $s->_n_error( $irc, $Session->nick,
             "[$cmdname] Channel doesn't exist!" );
     }
-      
+
     LOG("Deleting channel '$channame'");
-    if ( $db->NetworkChannels->delete($Channel)) {
+    if ( $db->NetworkChannels->delete($Channel) ) {
         $irc->yield( notice => $Session->nick =>
               "[$cmdname] Channel $type$channame deleted." );
         my $aj = $irc->plugin_get('AutoJoin');
@@ -141,6 +155,7 @@ sub channel_del {
     return PCI_EAT_ALL;
 }
 
+###############################################################################
 sub channel_add {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -182,6 +197,7 @@ sub channel_add {
     return PCI_EAT_ALL;
 }
 
+###############################################################################
 sub channel_info {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -211,10 +227,8 @@ sub channel_info {
     if ( $Channel->owner ) {
         $Owner = $db->Users->get( $Channel->owner );
     }
-    my $out =
-        "Channel information [$type$name] ("
-      . localtime( int $Channel->created_on )
-      . ")";
+    my $out = "Channel information [$type$name] ("
+      . localtime( int $Channel->created_on ) . ")";
     $out .= ( $Owner ? " (" . $Owner->name . ")\n" : "\n" );
     $out .= " - bot mode_____: "
       . ( $Channel->bot_mode ? "+" . $Channel->bot_mode : "" ) . "\n";
@@ -236,13 +250,13 @@ sub channel_info {
     $out .= " - active_______: " . ( $Channel->active ? "yes" : "no" ) . "\n";
     $out .=
       " - bot joined___: " . ( $Channel->bot_joined ? "yes" : "no" ) . "\n";
-$out .=
-      " - updated on___: " .  localtime( int $Channel->updated_on ) . "\n";
+    $out .= " - updated on___: " . localtime( int $Channel->updated_on ) . "\n";
     my @lines = split( /\n/, $out );
     $s->_send_lines( $irc, 'notice', $Session->nick, @lines );
     return PCI_EAT_ALL;
 }
 
+###############################################################################
 sub channel_set {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -309,6 +323,7 @@ sub channel_set {
     return PCI_EAT_ALL;
 }
 
+###############################################################################
 sub channel_list {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -332,16 +347,18 @@ sub channel_list {
         else {
             $owner = "No Owner";
         }
-        my $str = " - ";
+        my $str = ' - ';
         $str .= localtime( int $Chan->created_on );
-        $str .= " - [ " . str_fixsize( "$owner ]", 15 );
+        $str .= ' - [ ' . str_fixsize( "$owner ]", 10 );
         $str .= $Chan->_usable_name;
-
+        $str .= ' (' . localtime( int $Chan->updated_on ) . ')'
+          if $Chan->updated_on;
         $irc->yield( notice => $Session->nick => $str );
     }
     return PCI_EAT_ALL;
 }
 
+###############################################################################
 sub channel_set_owner {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -361,7 +378,9 @@ sub channel_set_owner {
         return $s->_n_error( $irc, $Session->nick,
             "[$cmdname] Invalid user name, " . $s->pretty_help($cmdname) );
     };
-    my $Channel = $db->NetworkChannels->get_by($irc->{Network}, { type => $type, name => $channame } );
+    my $Channel =
+      $db->NetworkChannels->get_by( $irc->{Network},
+        { type => $type, name => $channame } );
     unless ($Channel) {
         return $s->_n_error( $irc, $Session->nick,
             "[$cmdname] No channel named '$type$channame'" );
@@ -407,6 +426,7 @@ sub channel_set_owner {
 
 }
 
+###############################################################################
 sub join {
     my ( $self, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -420,14 +440,15 @@ sub join {
         push @channels, $where->[0];
     }
     for (@channels) {
-        #$irc->{Shoze}->POE->IRC->Out->join( $User, $_ );
-        WARN(__PACKAGE__."::join NOT IMPLEMENTED");
+        $irc->yield( join => $_ );
+
+        #WARN(__PACKAGE__."::join NOT IMPLEMENTED");
     }
     return PCI_EAT_ALL;
 }
 
 sub part {
-    my ( $self, $Session,  $irc, $event ) = splice @_, 0, 4;
+    my ( $self, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'op';
     my $PCMD    = $self->get_cmd($cmdname);
@@ -439,13 +460,14 @@ sub part {
         push @channels, $where->[0];
     }
     for (@channels) {
-        WARN(__PACKAGE__."::part NOT IMPLEMENTED");
+        $irc->yield( part => $_ );
     }
     return PCI_EAT_ALL;
 }
 
+###############################################################################
 sub topic {
-    my ( $self, $Session,  $irc, $event ) = splice @_, 0, 4;
+    my ( $self, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'topic';
     my $PCMD    = $self->get_cmd($cmdname);
@@ -468,7 +490,9 @@ sub topic {
     LOG("[$event] Want to set topic on '$channel': $msg");
     return PCI_EAT_NONE unless is_valid_chan_name($channel);
     my ( $type, $channame ) =~ ( $channel =~ /^(#|&)(.*)$/ );
-    my $Channel = $db->NetworkChannels->get_by( $irc->{Network},{ type => $type, name => $channame } );
+    my $Channel =
+      $db->NetworkChannels->get_by( $irc->{Network},
+        { type => $type, name => $channame } );
     LOG("Want to set topic: chan ok");
     return PCI_EAT_NONE unless $Channel;
     my $can = 0;
@@ -490,72 +514,119 @@ sub topic {
         return PCI_EAT_NONE;
     }
     if ($topic) {
-        $topic .=
-          " (" . $Session->user_name . "/" . localtime( $Channel->topic_seton ) . ")";
+        $topic .= " ("
+          . $Session->user_name . "/"
+          . localtime( $Channel->topic_seton ) . ")";
     }
     $irc->yield( 'topic' => $channel => $topic );
     return PCI_EAT_ALL;
 }
 
+###############################################################################
 sub op {
-    my ( $self, $Session, $irc, $event ) = splice @_, 0, 4;
+    my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'op';
-    my $PCMD    = $self->get_cmd($cmdname);
+    my $PCMD    = $s->get_cmd($cmdname);
     my $db      = App::IRC::Bot::Shoze::Db->new;
 
-    my @channels = split /\s+/, $msg;
-    shift @channels;    # First argument is the command
-    if ( $event eq "S_public" ) {
-        push @channels, $where->[0];
+
+    my ( $cmd, $channel, @nicks );
+    if ( $event eq 'S_public' ) {
+        $channel = $where->[0];
+        ($cmd, @nicks) = split /\s+/, $msg;
     }
-    for (@channels) {
-        next unless is_valid_chan_name($_);
-        /^(#|&)(.*)$/;
-        my ( $type, $channame ) = ( $1, $2 );
-        my $Channel =
-          $db->NetworkChannels->get_by( $irc->{Network}, { type => $type, name => $channame } );
-        next unless $Channel;
-        my $canop = 0;
-        if ( $Session->user_lvl >= 800 ) {
-            $canop = 1;
-        }
-        elsif ( $Channel->owner and ( $Session->user_id == $Channel->owner ) ) {
-            $canop = 1;
-        }
-        else {
-            LOG("Checking user channel right");
-        }
-        if ($canop) {
-            $irc->yield( 'mode', "$_ +o " . $Session->nick );
-        }
+    else {
+        ( $cmd, $channel, @nicks ) = split /\s+/, $msg;
+    }
+    unless (@nicks) {
+        push @nicks, $Session->nick;
+    }
+    my ( $ctype, $cname ) = splitchannel($channel);
+    my $Channel =
+      $db->NetworkChannels->get_by( $irc->{Network},
+        { type => $ctype, name => $cname } );
+    unless ($Channel) {
+        WARN("Channel '$channel' is not managed");
+        return PCI_EAT_NONE;
+    }
+    unless( $s->can_op( $irc, $Session, $Channel ) ) {
+        WARN('User ' . $Session->nick . ' don\'t have the right to op people on channel \''.$channel.'\'');
+        return PCI_EAT_NONE;
+    }
+    
+    for (@nicks) {
+        print "Op: $_\n";
+        $irc->yield( 'mode', "$channel +o " . $_ );
     }
 }
 
+###############################################################################
 sub deop {
-    my ( $self, $Session,  $irc, $event ) = splice @_, 0, 4;
+    my ( $self, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
-    my $cmdname = 'op';
+    my $cmdname = 'deop';
     my $PCMD    = $self->get_cmd($cmdname);
     my $db      = App::IRC::Bot::Shoze::Db->new;
 
     my $channel = $where->[0];
-    if ( $Session->user_lvl >= 800 ) {
-        LOG( $Session->user_name . "800+ request deop on $channel" );
-        $self->deop_who_on( $irc, $Session->nick, $channel );
-        return PCI_EAT_ALL;
-    }
+
+#    if ( $s->can_op( $irc, $Session, $Channel ) ) {
+#        LOG( $Session->user_name . "800+ request deop on $channel" );
+#        $self->deop_who_on( $irc, $Session->nick, $channel );
+#        return PCI_EAT_ALL;
+#    }
     $irc->yield(
         notice => $Session->nick => "[$cmdname] DeOp not implemented :)" );
     return PCI_EAT_ALL;
 }
 
+###############################################################################
+sub voice {
+    my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
+    my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
+    my $cmdname = 'op';
+    my $PCMD    = $s->get_cmd($cmdname);
+    my $db      = App::IRC::Bot::Shoze::Db->new;
+
+
+    my ( $cmd, $channel, @nicks );
+    if ( $event eq 'S_public' ) {
+        $channel = $where->[0];
+        ($cmd, @nicks) = split /\s+/, $msg;
+    }
+    else {
+        ( $cmd, $channel, @nicks ) = split /\s+/, $msg;
+    }
+    unless (@nicks) {
+        push @nicks, $Session->nick;
+    }
+    my ( $ctype, $cname ) = splitchannel($channel);
+    my $Channel =
+      $db->NetworkChannels->get_by( $irc->{Network},
+        { type => $ctype, name => $cname } );
+    unless ($Channel) {
+        WARN("Channel '$channel' is not managed");
+        return PCI_EAT_NONE;
+    }
+    unless( $s->can_voice( $irc, $Session, $Channel ) ) {
+        WARN('User ' . $Session->nick . ' don\'t have the right to voice people on channel \''.$channel.'\'');
+        return PCI_EAT_NONE;
+    }
+    
+    for (@nicks) {
+        print "Voice: $_\n";
+        $irc->yield( 'mode', "$channel +v " . $_ );
+    }
+}
+###############################################################################
 sub deop_who_on {
     my $s = shift;
     my ( $irc, $nick, $channel ) = @_;
     $irc->yield( 'mode', "$channel -o $nick" );
 }
 
+###############################################################################
 sub op_who_on {
     my $s = shift;
     my ( $irc, $nick, $channel ) = @_;

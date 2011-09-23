@@ -11,7 +11,7 @@ sub MAX_CONCURRENT_TASKS () { 3 }
 
 use Storable;
 
-use lib qw(../../);
+use lib qw(../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
 use App::IRC::Bot::Shoze::Constants;
 use App::IRC::Bot::Shoze::Log;

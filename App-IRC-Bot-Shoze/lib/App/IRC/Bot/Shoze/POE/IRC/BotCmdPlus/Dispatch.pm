@@ -69,12 +69,17 @@ sub _shutdown {
     return;
 }
 
+###############################################################################
+# We are dispatching all our commands here
+# - We check each user input for command trigger
+# - We check if user have the righet to execute the command
+# - We create a session with extended attributes that we pass to our plugins
+###############################################################################
 sub _default {
     my ( $s, $irc, $event ) = splice @_, 0, 3;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
    
-    LOG("Dispatcher[$event]");
-    LOG("Message: '$msg'");
+    LOG("Dispatcher[$event] $where/ $who / $msg", 3);
      
     my $Config = App::IRC::Bot::Shoze::Config->new;
     my $prefix = $Config->bot->{cmd_prefix};
@@ -116,16 +121,7 @@ sub _default {
         WARN("Cannot create nick '$nick' for network " . $Network->name);
         return PCI_EAT_NONE;
     }
-#    my $Session =
-#      $db->Sessions->get_by( $Nick, { user => $user, hostname => $hostname });
-#    unless ($Session) {
-#        $irc->yield( privmsg => $nick => "# Who are you!" );
-#        return PCI_EAT_ALL;
-#    }
-#    my $User;
-#    if ( $Session->user_id ) {
-#        $User = $db->Users->get_by( {id  => $Session->user_id } );
-#    }
+    $db->NetworkSessions->delete_idle();
     my $Session = $db->NetworkSessions->get_extended($Network, $nick, $user, $hostname);
     unless($Session) {
         WARN("Cannot get session for $nick, $user, $hostname");
@@ -137,7 +133,7 @@ sub _default {
     if ( $Session->user_id ) {
         $User = $db->Users->get_by( {id  => $Session->user_id } );
     }
-    #LOG($Session->_pretty);
+
     my $pl  = $Master->cmd->{$cmd}->{plugin};
     my $lvl = $Master->cmd->{$cmd}->{lvl};
     if ( $lvl > 0 ) {
@@ -152,8 +148,8 @@ sub _default {
             return PCI_EAT_ALL;
         }
     }
-    LOG("Calling $cmd on plugin $pl");
-    #$pl->$cmd( $Session, $User, $irc, $event, @_ );
+    LOG("Calling $cmd on plugin $pl", 3);
+
     $pl->$cmd( $Session, $irc, $event, @_ );
     LOG($Session->_pretty);
     return PCI_EAT_ALL;

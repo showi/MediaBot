@@ -5,7 +5,7 @@ use warnings;
 
 use Carp;
 
-use lib qw(../lib/);
+use lib qw(lib/);
 
 use App::IRC::Bot::Shoze;
 use App::IRC::Bot::Shoze::Log;
@@ -16,8 +16,11 @@ use App::IRC::Bot::Shoze::Log;
 
 my $user = 'shoze';
 my $group = 'sho';
-
-my $BASE_PATH = "/srv/shoze/";
+my $CHROOT = "/home/sho/workspace/MediaBot/App-IRC-Bot-Shoze";
+chdir $CHROOT;
+#my $BASE_PATH = "/srv/shoze/";
+my $BASE_PATH = "/home/sho/workspace/MediaBot/App-IRC-Bot-Shoze/";
+#$BASE_PATH = "/";
 my $LOG_PATH = $BASE_PATH . "log/";
 
 $App::IRC::Bot::Shoze::Log::Debug = 9;
@@ -27,14 +30,16 @@ $App::IRC::Bot::Shoze::Log::Debug = 9;
 # END OF EDIT
 ###########################################
 
-#my $uid = (getpwnam($user))[2];
-#die "Tentative de lancer le serveur en tant qu'utilisateur inexistant ou supperutilisateur\n" 
-#    unless ($uid);
-##chroot($BASE_PATH);
-#$> = $uid;
+my $uid = (getpwnam($user))[2];
+print "UID: $uid\n";
+die "Tentative de lancer le serveur en tant qu'utilisateur inexistant ou supperutilisateur\n" 
+    unless ($uid);
+#chroot($CHROOT);
+$> = $uid;
  
 $0 = "shozed";
 
+#sleep 20;
 my $SEP = '-'x80 . "\n";
 my $DEMISEP = '-'x40 . "\n";
 my $data_dir = $BASE_PATH . "data";

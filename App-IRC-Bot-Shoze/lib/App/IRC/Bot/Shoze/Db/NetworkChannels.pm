@@ -54,8 +54,9 @@ sub list {
     my $query = <<SQL;
 SELECT c.bot_mode AS bot_mode, c.mode AS mode, c.bot_joined AS bot_joined,
 		c.password AS password, c.auto_topic AS auto_topic, c.ulimit AS ulimit, 
-		c.created_on AS created_on, c.id AS id, c.auto_op AS auto_op, c.owner AS owner,
-		c.topic AS topic, c.auto_voice AS auto_voice, c.name AS name, c.active AS active,
+		c.created_on AS created_on, c.updated_on AS updated_on, c.id AS id, 
+		c.auto_op AS auto_op, c.owner AS owner, c.topic AS topic, 
+		c.auto_voice AS auto_voice, c.name AS name, c.active AS active,
 		c.auto_mode AS auto_mode, c.type AS type, c.created_by AS created_by, 
 		c.topic_setby AS topic_setby, c.topic_seton AS topic_seton,
 		u.name AS user_name, u.lvl AS user_lvl, u.is_bot AS user_is_bot

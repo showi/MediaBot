@@ -24,16 +24,16 @@ our %fields = (
     is_bot         => undef,
     updated_on     => undef,
     created_on     => undef,
-    
-    _object_name   => undef,
-    _object_db     => undef,
+
+    _object_name => undef,
+    _object_db   => undef,
 );
 
 sub new {
     my ( $proto, $object_db ) = @_;
-    DEBUG( "Creating new " . __PACKAGE__ );
-    print "ObjectDb: $object_db\n";
-    croak "No database object passed as first parameter" unless ref($object_db);
+    DEBUG( "Creating new " . __PACKAGE__, 5 );
+    croak "No database object passed as first parameter"
+      unless ref($object_db);
     my $class = ref($proto) || $proto;
     my $s = {
         _permitted => \%fields,
@@ -41,7 +41,8 @@ sub new {
     };
 
     bless( $s, $class );
-    $s->_init_fields();    # DIRTY HACK VALUES IS SET TO 1 on init ...
+     # DIRTY HACK VALUES IS SET TO 1 on init ...
+    $s->_init_fields();         
     $s->_object_name('users');
     $s->_object_db($object_db);
     return $s;

@@ -22,15 +22,16 @@ my $tld  = "";
 
 sub myexit {
     my ( $status, $type, $info ) = @_;
-    my $ref = { 
+    my $ref = {
         tld_origin => $otld,
         tld_ascii  => $tld,
-        type       => $type,
     };
-    if($status) {
-        $ref->{status_msg} = $info;
-    } else {
+    if ($status) {
+        $ref->{status_msg} = $type;
+    }
+    else {
         $ref->{info} = $info if $info;
+        $ref->{type} = $type;
     }
     print Dump $ref;
     exit $status;

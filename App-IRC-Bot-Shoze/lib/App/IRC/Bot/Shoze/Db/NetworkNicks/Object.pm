@@ -25,7 +25,8 @@ our %fields = (
 sub new {
     my ( $proto, $object_db ) = @_;
     DEBUG( "Creating new " . __PACKAGE__, 5 );
-    croak "No database object passed as first parameter" unless ref($object_db);
+    croak "No database object passed as first parameter"
+      unless ref($object_db);
     my $class = ref($proto) || $proto;
     my $s = {
         _permitted => \%fields,
@@ -33,7 +34,9 @@ sub new {
     };
 
     bless( $s, $class );
-    $s->_init_fields();    # DIRTY HACK VALUES IS SET TO 1 on init ...
+
+    # DIRTY HACK VALUES IS SET TO 1 on init ...
+    $s->_init_fields();
     $s->_object_name('network_nicks');
     $s->_object_db($object_db);
     return $s;

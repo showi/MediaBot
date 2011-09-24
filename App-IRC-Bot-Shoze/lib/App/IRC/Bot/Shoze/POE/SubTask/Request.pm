@@ -5,7 +5,7 @@ use warnings;
 
 use Carp;
 
-use lib qw(../../../../../../../../../../);
+use lib qw(../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
 use App::IRC::Bot::Shoze::Constants;
 use App::IRC::Bot::Shoze::Log;

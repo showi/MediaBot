@@ -16,7 +16,7 @@ our %fields = (
     id         => undef,
     channel_id => undef,
     time       => undef,
-    action     => undef,
+    mode       => undef,
     hostmask   => undef,
     updated_on => undef,
     created_on => undef,
@@ -29,14 +29,15 @@ sub new {
     my ( $proto, $object_db ) = @_;
     DEBUG( "Creating new " . __PACKAGE__ );
     print "ObjectDb: $object_db\n";
-    croak "No database object passed as first parameter" unless ref($object_db);
+    croak "No database object passed as first parameter"
+      unless ref($object_db);
     my $class = ref($proto) || $proto;
     my $s = {
         _permitted => \%fields,
         %fields,
     };
     bless( $s, $class );
-    $s->_init_fields;    # DIRTY HACK
+    $s->_init_fields;            # DIRTY HACK
     $s->_object_name('channel_auto_user_mode');
     $s->_object_db($object_db);
     return $s;

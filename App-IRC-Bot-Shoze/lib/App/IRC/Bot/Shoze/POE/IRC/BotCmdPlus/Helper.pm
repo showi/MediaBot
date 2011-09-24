@@ -8,6 +8,8 @@ use Exporter;
 
 use POE::Component::IRC::Plugin qw(:ALL);
 
+use IRC::Utils qw(:ALL);
+
 use lib qw(../../../../../../../);
 use App::IRC::Bot::Shoze::Log;
 
@@ -18,7 +20,7 @@ our @MyExport = qw(_n_error _send_lines
   PCI_register PCI_unregister
   _register_cmd _unregister_cmd
   BOTLVL CHANLVL splitchannel _get_nick _get_session
-  _add_channel_user _del_channel_user can_op can_voice);
+  _add_channel_user _del_channel_user can_op can_voice _modes);
 
 #our @EXPORT_OK = @MyExport;
 our @EXPORT = @MyExport;
@@ -138,7 +140,7 @@ sub _get_session {
 ###############################################################################
 # Create or return Nick object from database for a given Network
 sub _get_nick {
-    my ( $s, $db, $Network, $nick ) = @_;
+    my ( $s, $irc, $db, $Network, $nick ) = @_;
     croak "Need Db Object as first parameter"
       unless ref($db) =~ /Shoze::Db/;
     croak "Need Network Object as second parameter"
@@ -147,8 +149,9 @@ sub _get_nick {
     my $Nick = $db->NetworkNicks->get_by( $Network, { nick => $nick } );
     unless ($Nick) {
         my $res = $db->NetworkNicks->create( $Network, $nick );
-        return $s->_get_nick( $db, $Network, $nick ) if $res;
-        return undef;
+        return undef unless $res;
+        $irc->yield(whois => $nick);
+        return $s->_get_nick($irc, $db, $Network, $nick );
     }
     return $Nick;
 }
@@ -255,7 +258,7 @@ sub can_voice {
     my @CAUM =
       $db->ChannelAutoUserMode->list_by( { channel_id => $Channel->id } );
     for (@CAUM) {
-        if ( matches_mask( $_->hostmask, $hostmask ) and $_->mode =~ /[ov]/  ) {
+        if ( matches_mask( $_->hostmask, $hostmask ) and $_->mode =~ /[ov]/ ) {
             return 1;
         }
     }
@@ -277,5 +280,28 @@ sub can_voice {
     }
     return 0;
 }
+
 ###############################################################################
+sub _modes {
+    my ( $s, $irc, $sign, $mode, $Channel, @nicks ) = @_;
+    my $max = 6;
+    my ( $m, $nicks ) = '';
+    my $i = $max;
+    for (@nicks) {
+        if ( $i < 1 ) {
+            $irc->yield( mode => $Channel->_usable_name => "$sign$m $nicks" );
+            ( $m, $nicks ) = '';
+            $i = $max;
+        }
+        $m .= $mode;
+        $nicks .= " $_";
+        $i--;
+    }
+    if ($m) {
+         $irc->yield( mode => $Channel->_usable_name => "$sign$m $nicks" );
+    }
+}
+
+###############################################################################
+
 1;

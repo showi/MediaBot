@@ -2,7 +2,7 @@
 # Plugins:: NetworkChannels
 #---------------
 #
-# This plugin allow administrator to manage channels
+# This plugin allow administrator to manage channels and user
 #
 ###############################################################################
 package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::NetworkChannels;
@@ -489,7 +489,7 @@ sub topic {
     }
     LOG("[$event] Want to set topic on '$channel': $msg");
     return PCI_EAT_NONE unless is_valid_chan_name($channel);
-    my ( $type, $channame ) =~ ( $channel =~ /^(#|&)(.*)$/ );
+    my ( $type, $channame ) = ( $channel =~ /^(#|&)(.*)$/ );
     my $Channel =
       $db->NetworkChannels->get_by( $irc->{Network},
         { type => $type, name => $channame } );
@@ -530,11 +530,10 @@ sub op {
     my $PCMD    = $s->get_cmd($cmdname);
     my $db      = App::IRC::Bot::Shoze::Db->new;
 
-
     my ( $cmd, $channel, @nicks );
     if ( $event eq 'S_public' ) {
         $channel = $where->[0];
-        ($cmd, @nicks) = split /\s+/, $msg;
+        ( $cmd, @nicks ) = split /\s+/, $msg;
     }
     else {
         ( $cmd, $channel, @nicks ) = split /\s+/, $msg;
@@ -550,34 +549,55 @@ sub op {
         WARN("Channel '$channel' is not managed");
         return PCI_EAT_NONE;
     }
-    unless( $s->can_op( $irc, $Session, $Channel ) ) {
-        WARN('User ' . $Session->nick . ' don\'t have the right to op people on channel \''.$channel.'\'');
+    unless ( $s->can_op( $irc, $Session, $Channel ) ) {
+        WARN(   'User '
+              . $Session->nick
+              . ' don\'t have the right to op people on channel \''
+              . $channel
+              . '\'' );
         return PCI_EAT_NONE;
     }
-    
-    for (@nicks) {
-        print "Op: $_\n";
-        $irc->yield( 'mode', "$channel +o " . $_ );
-    }
+
+    $s->_modes($irc, '+', 'o', $Channel, @nicks);
 }
 
 ###############################################################################
 sub deop {
-    my ( $self, $Session, $irc, $event ) = splice @_, 0, 4;
+    my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'deop';
-    my $PCMD    = $self->get_cmd($cmdname);
+    my $PCMD    = $s->get_cmd($cmdname);
     my $db      = App::IRC::Bot::Shoze::Db->new;
 
-    my $channel = $where->[0];
+    my ( $cmd, $channel, @nicks );
+    if ( $event eq 'S_public' ) {
+        $channel = $where->[0];
+        ( $cmd, @nicks ) = split /\s+/, $msg;
+    }
+    else {
+        ( $cmd, $channel, @nicks ) = split /\s+/, $msg;
+    }
+    unless (@nicks) {
+        push @nicks, $Session->nick;
+    }
+    my ( $ctype, $cname ) = splitchannel($channel);
+    my $Channel =
+      $db->NetworkChannels->get_by( $irc->{Network},
+        { type => $ctype, name => $cname } );
+    unless ($Channel) {
+        WARN("Channel '$channel' is not managed");
+        return PCI_EAT_NONE;
+    }
+    unless ( $s->can_op( $irc, $Session, $Channel ) ) {
+        WARN(   'User '
+              . $Session->nick
+              . ' don\'t have the right to op people on channel \''
+              . $channel
+              . '\'' );
+        return PCI_EAT_NONE;
+    }
 
-#    if ( $s->can_op( $irc, $Session, $Channel ) ) {
-#        LOG( $Session->user_name . "800+ request deop on $channel" );
-#        $self->deop_who_on( $irc, $Session->nick, $channel );
-#        return PCI_EAT_ALL;
-#    }
-    $irc->yield(
-        notice => $Session->nick => "[$cmdname] DeOp not implemented :)" );
+    $s->_modes($irc, '-', 'o', $Channel, @nicks);
     return PCI_EAT_ALL;
 }
 
@@ -589,11 +609,10 @@ sub voice {
     my $PCMD    = $s->get_cmd($cmdname);
     my $db      = App::IRC::Bot::Shoze::Db->new;
 
-
     my ( $cmd, $channel, @nicks );
     if ( $event eq 'S_public' ) {
         $channel = $where->[0];
-        ($cmd, @nicks) = split /\s+/, $msg;
+        ( $cmd, @nicks ) = split /\s+/, $msg;
     }
     else {
         ( $cmd, $channel, @nicks ) = split /\s+/, $msg;
@@ -609,15 +628,54 @@ sub voice {
         WARN("Channel '$channel' is not managed");
         return PCI_EAT_NONE;
     }
-    unless( $s->can_voice( $irc, $Session, $Channel ) ) {
-        WARN('User ' . $Session->nick . ' don\'t have the right to voice people on channel \''.$channel.'\'');
+    unless ( $s->can_voice( $irc, $Session, $Channel ) ) {
+        WARN(   'User '
+              . $Session->nick
+              . ' don\'t have the right to voice people on channel \''
+              . $channel
+              . '\'' );
         return PCI_EAT_NONE;
     }
-    
-    for (@nicks) {
-        print "Voice: $_\n";
-        $irc->yield( 'mode', "$channel +v " . $_ );
+    $s->_modes($irc, '+', 'v', $Channel, @nicks);
+    return PCI_EAT_ALL;
+}
+
+sub devoice {
+    my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
+    my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
+    my $cmdname = 'op';
+    my $PCMD    = $s->get_cmd($cmdname);
+    my $db      = App::IRC::Bot::Shoze::Db->new;
+
+    my ( $cmd, $channel, @nicks );
+    if ( $event eq 'S_public' ) {
+        $channel = $where->[0];
+        ( $cmd, @nicks ) = split /\s+/, $msg;
     }
+    else {
+        ( $cmd, $channel, @nicks ) = split /\s+/, $msg;
+    }
+    unless (@nicks) {
+        push @nicks, $Session->nick;
+    }
+    my ( $ctype, $cname ) = splitchannel($channel);
+    my $Channel =
+      $db->NetworkChannels->get_by( $irc->{Network},
+        { type => $ctype, name => $cname } );
+    unless ($Channel) {
+        WARN("Channel '$channel' is not managed");
+        return PCI_EAT_NONE;
+    }
+    unless ( $s->can_voice( $irc, $Session, $Channel ) ) {
+        WARN(   'User '
+              . $Session->nick
+              . ' don\'t have the right to voice people on channel \''
+              . $channel
+              . '\'' );
+        return PCI_EAT_NONE;
+    }
+    $s->_modes($irc, '-', 'v', $Channel, @nicks);
+    return PCI_EAT_ALL;
 }
 ###############################################################################
 sub deop_who_on {

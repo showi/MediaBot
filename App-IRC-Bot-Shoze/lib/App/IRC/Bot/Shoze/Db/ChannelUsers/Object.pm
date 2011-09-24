@@ -29,14 +29,15 @@ sub new {
     my ( $proto, $object_db ) = @_;
     DEBUG( "Creating new " . __PACKAGE__, 5 );
     LOG("ObjectDb: $object_db");
-    croak "No database object passed as first parameter" unless ref($object_db);
+    croak "No database object passed as first parameter"
+      unless ref($object_db);
     my $class = ref($proto) || $proto;
     my $s = {
         _permitted => \%fields,
         %fields,
     };
     bless( $s, $class );
-    $s->_init_fields;    # DIRTY HACK
+    $s->_init_fields;            # DIRTY HACK
     $s->_object_name('channel_users');
     $s->_object_db($object_db);
     return $s;

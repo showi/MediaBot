@@ -91,7 +91,7 @@ sub _default {
     
     #my $TmpSession = App::IRC::Bot::Shoze::Db::NetworkSessions::Object->new($db)->parse_who($who);
     my ($nick, $user, $hostname) = parse_user($who);
-    my $Nick = $s->_get_nick($db, $irc->{Network}, $nick);
+    my $Nick = $s->_get_nick($irc, $db, $irc->{Network}, $nick);
     unless($Nick) {
         WARN("Could not create nick '".$Nick->nick."'");
         return PCI_EAT_NONE;

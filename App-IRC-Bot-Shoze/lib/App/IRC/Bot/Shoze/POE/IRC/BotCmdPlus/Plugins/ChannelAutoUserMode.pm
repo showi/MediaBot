@@ -15,7 +15,7 @@ use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper
-  qw(_register_cmd _unregister_cmd get_cmd _n_error);
+  qw(_register_cmd _unregister_cmd get_cmd _n_error splitchannel);
 
 our %fields = ( cmd => undef, _parent => undef );
 
@@ -49,28 +49,34 @@ sub S_join {
     my $db = App::IRC::Bot::Shoze::Db->new;
 
     my ( $nick, $user, $hostname ) = parse_user($who);
-    my ( $type, $channame ) = ( $channel =~ /^(#|&)(.*)$/ );
-    my $Channel = $db->Channels->get_by( { type => $type, name => $channame } );
+    my ( $type, $channame ) = splitchannel($channel);
+    my $Channel = $db->NetworkChannels->get_by( $irc->{Network}, { type => $type, name => $channame } );
     unless ($Channel) {
         LOG("We are not managing channel '$channel'");
         return PCI_EAT_NONE;
     }
-    my @AutoMode =
-      $db->ChannelUserAutoMode->list_by( { channel_id => $Channel->id, } );
+    print "Chanel: " . $Channel->id . "\n";
+    my @GAutoMode =
+      $db->ChannelAutoUserMode->list_by( { channel_id => undef } );
+    my @LAutoMode =
+      $db->ChannelAutoUserMode->list_by( { channel_id => $Channel->id } );
+    #print "AutoMode: " . @AutoMode . "\n";
+    my @AutoMode = (@LAutoMode, @GAutoMode);
     for (@AutoMode) {
+        print "automode: channel_id: " . $_->channel_id . " / " . $_->hostmask . " / " . $who . "\n";
         if ( matches_mask( $_->hostmask, $who ) ) {
             LOG( "AutoMode match hostmask '" . $_->hostmask . "'" );
-            if ( $_->action eq 'o' ) {
+            if ( $_->mode eq 'o' ) {
                 LOG("Need to op $who");
                 $irc->yield( 'mode' => "$channel +o $nick" );
                 last;
             }
-            elsif ( $_->action eq 'v' ) {
+            elsif ( $_->mode eq 'v' ) {
                 LOG("Need to voice $who");
                 $irc->yield( 'mode' => "$channel +v $nick" );
                 last;
             }
-            elsif ( $_->action eq 'b' ) {
+            elsif ( $_->mode eq 'b' ) {
                 LOG("Need to ban $who");
             }
             else {

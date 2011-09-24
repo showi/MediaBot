@@ -10,12 +10,12 @@ use Data::Dumper;
 use YAML qw(Dump Bless);
 
 my $user     = "admin";
-my $password = "";
+my $password = "w3bradiale";
 my $hostname = "radiocapsule.com";
 my $port     = 15000;
 
-my $netloc = "$hostname:$port";
-my $url    = "http://$netloc/admin/stats.xml";
+my $netloc   = "$hostname:$port";
+my $url      = "http://$netloc/admin/stats.xml";
 my $realm    = 'Icecast2 Server';
 
 my $ua = new LWP::UserAgent;
@@ -24,8 +24,8 @@ $ua->credentials( $netloc, $realm, $user, $password );
 my $request = HTTP::Request->new( GET => $url );
 my $response = $ua->request($request);
 unless ( $response->is_success ) {
-    my $status = $response->status_line;
-    print "1#$status";
+    my $ref = { status_msg => $response->status_line, };
+    print Dump $ref;
     exit 1;
 }
 my @array_tags;
@@ -36,5 +36,6 @@ my $xmls = new XML::Simple(
     SuppressEmpty => ''
 );
 my $ref = $xmls->XMLin( $response->decoded_content );
+$ref->{status_msg} = $response->status_line;
 print Dump $ref;
 exit 0;

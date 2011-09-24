@@ -37,7 +37,7 @@ sub new {
 sub PCI_register {
     my ( $s, $irc ) = splice @_, 0, 2;
     $irc->plugin_register( $s, 'SERVER',
-        qw(324 353 join part quit connected disconnected mode) );
+        qw(324 353 join part quit connected disconnected mode whois) );
     return 1;
 }
 
@@ -98,7 +98,7 @@ sub S_part {
     my $db = App::IRC::Bot::Shoze::Db->new;
     my ( $nick, $user, $hostname ) = parse_user($who);
     my $Network = $irc->{Network};
-    my $Nick = $s->_get_nick( $db, $Network, $nick );
+    my $Nick = $s->_get_nick( $irc, $db, $Network, $nick );
     unless ($Nick) {
         WARN( "Could not find nick '$nick' in Network " . $Network->name );
         return PCI_EAT_NONE;
@@ -159,7 +159,7 @@ sub S_join {
         $irc->yield( mode => $channel );
         return PCI_EAT_NONE;
     }
-    my $Nick = $s->_get_nick( $db, $Network, $nick );
+    my $Nick = $s->_get_nick( $irc, $db, $Network, $nick );
     unless ($Nick) {
         WARN( "Cannot get nick '$nick' for network '" . $Network->name . "'" );
         return PCI_EAT_NONE;
@@ -208,7 +208,8 @@ sub S_mode {
         my $arg = "";
         if ( $op =~ /^[ovk]$/ ) {
             $arg = ${ shift @args };
-        } elsif ($op eq 'l' and $sign eq '+') {
+        }
+        elsif ( $op eq 'l' and $sign eq '+' ) {
             $arg = ${ shift @args };
         }
         print "Mode $sign$op on $for with arg $arg\n";
@@ -277,6 +278,37 @@ sub mode_user {
     return $NCU->_update;
 }
 
+#
+sub S_whois {
+    my ( $s, $irc ) = splice @_, 0, 2;
+    my $whois = ${ $_[0] };
+    my $db    = App::IRC::Bot::Shoze::Db->new;
+    print Dumper $whois;
+    my $Nick =
+      $db->NetworkNicks->get_by( $irc->{Network}, { nick => $whois->{nick} } );
+    unless ($Nick) {
+        WARN( "nick " . $whois->{nick} . " not found" );
+        return 0;
+    }
+    my $Session = $db->NetworkSessions->get_by(
+        $Nick,
+        {
+            user     => $whois->{user},
+            hostname => $whois->{host},
+        }
+    );
+    return PCI_EAT_NONE if $Session;
+    my $res = $db->NetworkSessions->create(
+        $Nick,
+        $whois->{user}, $whois->{host}, $whois->{real}
+    );
+    unless($res) {
+        WARN("Cannot create new session for nick " . $whois->{nick});
+        return PCI_EAT_NONE;
+    }
+    return PCI_EAT_NONE;
+}
+
 # Names event
 sub S_353 {
     my ( $s, $irc ) = splice @_, 0, 2;
@@ -311,15 +343,13 @@ sub S_353 {
             }
             print "User: $nick ($mode)\n";
         }
-        my $Nick = $s->_get_nick( $db, $Network, $nick );
+        my $Nick = $s->_get_nick( $irc, $db, $Network, $nick );
         unless ($Nick) {
             WARN(   "Cannot get nick '$nick' for network '"
                   . $Network->name
                   . "'" );
-            return PCI_EAT_NONE;
+            next;
         }
-
-        #    my $Session = $db->NetworkSessions->get_by(nick_id => $Nick->id);
         $s->_add_channel_user( $db, $Channel, $Nick, $mode );
     }
     return PCI_EAT_NONE;
@@ -352,9 +382,10 @@ sub S_324 {
         }
         else {
             if ( $tok eq 'k' ) {
-                $Channel->password(shift @args);
-            } elsif($tok eq 'l') {
-                $Channel->ulimit(shift @args);
+                $Channel->password( shift @args );
+            }
+            elsif ( $tok eq 'l' ) {
+                $Channel->ulimit( shift @args );
             }
         }
     }
@@ -362,84 +393,5 @@ sub S_324 {
     $Channel->_update;
     return PCI_EAT_NONE;
 }
-
-#    $where =~ /^([#|&][\w\d_-]+)\s+\+(([^\s]+)(\s+.*)?)?$/ or do {
-#        DEBUG("Invalid 324 EVENT\n");
-#        return PCI_EAT_NONE;
-#    };
-#    my ( $chan, $mode, @args ) = ( $1, $3, split( /\s+/, str_chomp($4) ) );
-#    LOG("Channel $1 have mode $2");
-#    my $db = App::IRC::Bot::Shoze::Db->new;
-#    my ( $type, $channame ) = ( $chan =~ /^(#|&)(.*)$/ );
-#    my $Channel = $db->NetworkChannels->get_by($irc->{Network},  { type => $type, name => $channame } );
-#    return PCI_EAT_NONE unless $Channel;
-#    return PCI_EAT_NONE unless $Channel->auto_mode;
-#
-#    my $hrm  = parse_mode_line($mode);
-#    my $iarg = 0;
-#    my ( $chanmode, $chanmodeparam, $chanargs );
-#    for ( 0 .. $#{ $hrm->{modes} } ) {
-#        my $index = $_;
-#        my ( $osign, $omode ) = ( $hrm->{modes}->[$index] =~ /([+-])([\w])/ );
-#        if ( $omode !~ /^[lk]$/ ) {
-#            $chanmode .= "$osign$omode";
-#        }
-#        elsif ( $omode eq 'k' ) {
-#            if ( $osign eq '+' ) {
-#                if ( !$Channel->password ) {
-#                    $chanmodeparam .= "-k";
-#                    $chanargs .= $args[$iarg] . " ";
-#                }
-#                else {
-#                    if ( $Channel->password ne $args[$iarg] ) {
-#                        $chanmodeparam .= "-k+k";
-#                        $chanargs .=
-#                          $args[$iarg] . " " . $Channel->password . " ";
-#                    }
-#                }
-#            }
-#            $iarg++;
-#        }
-#        elsif ( $omode eq 'l' ) {
-#            if ( $osign eq '+' ) {
-#                if ( !$Channel->ulimit ) {
-#                    $chanmodeparam .= "-l";
-#
-#                    #$chanargs .= 0 . " "
-#                }
-#                else {
-#                    if ( $Channel->ulimit ne $args[$iarg] ) {
-#                        $chanmodeparam .= "+l";
-#                        $chanargs .= $Channel->ulimit . " ";
-#                    }
-#                }
-#            }
-#            $iarg++;
-#        }
-#    }
-#    $chanmode = unparse_mode_line($chanmode);
-#    print "Want to apply '$chanmode'\n";
-#    print "And  $chanmodeparam with $chanargs\n" if $chanmodeparam;
-#    my $newmode = "+" . $Channel->mode;
-#    my $newargs = "";
-#    if ( $Channel->password ) {
-#        $newmode .= "k";
-#        $newargs .= $Channel->password . " ";
-#    }
-#    if ( $Channel->ulimit ) {
-#        $newmode .= "l";
-#        $newargs .= $Channel->ulimit . " ";
-#    }
-#    print "Enforce mode: $newmode with params $newargs\n";
-#    my $rmode = gen_mode_change( $chanmode, $newmode );
-#    $rmode = $chanmodeparam . $rmode if $chanmodeparam;
-#    LOG("MODE CHANGE $newmode / $rmode");
-#    return PCI_EAT_NONE if ( !$rmode );
-#
-#    #or ( $chanmode eq $newmode ) );
-#    $irc->yield( 'mode' => $chan => $rmode => "$chanargs$newargs" );
-#
-#    return PCI_EAT_ALL;
-#}
 
 1;

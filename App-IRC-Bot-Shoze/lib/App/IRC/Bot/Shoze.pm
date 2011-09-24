@@ -55,7 +55,7 @@ use App::IRC::Bot::Shoze::Log;
 
 our %fields = (
     _path  => "",
-    _debug => 1,
+   # _debug => 1,
     POE    => undef,
     Log    => undef,
     HTTP   => undef,

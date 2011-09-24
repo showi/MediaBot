@@ -237,8 +237,12 @@ sub _list_by {
     my $query = "SELECT * FROM  " . $s->_object_name . " WHERE";
     my @args;
     for my $k (keys %{$matches}) {
-        $query .= " $k = ? AND";
-        push @args, $matches->{$k};
+        if (defined $matches->{$k}) {
+            $query .= " $k = ? AND";
+            push @args, $matches->{$k};
+        } else {
+            $query .= " $k IS NULL AND";
+        }
     }
     $query =~ s/^(.*)\s+AND/$1/;
     DEBUG( "[" . $s->_object_name . "] LIST Query: $query", 4 );

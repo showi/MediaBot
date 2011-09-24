@@ -36,7 +36,7 @@ sub new {
 
 ###############################################################################
 sub create {
-    my ( $s, $Nick, $user, $hostname ) = @_;
+    my ( $s, $Nick, $user, $hostname, $real ) = @_;
     croak "Need Nick object as first parameter"
       unless ref($Nick) =~ /Db::NetworkNicks::Object/;
     my $time = time;
@@ -44,6 +44,7 @@ sub create {
       new App::IRC::Bot::Shoze::Db::NetworkSessions::Object( $s->_parent );
     $O->nick_id( $Nick->id );
     $O->user($user);
+    $O->real($real);
     $O->hostname($hostname);
     $O->first_access($time);
     $O->last_access($time);
@@ -72,11 +73,11 @@ sub update {
     }
     if ( $Session->flood_end < $time ) {
         $Session->flood_start($time);
-        $Session->flood_end( $time + 60 );
+        $Session->flood_end( $time + 120 );
         $Session->flood_numcmd(0);
     }
     else {
-        if ( $Session->flood_numcmd > 10 ) {
+        if ( $Session->flood_numcmd > 20 ) {
             $Session->ignore( $time + 30 );
         }
         else {
@@ -109,14 +110,14 @@ SQL
 sub get_extended {
     my ( $s, $Network, $nick, $user, $hostname ) = @_;
     my $db = App::IRC::Bot::Shoze::Db->new;
-    my $Nick = $s->_get_nick( $db, $Network, $nick );
+    my $Nick = $db->NetworkNicks->get_by( $Network, { nick => $nick } );
     unless ($Nick) {
         WARN( "Cannot get nick '$nick' for network " . $Network->name );
         return undef;
     }
     my $h     = $db->handle;
     my $query = <<SQL;
-    SELECT ns.last_access AS last_access, ns.ignore AS ignore, 
+    SELECT ns.real AS real, ns.last_access AS last_access, ns.ignore AS ignore, 
     ns.flood_numcmd AS flood_numcmd, ns.flood_end AS flood_end, 
     ns.flood_start AS flood_start, ns.user AS user, ns.hostname AS hostname,
     ns.id AS id, ns.first_access AS first_access, ns.nick_id AS nick_id, 

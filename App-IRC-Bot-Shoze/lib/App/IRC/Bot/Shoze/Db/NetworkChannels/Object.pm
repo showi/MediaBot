@@ -32,24 +32,25 @@ our %fields = (
     type        => undef,
     created_by  => undef,
     network_id  => undef,
-    updated_on => undef,
-    created_on => undef,
-    
+    updated_on  => undef,
+    created_on  => undef,
+
     _object_name => undef,
     _object_db   => undef,
 );
 
 sub new {
     my ( $proto, $object_db ) = @_;
-    DEBUG( "Creating new " . __PACKAGE__, 5);
-    croak "No database object passed as first parameter" unless ref($object_db);
+    DEBUG( "Creating new " . __PACKAGE__, 5 );
+    croak "No database object passed as first parameter"
+      unless ref($object_db);
     my $class = ref($proto) || $proto;
     my $s = {
         _permitted => \%fields,
         %fields,
     };
     bless( $s, $class );
-    $s->_init_fields;    # DIRTY HACK
+    $s->_init_fields;            # DIRTY HACK
     $s->_object_name('network_channels');
     $s->_object_db($object_db);
     return $s;

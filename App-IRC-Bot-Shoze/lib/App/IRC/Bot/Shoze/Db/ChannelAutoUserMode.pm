@@ -42,6 +42,7 @@ sub list {
     return $C->_list();
 }
 
+
 sub list_by {
     my ($s, $hash) = @_;
     my $C = new App::IRC::Bot::Shoze::Db::ChannelAutoUserMode::Object( $s->_parent );

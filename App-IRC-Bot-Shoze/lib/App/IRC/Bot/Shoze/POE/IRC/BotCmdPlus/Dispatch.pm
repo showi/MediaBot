@@ -116,7 +116,7 @@ sub _default {
         or croak "No registered Network object within irc session";
     
     my ($nick, $user, $hostname) = parse_user($who);
-    my $Nick = $s->_get_nick($db, $Network, $nick);
+    my $Nick = $s->_get_nick($irc, $db, $Network, $nick);
     unless($Nick) {
         WARN("Cannot create nick '$nick' for network " . $Network->name);
         return PCI_EAT_NONE;

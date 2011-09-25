@@ -10,7 +10,7 @@ use Data::Dumper;
 use YAML qw(Dump Bless);
 
 my $user     = "admin";
-my $password = "w3bradiale";
+my $password = "";
 my $hostname = "radiocapsule.com";
 my $port     = 15000;
 

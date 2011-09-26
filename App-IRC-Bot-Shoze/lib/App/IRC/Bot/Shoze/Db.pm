@@ -10,7 +10,12 @@ use lib qw(../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::Config;
+
+use App::IRC::Bot::Shoze::Db::BotLogs;
+
 use App::IRC::Bot::Shoze::Db::Users;
+use App::IRC::Bot::Shoze::Db::ChannelUsers;
+use App::IRC::Bot::Shoze::Db::ChannelAutoUserMode;
 
 use App::IRC::Bot::Shoze::Db::Networks;
 use App::IRC::Bot::Shoze::Db::NetworkNicks;
@@ -19,10 +24,9 @@ use App::IRC::Bot::Shoze::Db::NetworkChannelUsers;
 use App::IRC::Bot::Shoze::Db::NetworkChannelLogs;
 use App::IRC::Bot::Shoze::Db::NetworkSessions;
 
-use App::IRC::Bot::Shoze::Db::ChannelUsers;
+
 use App::IRC::Bot::Shoze::Db::Apero;
 use App::IRC::Bot::Shoze::Db::EasySentence;
-use App::IRC::Bot::Shoze::Db::ChannelAutoUserMode;
 
 our $AUTOLOAD;
 
@@ -31,6 +35,8 @@ our %fields    = (
     handle  => undef,
     is_open => undef,
 
+    BotLogs => undef,
+    
     # Networks(undernet, efnet...)
     Networks => undef,
 
@@ -86,6 +92,7 @@ sub new {
     $Singleton = $s;
      
      # Initialize our database object
+    $s->BotLogs( new App::IRC::Bot::Shoze::Db::BotLogs($s) );
     $s->Networks( new App::IRC::Bot::Shoze::Db::Networks($s) );
     $s->NetworkNicks( new App::IRC::Bot::Shoze::Db::NetworkNicks($s) );
     $s->NetworkSessions( new App::IRC::Bot::Shoze::Db::NetworkSessions($s) );

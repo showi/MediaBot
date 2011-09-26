@@ -15,12 +15,12 @@ use App::IRC::Bot::Shoze::Log;
 
 our @ISA = qw(Exporter);
 
-our @MyExport = qw(_n_error _send_lines
+our @MyExport = qw(_n_error _send_lines _send_lines_privmsg _send_lines_notice
   pretty_help get_cmd
   PCI_register PCI_unregister
   _register_cmd _unregister_cmd
   BOTLVL CHANLVL splitchannel _get_nick _get_session
-  _add_channel_user _del_channel_user can_op can_voice _modes);
+  _add_channel_user _del_channel_user can_op can_voice _modes _join);
 
 #our @EXPORT_OK = @MyExport;
 our @EXPORT = @MyExport;
@@ -80,21 +80,42 @@ sub _unregister_cmd {
 ###############################################################################
 sub splitchannel {
     return ( undef, undef ) unless $_[0];
-    return ( $_[0] =~ /^(#|&)(.*)$/ );
+    $_[0] =~ /^(#|&)(.*)$/ and do {
+        return ($1, $2);
+    };
+    return undef;
 }
 
 ###############################################################################
 sub _send_lines {
-    my ( $s, $irc, $what, $where, @lines ) = @_;
-    for (@lines) {
-        $irc->yield( $what => $where => $_ );
+    my ( $s, $irc, $what, $who, $where, @lines ) = @_;
+    if ($what eq 'notice') {
+        $s->_send_lines_notice($irc, $who, $where, @lines);
+    } elsif($what eq 'privmsg') {
+        $s->_send_lines_privmsg($irc, $who, $where, @lines);
+    } else {
+        croak "Unknown send type '$what'";
+    }
+}
+
+sub _send_lines_notice {
+   my ( $s, $irc, $who, $where, @lines ) = @_;
+   for (@lines) {
+        $irc->{Out}->notice($who, $where, $_ );
+    }
+}
+
+sub _send_lines_privmsg {
+   my ( $s, $irc, $who, $where, @lines ) = @_;
+   for (@lines) {
+        $irc->{Out}->privmsg($who, $where, $_ );
     }
 }
 
 ###############################################################################
 sub _n_error {
-    my ( $s, $irc, $who, $msg ) = @_;
-    $irc->yield( "notice" => $who => "Error: $msg" );
+    my ( $s, $irc, $where, $msg ) = @_;
+    $irc->{Out}->notice('#me#', $where, "Error: $msg" );
     return PCI_EAT_ALL;
 }
 
@@ -303,5 +324,12 @@ sub _modes {
 }
 
 ###############################################################################
+
+sub _join {
+    my ($s, $irc, $Channel) = @_;
+    my $msg = $Channel->_usable_name;
+    $msg .= ' ' . $Channel->password if $Channel->password;
+    $irc->yield(join => $msg);
+}
 
 1;

@@ -37,7 +37,7 @@ sub PCI_register {
     $self->{irc} = $irc;
 
     $irc->plugin_register( $self, 'SERVER', qw(msg public) );
-
+    $irc->plugin_register( $self, 'USER', 'all' );
     POE::Session->create( object_states => [ $self => [qw(_start _shutdown)], ],
     );
 
@@ -77,6 +77,10 @@ sub _shutdown {
 ###############################################################################
 sub _default {
     my ( $s, $irc, $event ) = splice @_, 0, 3;
+    if ($event =~ /^U_/) {
+        print "Public Event: $event\n";
+        return PCI_EAT_NONE;
+    }
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
    
     LOG("Dispatcher[$event] $where/ $who / $msg", 3);
@@ -149,7 +153,7 @@ sub _default {
         }
     }
     LOG("Calling $cmd on plugin $pl", 3);
-
+    $irc->{Out}->log('dispatch', $who, $where, $msg);
     $pl->$cmd( $Session, $irc, $event, @_ );
     LOG($Session->_pretty);
     return PCI_EAT_ALL;

@@ -15,6 +15,7 @@ use lib qw(../../../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;
+use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(_join);
 
 our %fields = ( cmd => undef, irc => undef );
 
@@ -22,8 +23,8 @@ sub new {
     my ( $proto, $parent ) = @_;
     my $class = ref($proto) || $proto;
     my $s = {
-        _permitted => \%fields,
-        %fields,
+              _permitted => \%fields,
+              %fields,
     };
     bless( $s, $class );
     return $s;
@@ -56,7 +57,8 @@ sub S_324 {
     LOG("Channel $1 have mode $2");
     my $db = App::IRC::Bot::Shoze::Db->new;
     my ( $type, $channame ) = ( $chan =~ /^(#|&)(.*)$/ );
-    my $Channel = $db->NetworkChannels->get_by($irc->{Network},  { type => $type, name => $channame } );
+    my $Channel = $db->NetworkChannels->get_by( $irc->{Network},
+                                         { type => $type, name => $channame } );
     return PCI_EAT_NONE unless $Channel;
     return PCI_EAT_NONE unless $Channel->auto_mode;
 
@@ -68,14 +70,12 @@ sub S_324 {
         my ( $osign, $omode ) = ( $hrm->{modes}->[$index] =~ /([+-])([\w])/ );
         if ( $omode !~ /^[lk]$/ ) {
             $chanmode .= "$osign$omode";
-        }
-        elsif ( $omode eq 'k' ) {
+        } elsif ( $omode eq 'k' ) {
             if ( $osign eq '+' ) {
                 if ( !$Channel->password ) {
                     $chanmodeparam .= "-k";
                     $chanargs .= $args[$iarg] . " ";
-                }
-                else {
+                } else {
                     if ( $Channel->password ne $args[$iarg] ) {
                         $chanmodeparam .= "-k+k";
                         $chanargs .=
@@ -84,15 +84,13 @@ sub S_324 {
                 }
             }
             $iarg++;
-        }
-        elsif ( $omode eq 'l' ) {
+        } elsif ( $omode eq 'l' ) {
             if ( $osign eq '+' ) {
                 if ( !$Channel->ulimit ) {
                     $chanmodeparam .= "-l";
 
                     #$chanargs .= 0 . " "
-                }
-                else {
+                } else {
                     if ( $Channel->ulimit ne $args[$iarg] ) {
                         $chanmodeparam .= "+l";
                         $chanargs .= $Channel->ulimit . " ";
@@ -103,8 +101,9 @@ sub S_324 {
         }
     }
     $chanmode = unparse_mode_line($chanmode);
-    print "Want to apply '$chanmode'\n";
-    print "And  $chanmodeparam with $chanargs\n" if $chanmodeparam;
+
+    #    print "Want to apply '$chanmode'\n";
+    #    print "And  $chanmodeparam with $chanargs\n" if $chanmodeparam;
     my $newmode = "+" . $Channel->mode;
     my $newargs = "";
     if ( $Channel->password ) {
@@ -115,15 +114,13 @@ sub S_324 {
         $newmode .= "l";
         $newargs .= $Channel->ulimit . " ";
     }
-    print "Enforce mode: $newmode with params $newargs\n";
+
+    #    print "Enforce mode: $newmode with params $newargs\n";
     my $rmode = gen_mode_change( $chanmode, $newmode );
     $rmode = $chanmodeparam . $rmode if $chanmodeparam;
     LOG("MODE CHANGE $newmode / $rmode");
     return PCI_EAT_NONE if ( !$rmode );
-
-    #or ( $chanmode eq $newmode ) );
     $irc->yield( 'mode' => $chan => $rmode => "$chanargs$newargs" );
-
     return PCI_EAT_ALL;
 }
 
@@ -134,8 +131,9 @@ sub S_join {
     if ( $irc->nick_name eq $nick ) {
         my $db = App::IRC::Bot::Shoze::Db->new;
         my ( $type, $channame ) = ( $where =~ /^(#|&)(.*)$/ );
-        my $Channel =
-          $db->NetworkChannels->get_by( $irc->{Network}, { type => $type, name => $channame } );
+        my $Channel = $db->NetworkChannels->get_by(
+            $irc->{Network},
+            { type => $type, name => $channame } );
         return PCI_EAT_NONE unless $Channel;
         $Channel->bot_joined(1);
         $Channel->bot_mode(undef);
@@ -146,23 +144,21 @@ sub S_join {
 }
 
 sub S_invite {
-    my ( $self, $irc ) = splice @_, 0, 2;
+    my ( $s, $irc ) = splice @_, 0, 2;
     my $db = App::IRC::Bot::Shoze::Db->new;
 
     my ( $who, $where ) = ( ${ $_[0] }, ${ $_[1] } );
     my ( $type, $channame ) = ( $where =~ /^(#|&)(.*)$/ );
-    my $Channel = $db->NetworkChannels->get_by($irc->{Network}, { type => $type, name => $channame } );
+    my $Channel = $db->NetworkChannels->get_by( $irc->{Network},
+                                         { type => $type, name => $channame } );
     return PCI_EAT_NONE unless $Channel;
     return PCI_EAT_NONE if $Channel->bot_joined;
-#    my $TmpSession = new App::IRC::Bot::Shoze::Db::Sessions::Object($db);
-#    $TmpSession->parse_who($who);
-    my ($nick, $user, $hostname) = parse_user($who);
-    my $Session =
-      $db->Sessions->get_extended( $nick, $user,
-        $hostname );
+
+    my ( $nick, $user, $hostname ) = parse_user($who);
+    my $Session = $db->Sessions->get_extended( $nick, $user, $hostname );
 
     unless ($Session) {
-        $irc->yield( privmsg => $nick => "# Who are you!" );
+        $irc->{Out}->privmsg('#me#', $nick, "# Who are you!" );
         return PCI_EAT_ALL;
     }
     my $User;
@@ -170,8 +166,7 @@ sub S_invite {
         $User = $db->Users->get( $Session->user_id );
     }
     LOG("We receive an invite on $where!");
-
-    $irc->{Shoze}->POE->IRC->Out->join( $User, $where );
+    $s->_join( $irc, $Channel );
     return PCI_EAT_NONE;
 }
 
@@ -183,8 +178,8 @@ sub S_part {
 
     if ( $irc->nick_name eq $nick ) {
         my ( $type, $channame ) = ( $where =~ /^(#|&)(.*)$/ );
-        my $Channel =
-          $db->NetworkChannels->get_by($irc->{Network}, { type => $type, name => $channame } );
+        my $Channel = $db->NetworkChannels->get_by( $irc->{Network},
+                                         { type => $type, name => $channame } );
         unless ($Channel) {
             WARN("Do not find channel '$where' in database");
             return PCI_EAT_ALL;
@@ -194,10 +189,9 @@ sub S_part {
             WARN("Cannot unset bot_joined on channel $where");
         }
         LOG("We have leaved channel $where");
-    }
-    else {
+    } else {
         my $NewSession = $db->Sessions->get_by(
-            { nick => $nick, user => $user, hostname => $hostname } );
+                      { nick => $nick, user => $user, hostname => $hostname } );
         $NewSession->_delete if $NewSession;
     }
     return PCI_EAT_NONE;

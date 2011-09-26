@@ -108,9 +108,18 @@ sub _default {
     my $db = App::IRC::Bot::Shoze::Db->new;
     my ( $type, $name ) = splitchannel($srcchannel);
     for ( @{ $s->logs->{$srcchannel} } ) {
+        my $Channel = $db->NetworkChannels->get_by($irc->{Network}, {type => $type, name => $name});
+        unless ($Channel) {
+            WARN("Cannot get log channel $srcchannel");
+            next;
+        }
+        unless ($Channel->bot_joined) {
+            WARN("We do not log to channel that we don't have joined");
+            next;
+        }
+        
         if ( $_->{type} eq "irc" ) {
-            $irc->yield(
-                privmsg => $_->{target} => "[" . time . "][$srcchannel][$who] $msg" );
+            $irc->privmsg('#me#', $_->{target},  "[" . time . "][$srcchannel][$who] $msg" );
         }
     }
 }
@@ -122,7 +131,6 @@ sub channel_log_list {
     my $PCMD    = $s->get_cmd($cmdname);
     my $db      = App::IRC::Bot::Shoze::Db->new;
 
-    #my ( $cmd, $chansrc, $logtype, $target ) = ( split( /\s+/, $msg ) );
     my @list = $db->NetworkChannelLogs->list();
     unless (@list) {
         return $s->_n_error( $irc, $Session->nick,
@@ -138,7 +146,7 @@ sub channel_log_list {
         $str .= " (via " . $l->type . ")";
         $str .= $str .= "\n";
     }
-    $s->_send_lines( $irc, 'notice', $Session->nick, split( /\n/, $str ) );
+    $s->_send_lines( $irc, 'notice', '#me#', $Session, split( /\n/, $str ) );
     return PCI_EAT_ALL;
 }
 
@@ -150,13 +158,13 @@ sub channel_log_add {
     my $db      = App::IRC::Bot::Shoze::Db->new;
 
     my ( $cmd, $chansrc, $logtype, $target ) = ( split( /\s+/, $msg ) );
-    return $s->_n_error( $irc, $Session->nick,
+    return $s->_n_error( $irc, $Session,
         "Invalid syntax: " . $PCMD->{help_description} )
       unless ( $chansrc || $logtype || $target );
 
     LOG("Want to log $chansrc to $target ($logtype)");
     my @authtype = qw(irc db file ws);
-    return $s->_n_error( $irc, $Session->nick,
+    return $s->_n_error( $irc, $Session,
         "Invalid logging facility '$logtype' must be one of "
           . join( ", ", @authtype ) )
       unless ( grep( /$logtype/, @authtype ) );
@@ -164,19 +172,19 @@ sub channel_log_add {
     my $SChan =
       $db->NetworkChannels->get_by( $irc->{Network},
         { type => $stype, name => $sname } );
-    return $s->_n_error( $irc, $Session->nick,
+    return $s->_n_error( $irc, $Session,
         "Cannot log channel '$chansrc': not managed" )
       unless $SChan;
 
     if ( $logtype eq "irc" ) {
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "Cannot log channel to the the same channel ..." )
           if ( $chansrc eq $target );
         my ( $ttype, $tname ) = splitchannel($target);
         my $TChan =
           $db->NetworkChannels->get_by( $irc->{Network},
             { type => $ttype, name => $tname } );
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "Target '$target' is not a managed channel" )
           unless $TChan;
         my $Log = $db->NetworkChannelLogs->get_by(
@@ -186,24 +194,24 @@ sub channel_log_add {
                 type              => $logtype
             }
         );
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "Channel '$chansrc' already logged to '$target' via IRC" )
           if $Log;
         my $ret =
           $db->NetworkChannelLogs->create( $SChan, $logtype, $TChan,
             $Session->user_id );
         unless ($ret) {
-            return $s->_n_error( $irc, $Session->nick,
+            return $s->_n_error( $irc, $Session,
                 "Cannot log channel '$chansrc'  to '$target' via IRC" );
         }
         else {
-            $irc->yield( notice => $Session->nick =>
+            $irc->notice('#me#', $Session->nick, 
                   "[$cmdname] Logging channel '$chansrc' to '$target' via IRC"
             );
         }
     }
     else {
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "Log facility '$logtype' not supported" );
     }
     return PCI_EAT_ALL;

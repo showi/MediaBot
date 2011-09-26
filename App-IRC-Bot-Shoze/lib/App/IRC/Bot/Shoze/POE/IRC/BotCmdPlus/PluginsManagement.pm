@@ -56,7 +56,7 @@ sub new {
         }
     );
     my @plugins =
-      qw(Users Info NetworkChannels NetworkChannelUsers NetworkChannelLogs ChannelUser Help Tld EasySentence);
+      qw(Users Info NetworkChannels NetworkChannelUsers NetworkChannelLogs ChannelUsers Help Tld EasySentence);
     $s->plugins( \@plugins );
     return $s;
 }
@@ -65,7 +65,7 @@ sub PCI_register {
     my ( $s, $irc ) = splice @_, 0, 2;
     $s->irc($irc);
     my $C = $irc->plugin_get('BotCmdPlus');
-    for my $cmd ( %{ $s->cmd } ) {
+    for my $cmd ( keys %{ $s->cmd } ) {
         $C->register_command(
             $s, $cmd,
             $s->cmd->{$cmd}->{access},
@@ -89,7 +89,6 @@ sub PCI_unregister {
 sub is_valid_plugin {
     my($s, $name) = @_;
     return 0 unless $name =~ /^\w+$/;    
-    
 }
 
 sub _reload_plugin {
@@ -99,9 +98,10 @@ sub _reload_plugin {
     $err = 0 unless $s->_load_plugin($name);
     return $err;
 }
+
 sub _load_plugin {
     my ( $s, $oname ) = @_;
-    my $name   = $oname;#ucfirst($oname);
+    my $name   = $oname;
     my $plugin = "App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::$name";
     unless ( $s->loaded->{$oname} ) {
         LOG("LOAD: Requiring module '$plugin'");
@@ -114,8 +114,19 @@ sub _load_plugin {
         }
         $plugin->import();
         $s->loaded->{$oname} = 1;
+        
+        my $code;
+        eval {
+            local $SIG{'__DIE__'};
+            $code=  $plugin->new($s);
+        }; 
+        if ($@) {
+            $s->_unload_plugin($oname);
+            WARN("Plugin Error: " . $@);
+            return 0;
+        }
         LOG("Plugin code for '$oname' loaded");
-        $s->irc->plugin_add( "BotCmdPlus_$name", $plugin->new($s) );
+        $s->irc->plugin_add( "BotCmdPlus_$name", $code);
         return 1;
     }
     return 0;
@@ -123,7 +134,6 @@ sub _load_plugin {
 
 sub _load_all_plugin {
     my ($s) = shift;
-
     for ( @{ $s->plugins } ) {
         $s->_load_plugin($_);
     }
@@ -131,11 +141,9 @@ sub _load_all_plugin {
 
 sub _unload_plugin {
     my ( $s, $oname ) = @_;
-
-    my $name   = $oname; #ucfirst( lc($oname) );
+    my $name   = $oname;
     my $plugin = "App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::$name";
     LOG("Removing plugin $plugin");
-
     $s->irc->plugin_del("BotCmdPlus_$name");
     Class::Unload->unload($plugin);
     delete $s->loaded->{$oname};
@@ -157,16 +165,15 @@ sub plugin_reload {
     my $db      = App::IRC::Bot::Shoze::Db->new;
 
     my ( $cmd, $name ) = split /\s+/, $msg;
-    #$name = lc($name);
     unless ( grep @{ $s->{plugins} }, $name ) {
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "[$cmdname] Unknow command name!" );
     }
     if ( $s->_reload_plugin($name) ) {
-        $irc->yield( notice => $Session->nick => "Plugin $name reloaded" );
+        $irc->{Out}->notice('#me#', $Session, "Plugin $name reloaded" );
     }
     else {
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "Cannot reload plugin '$name'" );
     }
     return PCI_EAT_ALL;
@@ -180,25 +187,19 @@ sub plugin_load {
     my $db      = App::IRC::Bot::Shoze::Db->new;
 
     my ( $cmd, $name ) = split /\s+/, $msg;
-    #$name = lc($name);
-#    unless ( grep @{ $s->{plugins} }, $name ) {
-#        return $s->_n_error( $irc, $Session->nick,
-#            "[$cmdname] Unknow plugin name!" );
-#    }
     unless($s->is_valid_plugin($name)) {
-        return $s->_n_error( $irc, $Session->nick,
-            "[$cmdname] Invalid plugin name!" );
-        
+        return $s->_n_error( $irc, $Session,
+            "[$cmdname] Invalid plugin name!" );    
     }
     if ( defined $s->loaded->{$name} ) {
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "[$cmdname] Plugin '$name' already loaded" );
     }
     if ( $s->_load_plugin($name) ) {
-        $irc->yield( notice => $Session->nick => "Plugin $name loaded" );
+        $irc->{Out}->notice('#me#', $Session, "Plugin $name loaded" );
     }
     else {
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "Cannot load plugin '$name'" );
     }
     return PCI_EAT_ALL;
@@ -212,22 +213,22 @@ sub plugin_unload {
     my $db      = App::IRC::Bot::Shoze::Db->new;
 
     my ( $cmd, $name ) = split /\s+/, $msg;
-    #$name = lc($name);
     unless ( grep @{ $s->{plugins} }, $name ) {
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "[$cmdname] Unknow command name!" );
     }
     unless ( defined $s->loaded->{$name} ) {
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "[$cmdname] Plugin '$name' is not loaded" );
     }
     if ( $s->_unload_plugin($name) ) {
-        $irc->yield( notice => $Session->nick => "Plugin $name unloaded" );
+        $irc->{Out}->notice('#me#', $Session, "Plugin $name unloaded" );
     }
     else {
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "Cannot unload plugin '$name'" );
     }
     return PCI_EAT_ALL;
 }
+
 1;

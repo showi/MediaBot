@@ -13,13 +13,14 @@ use App::IRC::Bot::Shoze::Log;
 use Data::Dumper qw(Dumper);
 
 our %fields = (
-    event   => undef,
-    name    => undef,
-    program => undef,
-    args    => undef,
-    who     => undef,
-    where   => undef,
-    data    => undef,
+    event      => undef,
+    name       => undef,
+    program    => undef,
+    args       => undef,
+    who        => undef,
+    where      => undef,
+    data       => undef,
+    session_id => undef,
 );
 
 sub new {
@@ -35,8 +36,10 @@ sub new {
 
 sub is_valid_program {
     my $s = shift;
-    unless(-x $s->program) {
-        WARN("Programe '".$s->program."' is not executable (check path&permission");
+    unless ( -x $s->program ) {
+        WARN(   "Programe '"
+              . $s->program
+              . "' is not executable (check path&permission" );
         return 0;
     }
 }

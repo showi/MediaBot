@@ -25,7 +25,7 @@ our %fields = (
 
 sub new {
     my ( $proto, $object_db ) = @_;
-    DEBUG( "Creating new " . __PACKAGE__, 5 );
+    DEBUG( "Creating new " . __PACKAGE__, 8 );
     croak "No database object passed as first parameter"
       unless ref($object_db);
     my $class = ref($proto) || $proto;

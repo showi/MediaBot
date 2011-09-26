@@ -23,7 +23,7 @@ our %fields = (
 #############
 sub new {
     my ( $proto, $parent ) = @_;
-    DEBUG( "Creating new " . __PACKAGE__, 6);
+    DEBUG( "Creating new " . __PACKAGE__, 8);
     croak "No parent specified" unless ref $parent;
     my $class = ref($proto) || $proto;
     my $s = {
@@ -59,8 +59,6 @@ sub create {
     my $C  = new App::IRC::Bot::Shoze::Db::NetworkChannelUsers::Object($db);
     $C->channel_id( $Channel->id );
     $C->nick_id( $Nick->id );
-#    $C->created_on($time);
-#    $C->updated_on($time);
     return $C->_create;
 }
 

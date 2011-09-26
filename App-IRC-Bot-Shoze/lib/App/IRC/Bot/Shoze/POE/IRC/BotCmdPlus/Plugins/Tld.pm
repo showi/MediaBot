@@ -73,7 +73,7 @@ sub S_tld_result {
     }
     my $d = $ref;
     if ( $result->status ) {
-        $irc->yield( 'privmsg' => $where => "Error: no match for tld "
+        $irc->privmsg('#me#', $where, "Error: no match for tld "
               . $d->{tld_ascii} . " ("
               . $d->{tld_origin} . "), "
               . $d->{type} );
@@ -82,7 +82,7 @@ sub S_tld_result {
 
     my $str = $d->{tld_ascii} . " (" . $d->{tld_origin} . "), " . $d->{type};
     $str .= ": " . $d->{info} if $d->{info};
-    $irc->yield( 'privmsg' => $where => $str );
+    $irc->privmsg('#me#', $where, $str );
     return PCI_EAT_ALL;
 }
 
@@ -103,6 +103,7 @@ sub tld {
     $request->args($msg);
     $request->who($where);
     $request->where( $where->[0] );
+    $request->session_id($irc->session_id);
     my $SubTask = App::IRC::Bot::Shoze->new->POE->SubTask;
     $SubTask->add_task($request);
     return PCI_EAT_ALL;

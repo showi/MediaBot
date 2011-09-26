@@ -1,4 +1,4 @@
-package App::IRC::Bot::Shoze::Db::NetworkServers::Object;
+package App::IRC::Bot::Shoze::Db::BotLogs::Object;
 
 use strict;
 use warnings;
@@ -14,14 +14,12 @@ our $AUTOLOAD;
 
 our %fields = (
     id         => undef,
-    network_id => undef,
-    hostname   => undef,
-    weight     => undef,
-    region     => undef,
-    hostname   => undef,
-
-    updated_on => undef,
+    type       => undef,
+    src        => undef,
+    target     => undef,
+    msg        => undef,
     created_on => undef,
+    network_id => undef,
 
     _object_name => undef,
     _object_db   => undef,
@@ -42,7 +40,7 @@ sub new {
 
     # DIRTY HACK VALUES IS SET TO 1 on init ...
     $s->_init_fields();
-    $s->_object_name('network_servers');
+    $s->_object_name('bot_logs');
     $s->_object_db($object_db);
     return $s;
 }

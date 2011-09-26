@@ -30,7 +30,7 @@ our %fields = (
 #############
 sub new {
     my ( $proto, $parent ) = @_;
-    DEBUG( "Creating new " . __PACKAGE__, 6 );
+    DEBUG( "Creating new " . __PACKAGE__, 8 );
     croak "No parent specified" unless ref $parent;
     my $class = ref($proto) || $proto;
     my $s = {
@@ -93,14 +93,13 @@ SQL
 
 ###############################################################################
 sub get_by {
-    my ( $s, $Network, $type, $name ) = @_;
+    my ( $s, $Network, $hash ) = @_;
     croak "Need Network object as first parameter "
       unless ref($Network) =~ /Db::Networks::Object/;
-    $type->{network_id} = $Network->id;
+    $hash->{network_id} = $Network->id;
     my $C =
       new App::IRC::Bot::Shoze::Db::NetworkChannels::Object( $s->_parent );
-    return $C->_get_by($type);
-
+    return $C->_get_by($hash);
 }
 
 ###############################################################################

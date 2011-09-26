@@ -55,7 +55,7 @@ sub version {
     if ( $event =~ /^\w_public$/ ) {
         $where = $channel;
     }
-    $irc->yield( privmsg => $where => $version );
+    $irc->{Out}->privmsg('#me#', $where,  $version );
     return PCI_EAT_ALL;
 }
 

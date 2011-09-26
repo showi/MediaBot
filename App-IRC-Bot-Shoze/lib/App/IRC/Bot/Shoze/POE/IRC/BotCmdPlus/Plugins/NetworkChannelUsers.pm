@@ -37,7 +37,7 @@ sub new {
 sub PCI_register {
     my ( $s, $irc ) = splice @_, 0, 2;
     $irc->plugin_register( $s, 'SERVER',
-        qw(324 353 join part quit connected disconnected mode whois) );
+        qw(324 353 join part quit connected disconnected mode whois registered) );
     return 1;
 }
 
@@ -51,23 +51,21 @@ sub _empty {
     App::IRC::Bot::Shoze::Db->new->ChannelUserList->empty;
 }
 
+sub S_registered {
+    my ( $s, $irc ) = @_;
+    print "Registered: " . $irc->session_id . "\n";
+}
 sub S_connected {
     my ( $s, $irc ) = @_;
     my $db      = App::IRC::Bot::Shoze::Db->new;
-    my $Network = $db->Networks->get( $irc->{network_id} );
-    unless ($Network) {
-        LOG( "Could not found network with id '" . $irc->{network_id} . "'" );
-        return PCI_EAT_NONE;
-    }
-    $db->NetworkNicks->empty($Network);
+    $db->NetworkNicks->empty($irc->{Network});
     return PCI_EAT_NONE;
 }
 
 sub S_disconnected {
     my ( $s, $irc ) = @_;
     my $db      = App::IRC::Bot::Shoze::Db->new;
-    my $Network = $db->Networks->get( $irc->{network_id} );
-    $db->NetworkNicks->empty($Network);
+    $db->NetworkNicks->empty($irc->{Network});
     return PCI_EAT_NONE;
 }
 
@@ -94,78 +92,13 @@ sub S_quit {
 
 sub S_part {
     my ( $s, $irc ) = splice @_, 0, 2;
-    my ( $who, $channel ) = ( ${ $_[0] }, ${ $_[1] } );
-    my $db = App::IRC::Bot::Shoze::Db->new;
-    my ( $nick, $user, $hostname ) = parse_user($who);
-    my $Network = $irc->{Network};
-    my $Nick = $s->_get_nick( $irc, $db, $Network, $nick );
-    unless ($Nick) {
-        WARN( "Could not find nick '$nick' in Network " . $Network->name );
-        return PCI_EAT_NONE;
-    }
-    my ( $chantype, $channame ) = ( $channel =~ /^(#|&)(.*)$/ );
-    my $Channel =
-      $db->NetworkChannels->get_by( $Network,
-        { type => $chantype, name => $channame } );
-    unless ($Channel) {
-        WARN(
-            "Could not find channel '$channel' in Network " . $Network->name );
-        return PCI_EAT_NONE;
-    }
-    if ( $nick eq $irc->nick_name ) {
-        WARN("We are leaving $channel");
-        $Channel->bot_joined(undef);
-        $Channel->_update();
-
-        # return PCI_EAT_NONE;
-    }
-    $s->_del_channel_user( $db, $Channel, $Nick );
-    my @list = $db->NetworkChannelUsers->is_on($Nick);
-    if ( @list < 1 ) {
-        $Nick->_delete;
-    }
+    $irc->{In}->user_part(${ $_[0] }, ${ $_[1] });
     return PCI_EAT_NONE;
 }
 
 sub S_join {
     my ( $s, $irc ) = splice @_, 0, 2;
-    my ( $who, $channel ) = ( ${ $_[0] }, ${ $_[1] } );
-    my $db = App::IRC::Bot::Shoze::Db->new;
-
-    my ( $nick, $user, $hostname ) = parse_user($who);
-
-    my ( $type, $channame ) = ( $channel =~ /^(#|&)(.*)$/ );
-    my $Network = $irc->{Network};
-    unless ($Network) {
-        WARN( "Could not found network with id '" . $irc->{network_id} . "'" );
-        return PCI_EAT_NONE;
-    }
-    my $Channel =
-      $db->NetworkChannels->get_by( $Network,
-        { type => $type, name => $channame } );
-    unless ($Channel) {
-        WARN("We are not managing channel '$channel'");
-        return PCI_EAT_NONE;
-    }
-    if ( $nick eq $irc->nick_name ) {
-        WARN("We are joining $channel");
-        $Channel->bot_joined(1);
-        $Channel->mode(undef);
-        $Channel->ulimit(undef);
-        $Channel->password(undef);
-        $Channel->_update();
-
-        # Issue mode command on channel
-        $irc->yield( mode => $channel );
-        return PCI_EAT_NONE;
-    }
-    my $Nick = $s->_get_nick( $irc, $db, $Network, $nick );
-    unless ($Nick) {
-        WARN( "Cannot get nick '$nick' for network '" . $Network->name . "'" );
-        return PCI_EAT_NONE;
-    }
-    LOG("Nick $Nick");
-    $s->_add_channel_user( $db, $Channel, $Nick, "" );
+    $irc->{In}->user_join(${ $_[0] }, ${ $_[1] });
     return PCI_EAT_NONE;
 }
 
@@ -212,7 +145,6 @@ sub S_mode {
         elsif ( $op eq 'l' and $sign eq '+' ) {
             $arg = ${ shift @args };
         }
-        print "Mode $sign$op on $for with arg $arg\n";
         if ( $op =~ /^[ov]$/ ) {
             $s->mode_user( $irc, $Channel, $sign, $op, $arg );
         }
@@ -269,6 +201,14 @@ sub mode_user {
     }
     my $NCU =
       $db->NetworkChannelUsers->get_by( $Channel, { nick_id => $Nick->id } );
+    unless ($NCU) {
+        WARN(   "NetworkChannelUser not found on channel '"
+              . $Channel->_usable_name
+              . "' for nick '"
+              . $Nick->nick
+              . "'" );
+        return 0;
+    }
     if ( $sign eq "+" ) {
         $NCU->mode($mode);
     }
@@ -298,12 +238,11 @@ sub S_whois {
         }
     );
     return PCI_EAT_NONE if $Session;
-    my $res = $db->NetworkSessions->create(
-        $Nick,
-        $whois->{user}, $whois->{host}, $whois->{real}
-    );
-    unless($res) {
-        WARN("Cannot create new session for nick " . $whois->{nick});
+    my $res =
+      $db->NetworkSessions->create( $Nick, $whois->{user}, $whois->{host},
+        $whois->{real} );
+    unless ($res) {
+        WARN( "Cannot create new session for nick " . $whois->{nick} );
         return PCI_EAT_NONE;
     }
     return PCI_EAT_NONE;
@@ -313,9 +252,8 @@ sub S_whois {
 sub S_353 {
     my ( $s, $irc ) = splice @_, 0, 2;
     my $db = App::IRC::Bot::Shoze::Db->new;
-    print Dumper @_;
+    #print Dumper @_;
 
-    #my @list = @{ ${$_[2] }};
     my $Network = $irc->{Network};
     unless ($Network) {
         LOG( "Could not found network with id '" . $irc->{network_id} . "'" );
@@ -341,7 +279,6 @@ sub S_353 {
                 WARN("Unknow mode set it to none");
                 $mode = "";
             }
-            print "User: $nick ($mode)\n";
         }
         my $Nick = $s->_get_nick( $irc, $db, $Network, $nick );
         unless ($Nick) {

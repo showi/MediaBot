@@ -149,9 +149,14 @@ sub task_result {
     my $s = $_[OBJECT];
     my $r = $_[ARG0];
 
-    $s->_get_root->POE->IRC->poco->send_event(
-        $r->event => $r->who => $r->where => $r );
-
+#    print "SessionID: " . $r->session_id . ", Event: " .  $r->event . "\n";
+#    $_[KERNEL]->post($r->session_id, $r->event , $r->who => $r->where => $r );
+#    $_[KERNEL]->post($r->session_id, 'privmsg', "#erreur404", "Coucou");
+#    my $session = $_[KERNEL]->ID_id_to_session($r->session_id);#->{heap}->send_even($r->event, $r->who => $r->where => $r);
+#     $_[KERNEL]->post($session->[HEAP]{irc}, $r->event , $r->who => $r->where => $r );
+    my $irc = $s->_parent->IRC->components->{$r->session_id};
+    $irc->send_event($r->event , $r->who => $r->where => $r);
+    #$session->{HEAP}->
 }
 
 # Catch and display information from the child's STDERR.  This was

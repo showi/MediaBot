@@ -127,7 +127,7 @@ sub channel_del {
 
     my ($channame) = ( split( /\s+/, $msg ) )[1];
     $channame =~ /^(#|&)([\w\d_]+)$/ or do {
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "[$cmdname] Invalid syntax, " );
     };
     my $type;
@@ -136,20 +136,22 @@ sub channel_del {
       $db->NetworkChannels->get_by( $irc->{Network},
         { type => $type, name => $channame } );
     if ( !$Channel ) {
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "[$cmdname] Channel doesn't exist!" );
     }
 
     LOG("Deleting channel '$channame'");
+    $irc->{Out}->part($Session->get_hostmask, $Channel->_usable_name, $Channel);
     if ( $db->NetworkChannels->delete($Channel) ) {
-        $irc->yield( notice => $Session->nick =>
+        $irc->{Out}->notice('#me#', $Session,
               "[$cmdname] Channel $type$channame deleted." );
         my $aj = $irc->plugin_get('AutoJoin');
         delete $aj->{Channels}->{"$type$channame"};
-        $irc->yield( part => "$type$channame" );
+       
     }
     else {
-        return $s->_n_error( $irc, $Session->nick,
+        $irc->{Out}->join($Session->get_hostmask, $Channel->_usable_name, $Channel );
+        return $s->_n_error( $irc, $Session,
             "[$cmdname] Cannot delete channel $type$channame" );
     }
     return PCI_EAT_ALL;
@@ -164,35 +166,32 @@ sub channel_add {
     my $db      = App::IRC::Bot::Shoze::Db->new;
 
     my ($channame) = ( split( /\s+/, $msg ) )[1];
-    $channame =~ /^(#|&)([\w\d_]+)$/ or do {
-        return $s->_n_error( $irc, $Session->nick,
-            "[$cmdname] Invalid syntax, " . $s->pretty_help($cmdname) );
-    };
-    my $type;
-    ( $type, $channame ) = ( $1, $2 );
+
+    my ( $ctype, $cname ) = splitchannel($channame);
     my $Channel =
       $db->NetworkChannels->get_by( $irc->{Network},
-        { type => $type, name => $channame } );
+        { type => $ctype, name => $cname } );
     if ($Channel) {
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
                 "[$cmdname] Channel '"
               . $Channel->_usable_name
               . "' already exist!" );
     }
     LOG("Creating channel '$channame'");
     $Channel =
-      $db->NetworkChannels->create( $irc->{Network}, $type, $channame,
+      $db->NetworkChannels->create( $irc->{Network}, $ctype, $cname,
         $Session->user_id );
     if ($Channel) {
-        $irc->yield( notice => $Session->nick =>
-              "[$cmdname] Channel $type$channame created." );
+        $irc->{Out}->notice('#me#', $Session->nick,,
+              "[$cmdname] Channel $ctype$cname created." );
         my $aj = $irc->plugin_get('AutoJoin');
-        $aj->{Channels}->{"$type$channame"} = '';
-        $irc->yield( join => "$type$channame" );
+        $aj->{Channels}->{"$ctype$cname"} = '';
+        $Channel = $db->NetworkChannels->get_by($irc->{Network}, {type => $ctype, name => $cname});
+        $irc->{Out}->join($Session->get_hostmask, $Channel->_usable_name, $Channel);
     }
     else {
-        return $s->_n_error( $irc, $Session->nick,
-            "[$cmdname] Cannot create channel $type$channame" );
+        return $s->_n_error( $irc, $Session,
+            "[$cmdname] Cannot create channel $ctype$cname" );
     }
     return PCI_EAT_ALL;
 }
@@ -208,19 +207,19 @@ sub channel_info {
     print "msg: $msg\n";
     my $chan = ( split( /\s+/, $msg ) )[1];
     $chan =~ /^([#&])([^\s]+)/ or do {
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "[$cmdname] Invalid channel name!" );
     };
     my ( $type, $name ) = ( $1, $2 );
     unless ( is_valid_chan_name("$type$name") ) {
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "[$cmdname] Invalid channel name $type$name" );
     }
     my $Channel =
       $db->NetworkChannels->get_by( $irc->{Network},
         { type => $type, name => $name } );
     unless ($Channel) {
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "[$cmdname] Channel $type$name not found!" );
     }
     my $Owner;
@@ -235,15 +234,15 @@ sub channel_info {
     $out .=
       " - auto mode____: " . ( $Channel->auto_mode ? "yes" : "no" ) . "\n";
     $out .= " - mode_________: "
-      . ( $Channel->mode ? "+" . $Channel->mode : "" ) . "\n";
+      . ( $Channel->wanted_mode ? "+" . $Channel->wanted_mode : "" ) . "\n";
     $out .= " - password_____: "
-      . ( $Channel->password ? $Channel->password : "" ) . "\n";
+      . ( $Channel->wanted_password ? $Channel->wanted_password : "" ) . "\n";
     $out .= " - limit________: "
-      . ( $Channel->ulimit ? $Channel->ulimit : "" ) . "\n";
+      . ( $Channel->wanted_ulimit ? $Channel->wanted_ulimit : "" ) . "\n";
     $out .=
       " - auto topic___: " . ( $Channel->auto_topic ? "yes" : "no" ) . "\n";
     $out .=
-      " - topic________: " . ( $Channel->topic ? $Channel->topic : "" ) . "\n";
+      " - topic________: " . ( $Channel->wanted_topic ? $Channel->wanted_topic : "" ) . "\n";
     $out .= " - auto op______: " . ( $Channel->auto_op ? "yes" : "no" ) . "\n";
     $out .=
       " - auto voice___: " . ( $Channel->auto_voice ? "yes" : "no" ) . "\n";
@@ -252,7 +251,7 @@ sub channel_info {
       " - bot joined___: " . ( $Channel->bot_joined ? "yes" : "no" ) . "\n";
     $out .= " - updated on___: " . localtime( int $Channel->updated_on ) . "\n";
     my @lines = split( /\n/, $out );
-    $s->_send_lines( $irc, 'notice', $Session->nick, @lines );
+    $s->_send_lines( $irc, 'notice', '#me#', $Session, @lines );
     return PCI_EAT_ALL;
 }
 
@@ -266,25 +265,25 @@ sub channel_set {
 
     my ( $cmd, $chan, $key, $value ) = split /\s+/, $msg;
     $chan =~ /^([#&])([^\s]+)$/ or do {
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "[$cmdname] Invalid channel name!" );
     };
     my ( $type, $name ) = ( $1, $2 );
     unless ( is_valid_chan_name("$type$name") ) {
-        return $s->_n_error( $irc, $Session->nick,,
+        return $s->_n_error( $irc, $Session,
             "[$cmdname] Invalid channel name '$type$name'!" );
     }
     my $Channel =
       $db->NetworkChannels->get_by( $irc->{Network},
         { type => $type, name => $name } );
     unless ($Channel) {
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "[$cmdname] Channel '$type$name' not found!" );
     }
     my @akeys =
-      qw(ulimit auto_mode auto_topic auto_op auto_voice active topic password  mode);
+      qw(auto_mode auto_topic auto_op auto_voice active wanted_topic wanted_password wanted_mode wanted_ulimit );
     unless ( grep /^$key$/, @akeys ) {
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "[$cmdname] Invalid key $key" );
     }
 
@@ -311,13 +310,13 @@ sub channel_set {
     }
     $Channel->$key($value);
     if ( $Channel->_update ) {
-        $irc->yield( notice => $Session->nick =>
+        $irc->notice('#me#', $Session, 
               "[$cmdname] Successfuly set $key to $value" );
         $irc->yield( 'mode', $Channel->_usable_name )
           if $mode_change and $Channel->auto_mode;
     }
     else {
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "[$cmdname] Cannot set $key to $value" );
     }
     return PCI_EAT_ALL;
@@ -337,7 +336,7 @@ sub channel_list {
             "[$cmdname] No channel in database " );
         return PCI_EAT_ALL;
     }
-    $irc->yield( notice => $Session->nick => "[$cmdname] Listing channel " );
+    $irc->notice('#me#', $Session, "[$cmdname] Listing channel " );
     for my $Chan (@list) {
         my ( $owner, $Owner );
         if ( $Chan->owner ) {
@@ -353,7 +352,7 @@ sub channel_list {
         $str .= $Chan->_usable_name;
         $str .= ' (' . localtime( int $Chan->updated_on ) . ')'
           if $Chan->updated_on;
-        $irc->yield( notice => $Session->nick => $str );
+        $irc->notice('#me#', $Session, $str );
     }
     return PCI_EAT_ALL;
 }
@@ -369,25 +368,25 @@ sub channel_set_owner {
     LOG("msg: $msg");
     my ( $channame, $name ) = ( split( /\s+/, $msg ) )[ 1 .. 2 ];
     $channame =~ /^(#|&)([\w\d_-]+)$/ or do {
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "[$cmdname] Invalid channel name, " . $s->pretty_help($cmdname) );
     };
     my $type;
     ( $type, $channame ) = ( $1, $2 );
     $name =~ /^[\w\d_-]+$/ or do {
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "[$cmdname] Invalid user name, " . $s->pretty_help($cmdname) );
     };
     my $Channel =
       $db->NetworkChannels->get_by( $irc->{Network},
         { type => $type, name => $channame } );
     unless ($Channel) {
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "[$cmdname] No channel named '$type$channame'" );
     }
     my $Owner = $db->Users->get_by( { name => $name } );
     unless ($Owner) {
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "[$cmdname] No user named '$name'" );
         return PCI_EAT_ALL;
     }
@@ -397,12 +396,12 @@ sub channel_set_owner {
         if (    ( $Session->user_lvl != 1000 )
             and ( $CurrentOwner->lvl >= $Session->user_lvl ) )
         {
-            $irc->yield( notice => $Session->nick =>
+            $irc->notice('#me#', $Session,
                   "[$cmdname] You cannot change this channel owner!" );
             return PCI_EAT_ALL;
         }
         elsif ( $CurrentOwner->id == $Owner->id ) {
-            $irc->yield( notice => $Session->nick => "[$cmdname] Same owner!" );
+            $irc->notice('#me#', $Session->nick => "[$cmdname] Same owner!" );
             return PCI_EAT_ALL;
         }
     }
@@ -410,14 +409,14 @@ sub channel_set_owner {
     $Channel->owner( $Owner->id );
 
     if ( $Channel->_update ) {
-        $irc->yield( notice => $Session->nick => "[$cmdname] "
+        $irc->notice('#me#', $Session, "[$cmdname] "
               . $Channel->_usable_name
               . " owner set to "
               . $Owner->name );
         return PCI_EAT_ALL;
     }
     else {
-        $irc->yield( notice => $Session->nick => "[$cmdname] Cannot set "
+        $irc->notice('#me#', $Session->nick => "[$cmdname] Cannot set "
               . $Channel->_usable_name
               . " owner set to "
               . $Owner->name );
@@ -428,10 +427,10 @@ sub channel_set_owner {
 
 ###############################################################################
 sub join {
-    my ( $self, $Session, $irc, $event ) = splice @_, 0, 4;
+    my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
-    my $cmdname = 'op';
-    my $PCMD    = $self->get_cmd($cmdname);
+    my $cmdname = 'join';
+    my $PCMD    = $s->get_cmd($cmdname);
     my $db      = App::IRC::Bot::Shoze::Db->new;
 
     my @channels = split /\s+/, $msg;
@@ -440,9 +439,21 @@ sub join {
         push @channels, $where->[0];
     }
     for (@channels) {
-        $irc->yield( join => $_ );
-
-        #WARN(__PACKAGE__."::join NOT IMPLEMENTED");
+        my ( $ctype, $cname ) = splitchannel($_);
+        #print "Cname: $cname, Ctype: $ctype, NetworkID: " . $irc->{Network}->id . "\n";
+        my $Channel = $db->NetworkChannels->get_by(
+            $irc->{Network},
+            {
+                name => $cname,
+                type => $ctype
+            }
+        );
+        #print "Channel: " . $Channel . "\n";
+        unless ($Channel) {
+            WARN("Cannot join unmanaged channel '$_'");
+            next;
+        }
+        $s->_join( $irc, $Channel );
     }
     return PCI_EAT_ALL;
 }
@@ -506,7 +517,7 @@ sub topic {
     else {
         return PCI_EAT_NONE;
     }
-    $Channel->topic($topic);
+    $Channel->wanted_topic($topic);
     $Channel->topic_setby( $Session->user_id );
     $Channel->topic_seton(time);
     unless ( $Channel->_update ) {
@@ -558,7 +569,7 @@ sub op {
         return PCI_EAT_NONE;
     }
 
-    $s->_modes($irc, '+', 'o', $Channel, @nicks);
+    $s->_modes( $irc, '+', 'o', $Channel, @nicks );
 }
 
 ###############################################################################
@@ -597,7 +608,7 @@ sub deop {
         return PCI_EAT_NONE;
     }
 
-    $s->_modes($irc, '-', 'o', $Channel, @nicks);
+    $s->_modes( $irc, '-', 'o', $Channel, @nicks );
     return PCI_EAT_ALL;
 }
 
@@ -636,7 +647,7 @@ sub voice {
               . '\'' );
         return PCI_EAT_NONE;
     }
-    $s->_modes($irc, '+', 'v', $Channel, @nicks);
+    $s->_modes( $irc, '+', 'v', $Channel, @nicks );
     return PCI_EAT_ALL;
 }
 
@@ -674,7 +685,7 @@ sub devoice {
               . '\'' );
         return PCI_EAT_NONE;
     }
-    $s->_modes($irc, '-', 'v', $Channel, @nicks);
+    $s->_modes( $irc, '-', 'v', $Channel, @nicks );
     return PCI_EAT_ALL;
 }
 ###############################################################################

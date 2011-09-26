@@ -37,7 +37,7 @@ our %fields = (
 #############
 sub new {
     my ( $proto, $object_name, $object_db ) = @_;
-    DEBUG( "Creating new " . __PACKAGE__, 6);
+    DEBUG( "Creating new " . __PACKAGE__, 8);
     croak "No database object passed as first argument" unless ref($object_db);
     my $class = ref($proto) || $proto;
     my $s = {
@@ -301,10 +301,11 @@ sub _create {
     my $h = $s->_object_db->handle;
     my @args;
     my $time = time;
-    if ($s->{_permitted}->{created_on}) {
+    if (defined $s->{_permitted}->{created_on}) {
+        #LOG("Create created_on $time");
         $s->created_on($time);
     }
-    if ($s->{_permitted}->{updated_on}) {
+    if (defined $s->{_permitted}->{updated_on}) {
         $s->updated_on($time);
     }
     my $query = "INSERT INTO " . $s->_object_name . " (";
@@ -340,7 +341,7 @@ sub _update {
     $s->_object_db->die_if_not_open();
     my $h = $s->_object_db->handle;
     my @args;
-    if ($s->{_permitted}->{updated_on}) {
+    if (defined $s->{_permitted}->{updated_on}) {
         $s->updated_on(time);
     }
     my $query = "UPDATE " . $s->_object_name . " SET ";

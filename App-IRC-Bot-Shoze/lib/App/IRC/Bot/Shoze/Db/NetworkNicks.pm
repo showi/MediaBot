@@ -23,7 +23,7 @@ our %fields = (
 #############
 sub new {
     my ( $proto, $parent ) = @_;
-    DEBUG( "Creating new " . __PACKAGE__, 6 );
+    DEBUG( "Creating new " . __PACKAGE__, 8 );
     croak "No parent specified" unless ref $parent;
     my $class = ref($proto) || $proto;
     my $s = {
@@ -85,7 +85,7 @@ SQL
     $sth->execute( $Network->id, $Nick->id )
       or die "Cannot execute query '$query' (" . $h->errstr . ")";
     $query = <<SQL;
-    DELETE FROM network_channel_users WHERE network_id = ? AND nick_id = ?
+    DELETE FROM network_channel_users WHERE nick_id = ?
 SQL
     $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";

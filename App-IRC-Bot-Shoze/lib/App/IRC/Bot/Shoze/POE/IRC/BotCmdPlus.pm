@@ -39,7 +39,7 @@ sub PCI_register {
 
     $irc->plugin_add( 'BotCmdPlus_Dispatch',
         new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Dispatch($s) );
-   
+
     return 1;
 }
 
@@ -60,17 +60,15 @@ sub get_cmd {
 }
 
 sub register_command {
-    my ( $s, $plugin, $cmd, $acces, $lvl ) = @_;
-    return
-      if ref($cmd)
-    ;    ### Dirty hack, something's going wrong on plugin registration###
-    DEBUG( "Registering command $cmd with access level $lvl ($plugin)", 2 );
+    my ( $s, $plugin, $cmd, $access, $lvl ) = @_;
+    return if ref($cmd);
+    DEBUG( "Registering command $cmd with access level $lvl ($plugin)", 5 );
     croak "Cannot register command '$cmd'"
       if defined $s->cmd->{$cmd};
     $s->cmd->{$cmd} = {
         plugin => $plugin,
         lvl    => $lvl,
-        access => $acces,
+        access => $access,
     };
 }
 

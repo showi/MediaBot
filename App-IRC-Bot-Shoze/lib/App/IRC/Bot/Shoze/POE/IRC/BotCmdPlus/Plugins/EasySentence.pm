@@ -82,7 +82,7 @@ sub sentence_add {
     my ( $cmd, $type, @sentauthor ) = split( /\s+/, $msg );
 
     unless ( grep ( /$type/, @{ $s->authtypes } ) && @sentauthor ) {
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "Invalid sentence type 'type', must be proverbe|insulte|carambar" );
     }
     my $sentence = join( ' ', @sentauthor );
@@ -91,22 +91,23 @@ sub sentence_add {
     $sentence =~ s/(\[#(.*)#\])// and do {
         $author = $2;
     };
+    $sentence =~ s/#nl#/\n/;
     LOG("$cmdname: $sentence / $author");
     my $Sentence = $db->Sentences->get_by( $type, { text => $sentence } );
     if ($Sentence) {
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "This '$type' sentence is already in database!" );
     }
     my $A = new App::IRC::Bot::Shoze::Db::EasySentence::Object( $db, $type );
     $A->text($sentence);
     $A->author($author) if $author;
     unless ( $A->_create ) {
-        return $s->_n_error( $irc, $Session->nick, "Cannot add this sentence" );
+        return $s->_n_error( $irc, $Session, "Cannot add this sentence" );
     }
     else {
-        $irc->yield( 'notice', $Session->nick,
+        $irc->notice('#me#', $Session,
             "Sentence of type '$type' added:" );
-        $irc->yield( 'notice', $Session->nick, "$sentence  >> $author <<" );
+        $irc->{Out}->notice('#me#', $Session , "$sentence  >> $author <<" );
     }
     return PCI_EAT_ALL;
 }
@@ -124,7 +125,7 @@ sub sentence_list {
     my $pattern = join ' ', @pattern;
     LOG("$cmdname: $type @pattern");
     unless ( grep ( /$type/, @{ $s->authtypes } ) ) {
-        return $s->_n_error( $irc, $Session->nick,
+        return $s->_n_error( $irc, $Session,
             "Invalid sentence type 'type', must be proverbe|insulte|carambar" );
     }
     my @list;
@@ -140,7 +141,7 @@ sub sentence_list {
         $str .= '<<' . $_->author . '>>  ' if $_->author;
         $str .= $_->text . "\n";
     }
-    $s->_send_lines( $irc, 'notice', $Session->nick, split( /\n/, $str ) );
+    $s->_send_lines( $irc, 'notice', $who, $Session, split( /\n/, $str ) );
     return PCI_EAT_ALL;
 }
 
@@ -160,10 +161,9 @@ sub insulte {
     my $rand = rand(@list);
     my $str = decode( 'utf8', $list[$rand]->text );
 
-    #my $str = $list[$rand]->text;
     LOG("[$who] $where/Insulte: $str");
     my @lines = split( /\n/, $str );
-    $self->_send_lines( $irc, 'privmsg', $where, @lines );
+    $self->_send_lines( $irc, 'privmsg', '#me#', $where, @lines );
     return PCI_EAT_ALL;
 }
 
@@ -187,7 +187,7 @@ sub carambar {
     $str = decode( 'utf8', $str );
     LOG("[$who] $where/Carambar: $str");
     my @lines = split( /\n/, $str );
-    $self->_send_lines( $irc, 'privmsg', $where, @lines );
+    $self->_send_lines( $irc, 'privmsg', '#me#',  $where, @lines );
     return PCI_EAT_ALL;
 }
 
@@ -211,7 +211,7 @@ sub proverbe {
     $str = decode( 'utf8', $str );
     LOG("[$who] $where/Proverbe: $str");
     my @lines = split( /\n/, $str );
-    $self->_send_lines( $irc, 'privmsg', $where, @lines );
+    $self->_send_lines( $irc, 'privmsg', '#me#', $where, @lines );
     return PCI_EAT_ALL;
 }
 

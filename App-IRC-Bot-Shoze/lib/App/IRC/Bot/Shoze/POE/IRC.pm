@@ -21,6 +21,7 @@ use App::IRC::Bot::Shoze::Db;
 use App::IRC::Bot::Shoze::Constants;
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::POE::IRC::Out;
+use App::IRC::Bot::Shoze::POE::IRC::In;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::PluginsManagement;
 
@@ -31,10 +32,11 @@ use Data::Dumper qw(Dumper);
 
 our %fields = (
     _parent => undef,
-    Out     => undef,
-    session => undef,
-    poco    => undef,
-    network_id => undef,
+    #Out     => undef,
+    #session => undef,
+    #poco    => undef,
+    #network_id => undef,
+    components => undef,
 );
 
 sub new {
@@ -47,6 +49,7 @@ sub new {
         %fields,
     };
     bless( $s, $class );
+    $s->components({});
     $s->_parent($parent);
     if (App::IRC::Bot::Shoze::Config->new->irc->{enable}) {
         $s->_init_poe();
@@ -57,7 +60,7 @@ sub new {
 sub _init_poe () {
     my $s = shift;
     LOG("* Connecting to irc network");
-    $s->session(
+    #$s->session(
         POE::Session->create(
             object_states => [
                 $s => { _start        => '_start' },
@@ -67,12 +70,12 @@ sub _init_poe () {
                 $s => { lag_o_meter   => 'lag_o_meter' },
             ],
             heap => {
-               Shoze => $s->_get_root,
+               #Shoze => $s->_get_root,
             }
-        )
-    ) unless $s->session;
-    $s->Out( new App::IRC::Bot::Shoze::POE::IRC::Out($s) )
-    unless $s->Out;
+        );
+    #) unless $s->session;
+    #$s->Out( new App::IRC::Bot::Shoze::POE::IRC::Out($s) )
+    #unless $s->Out;
 }
 
 sub _stop {
@@ -101,9 +104,14 @@ sub _start {
         ircname => $Config->{name}
           || 'shoze',
     ) or croak "Oh noooo! $!";
-    $irc->{network_id} = $Network->id;
+    $heap->{irc} = $irc;
+    $s->components->{$irc->session_id} = $irc;
+    #$irc->{network_id} = $Network->id;
     $irc->{Network} = $Network;
-    $s->poco($irc);
+    $irc->{Out} = new App::IRC::Bot::Shoze::POE::IRC::Out($s, $irc);
+    $irc->{In} = new App::IRC::Bot::Shoze::POE::IRC::In($s, $irc);
+    #$heap->{Network} = $Network;
+    
     $heap->{connector} = POE::Component::IRC::Plugin::Connector->new();
     $irc->plugin_add( 'Connector' => $heap->{connector} );
     # Our plugins system

@@ -53,7 +53,7 @@ sub help {
       $match = undef;
     }
     $mylvl = $Session->user_lvl if ($Session->user_id);
-    $irc->yield( notice => $Session->nick => "[$cmdname] Listing command:" );
+    $irc->{Out}->notice('#me#', $Session, "[$cmdname] Listing command:" );
     
     #print Dumper $C->cmd;
     for my $cmd ( sort keys %{ $C->cmd } ) {
@@ -61,13 +61,9 @@ sub help {
             next unless $cmd =~ /$match/i;
         }
         my $plugin = $C->cmd->{$cmd}->{plugin}->cmd->{$cmd};
-#        LOG( "Show cmd '$cmd': " . $plugin->{lvl} );
-#        LOG( "Show cmd '$cmd': " . $plugin->{help_cmd} );
-#        LOG( "Show cmd '$cmd': " . $plugin->{help_description} );
+
         next if $mylvl < $plugin->{lvl};
-        $irc->yield( notice => $Session->nick => " " . $plugin->{help_cmd});# . "   -   " . $plugin->{help_description});
-#        $irc->yield( notice => $Session->nick => "    -> "
-#              . $plugin->{help_description} );
+        $irc->{Out}->notice('#me#', $Session, " " . $plugin->{help_cmd});
     }
     return PCI_EAT_ALL;
 }

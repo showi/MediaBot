@@ -4,7 +4,11 @@ use warnings;
 use strict;
 
 use Carp;
-
+  BEGIN {
+    package POE::Kernel;
+    use constant ASSERT_DEFAULT => 1;
+  }
+  
 use POE qw(
   Component
   Component::IRC

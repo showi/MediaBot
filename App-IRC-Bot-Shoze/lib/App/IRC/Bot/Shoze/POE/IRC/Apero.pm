@@ -35,12 +35,12 @@ sub new {
 sub PCI_register {
     my ( $self, $irc ) = splice @_, 0, 2;
     $irc->plugin_register( $self, 'SERVER', qw(public) );
-    my $db = App::IRC::Bot::Shoze::Db->new;
+    my $db       = App::IRC::Bot::Shoze::Db->new;
     my @triggers = $db->Apero->list;
     $self->triggers( {} );
     for my $A (@triggers) {
         my $t = $A->trigger;
-        DEBUG("Registering trigger $t", 6);
+        DEBUG( "Registering trigger $t", 8 );
         $self->triggers->{ $A->id } = qr/$t/i;
     }
     return 1;
@@ -54,16 +54,12 @@ sub PCI_unregister {
 
 sub _have_trigger {
     my ( $s, $db, $cmd ) = @_;
-    #print "Searching for match for cmd '$cmd'\n";
     for my $id ( keys %{ $s->triggers } ) {
         my $t = $s->triggers->{$id};
-        #print "Looking id: $id ($t)\n";
         if ( $cmd =~ /$t/i ) {
-        #    print "Get a match with id: $id\n";
             return $db->Apero->get($id);
         }
     }
-
 }
 
 sub S_public {
@@ -82,15 +78,11 @@ sub S_public {
     $cmd = NFKD( decode( "utf-8", $cmd ) );
     my $ocmd = $cmd;
     $cmd =~ s/\pM//g;
-
     my $A = $self->_have_trigger( $db, $cmd );
     return PCI_EAT_NONE unless $A;
-
-    #print "Got trigger for $params[0]\n";
-    #print $A->text . "\n";
     my @target = @params;
     my $type   = 'user';
-    #print "Num Arg:" . $#params . "\n";
+
     if ( $#params == 0 ) {
         $type = 'chan' if grep /^#[^\s]+$/, $params[0];
     }
@@ -100,7 +92,6 @@ sub S_public {
     else {
         push @target, $nick;
     }
-
     my $str;
     my @choices;
     if ( $type eq 'chan' ) {
@@ -114,9 +105,7 @@ sub S_public {
     else {
         @choices = split( /\|/, $A->text );
     }
-    #print "Choice0: " . $choices[0] . "\n";
     $str = $choices[ int( rand( $#choices + 1 ) ) ];
-    #print "Str before: $str\n";
     if ( $type eq 'users' ) {
         my $people;
         my $be = $#target - 1;
@@ -131,23 +120,28 @@ sub S_public {
         my $one = $target[0];
         $str =~ s/%WHO%/$one/g;
     }
-    #print "type: $type\n";
     $str =~ s/%NICK%/$nick/g;
     $str =~ s/%CMD%/$ocmd/g;
     $str =~ /%IRAND(\d+)%/ and do {
-        my $rand = int(rand($1)) + 1;
-        $str =~ s/%IRAND(\d{})%/$rand/g; # .  
+        my $rand = int( rand($1) ) + 1;
+        $str =~ s/%IRAND(\d{})%/$rand/g;    # .
     };
-    $str = decode('utf8', $str);
-    if ($A->msg_type) {
-        if ($A->msg_type eq "action") {
-            $irc->yield(ctcp => $where => "ACTION $str");
-        } else {
-            WARN("Apero id: " . $A->id ." unknown msg_type '".$A->msg_type."'");
-            $irc->yield( privmsg => $where => $str );
+    $str = decode( 'utf8', $str );
+    if ( $A->msg_type ) {
+        if ( $A->msg_type eq "action" ) {
+            $irc->{Out}->ctcp_action( $who, $where, $str );
         }
-    } else {
-        $irc->yield( privmsg => $where => $str );
+        else {
+            WARN(   "Apero id: "
+                  . $A->id
+                  . " unknown msg_type '"
+                  . $A->msg_type
+                  . "'" );
+            $irc->{Out}->privmsg( $who, $where, $str );
+        }
+    }
+    else {
+        $irc->{Out}->privmsg( $who, $where, $str );
     }
     return PCI_EAT_ALL;
 }

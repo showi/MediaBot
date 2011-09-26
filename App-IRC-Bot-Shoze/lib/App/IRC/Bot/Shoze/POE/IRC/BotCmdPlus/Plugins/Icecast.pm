@@ -65,7 +65,6 @@ sub S_icecast_listeners_result {
     my ( $s, $irc ) = splice @_, 0, 2;
     my ( $who, $where, $result ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my ( $nick, $user, $hostmask ) = parse_user($who);
-    print Dump $result;
     my $ref = thaw( $result->data );
     if ( $result->status < 0 ) {
         $s->_n_error( $irc, $where,
@@ -73,12 +72,12 @@ sub S_icecast_listeners_result {
     }
     my $d = $ref->{icestats};
     if ( $result->status ) {
-        $irc->yield( 'privmsg' => $where => "Error: Can't fetch listeners!");
+        $irc->privmsg('#me#', $where, "Error: Can't fetch listeners!");
         return PCI_EAT_ALL;
     }
 
     my $str = $d->{host} . " / " . $d->{listeners} . " listeners";
-    $irc->yield( 'privmsg' => $where => $str );
+    $irc->privmsg('#me#', $where, $str );
     return PCI_EAT_ALL;
 }
 
@@ -96,7 +95,6 @@ sub listeners {
     $request->event('irc_icecast_listeners_result');
     $request->name('icecast');
     $request->program( $s->_get_root->_path . "/scripts/icestats.pl" );
-    #$request->args($msg);
     $request->who($where);
     $request->where( $where->[0] );
     my $SubTask = App::IRC::Bot::Shoze->new->POE->SubTask;

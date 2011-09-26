@@ -21,6 +21,7 @@ our %fields = (
     where   => undef,
     data    => undef,
     status  => undef,
+    session_id => undef,
 );
 
 sub new {

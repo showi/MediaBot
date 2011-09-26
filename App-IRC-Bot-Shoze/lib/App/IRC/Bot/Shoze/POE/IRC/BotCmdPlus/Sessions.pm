@@ -15,7 +15,8 @@ use lib qw(../../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::Db::NetworkSessions::Object;
-use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(_get_nick); # Must move BotCmd::Helper in Db
+use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(_get_nick)
+  ;    # Must move BotCmd::Helper in Db
 our %fields = ( cmd => undef, irc => undef );
 
 sub new {
@@ -32,8 +33,7 @@ sub new {
 sub PCI_register {
     my ( $self, $irc ) = splice @_, 0, 2;
     $irc->plugin_register( $self, 'SERVER',
-        qw(msg public ctcp_ping nick connected)
-    );
+        qw(msg public ctcp_ping nick connected) );
     $self->irc($irc);
     return 1;
 }
@@ -45,13 +45,9 @@ sub PCI_unregister {
 
 sub S_connected {
     my ( $self, $irc ) = splice @_, 0, 2;
-    LOG("Sessions/S_connected", 5);
-    my $db =  App::IRC::Bot::Shoze::Db->new;
-    my $Network = $db->Networks->get($irc->{network_id});
-    croak "Could not found network with id '".$irc->{network_id}."'"
-        unless $Network;
+    my $db      = App::IRC::Bot::Shoze::Db->new;
+    my $Network = $irc->{Network};
     App::IRC::Bot::Shoze::Db->new->NetworkChannels->clear_joined($Network);
-    $irc->yield( 'mode' => $irc->nick_name => '+x' );
     return PCI_EAT_NONE;
 }
 
@@ -60,10 +56,16 @@ sub destroy_session {
     my ( $who, $msg ) = ( ${ $_[0] }, ${ $_[1] } );
     my $db = App::IRC::Bot::Shoze::Db->new;
 
-    my $OldSession = App::IRC::Bot::Shoze::Db::NetworkSessions::Object->new($db)->parse_who($who);
-    my $NewSession =
-      $db->Sessions->get_by( { nick => $OldSession->nick, user => $OldSession->user,
-       hostname => $OldSession->hostname } );
+    my $OldSession =
+      App::IRC::Bot::Shoze::Db::NetworkSessions::Object->new($db)
+      ->parse_who($who);
+    my $NewSession = $db->Sessions->get_by(
+        {
+            nick     => $OldSession->nick,
+            user     => $OldSession->user,
+            hostname => $OldSession->hostname
+        }
+    );
     $db->Sessions->delete( $NewSession->id );
 }
 
@@ -71,10 +73,15 @@ sub S_nick {
     my ( $self, $irc ) = splice @_, 0, 2;
     my ( $who, $msg ) = ( ${ $_[0] }, ${ $_[1] } );
     my $db = App::IRC::Bot::Shoze::Db->new;
-    my $OldSession = App::IRC::Bot::Shoze::Db::NetworkSessions::Object->new($db)->parse_who($who);
-    my $NewSession =
-      $db->Sessions->get_by( { user => $OldSession->user,
-        hostname => $OldSession->hostname });
+    my $OldSession =
+      App::IRC::Bot::Shoze::Db::NetworkSessions::Object->new($db)
+      ->parse_who($who);
+    my $NewSession = $db->Sessions->get_by(
+        {
+            user     => $OldSession->user,
+            hostname => $OldSession->hostname
+        }
+    );
     $NewSession->nick($msg);
     $db->Sessions->update($NewSession);
 }
@@ -82,27 +89,28 @@ sub S_nick {
 sub _default {
     my ( $s, $irc, $event ) = splice @_, 0, 3;
     my $db = App::IRC::Bot::Shoze::Db->new;
-    
-    LOG( '-' x 80 );
-    LOG( __PACKAGE__ . " Unprocessed event: $event" );
+
+    LOG( __PACKAGE__ . "  $event" );
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
-    
+
     $db->NetworkSessions->delete_idle;
-    
-    #my $TmpSession = App::IRC::Bot::Shoze::Db::NetworkSessions::Object->new($db)->parse_who($who);
-    my ($nick, $user, $hostname) = parse_user($who);
-    my $Nick = $s->_get_nick($irc, $db, $irc->{Network}, $nick);
-    unless($Nick) {
-        WARN("Could not create nick '".$Nick->nick."'");
+
+    my ( $nick, $user, $hostname ) = parse_user($who);
+    my $Nick = $s->_get_nick( $irc, $db, $irc->{Network}, $nick );
+    unless ($Nick) {
+        WARN( "Could not create nick '" . $Nick->nick . "'" );
         return PCI_EAT_NONE;
     }
-    my $Session =
-      $db->NetworkSessions->get_by($Nick, { user => $user,
-        hostname => $hostname } );
+    my $Session = $db->NetworkSessions->get_by(
+        $Nick,
+        {
+            user     => $user,
+            hostname => $hostname
+        }
+    );
     unless ( defined $Session ) {
-        LOG( "Creating session for $who" );
-        $db->NetworkSessions->create( $Nick, $user,
-            $hostname );
+        LOG("Creating session for $who");
+        $db->NetworkSessions->create( $Nick, $user, $hostname );
     }
     else {
         LOG("Updating session");
@@ -112,7 +120,6 @@ sub _default {
             return PCI_EAT_ALL;
         }
     }
-    LOG( __PACKAGE__ . " is dispatchin $event" );
     return PCI_EAT_NONE;
 }
 

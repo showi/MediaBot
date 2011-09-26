@@ -23,8 +23,8 @@ sub new {
     my ( $proto, $parent ) = @_;
     my $class = ref($proto) || $proto;
     my $s = {
-        _permitted => \%fields,
-        %fields,
+              _permitted => \%fields,
+              %fields,
     };
 
     bless( $s, $class );
@@ -50,7 +50,8 @@ sub S_join {
 
     my ( $nick, $user, $hostname ) = parse_user($who);
     my ( $type, $channame ) = splitchannel($channel);
-    my $Channel = $db->NetworkChannels->get_by( $irc->{Network}, { type => $type, name => $channame } );
+    my $Channel = $db->NetworkChannels->get_by( $irc->{Network},
+                                         { type => $type, name => $channame } );
     unless ($Channel) {
         LOG("We are not managing channel '$channel'");
         return PCI_EAT_NONE;
@@ -60,26 +61,25 @@ sub S_join {
       $db->ChannelAutoUserMode->list_by( { channel_id => undef } );
     my @LAutoMode =
       $db->ChannelAutoUserMode->list_by( { channel_id => $Channel->id } );
-    #print "AutoMode: " . @AutoMode . "\n";
-    my @AutoMode = (@LAutoMode, @GAutoMode);
+    my @AutoMode = ( @LAutoMode, @GAutoMode );
     for (@AutoMode) {
-        print "automode: channel_id: " . $_->channel_id . " / " . $_->hostmask . " / " . $who . "\n";
+        print "automode: channel_id: "
+          . $_->channel_id . " / "
+          . $_->hostmask . " / "
+          . $who . "\n";
         if ( matches_mask( $_->hostmask, $who ) ) {
             LOG( "AutoMode match hostmask '" . $_->hostmask . "'" );
             if ( $_->mode eq 'o' ) {
                 LOG("Need to op $who");
                 $irc->yield( 'mode' => "$channel +o $nick" );
                 last;
-            }
-            elsif ( $_->mode eq 'v' ) {
+            } elsif ( $_->mode eq 'v' ) {
                 LOG("Need to voice $who");
                 $irc->yield( 'mode' => "$channel +v $nick" );
                 last;
-            }
-            elsif ( $_->mode eq 'b' ) {
+            } elsif ( $_->mode eq 'b' ) {
                 LOG("Need to ban $who");
-            }
-            else {
+            } else {
                 WARN( "Invalid AutoMode '" . $_->action . "'" );
             }
         }

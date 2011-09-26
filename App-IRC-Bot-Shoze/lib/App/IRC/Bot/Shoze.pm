@@ -89,7 +89,8 @@ sub new {
 
 sub read_config {
     my $s = shift;
-    new App::IRC::Bot::Shoze::Config($s->_path);
+    my $C = new App::IRC::Bot::Shoze::Config($s->_path);
+    $C->load_all();
 }
 
 =head1 AUTHOR

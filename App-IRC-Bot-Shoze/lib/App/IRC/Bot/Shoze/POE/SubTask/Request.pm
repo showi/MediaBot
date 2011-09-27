@@ -1,5 +1,15 @@
 package App::IRC::Bot::Shoze::POE::SubTask::Request;
 
+=head1 NAME
+
+App::IRC::Bot::Shoze::POE::SubTask::Request - SubTask Request 
+
+=cut
+
+=head1 SYNOPSIS
+
+=cut
+
 use strict;
 use warnings;
 
@@ -23,6 +33,14 @@ our %fields = (
     session_id => undef,
 );
 
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+=cut
+
 sub new {
     my ($proto) = @_;
     my $class = ref($proto) || $proto;
@@ -34,6 +52,10 @@ sub new {
     return $s;
 }
 
+=item is_valid_program
+
+=cut
+
 sub is_valid_program {
     my $s = shift;
     unless ( -x $s->program ) {
@@ -43,5 +65,19 @@ sub is_valid_program {
         return 0;
     }
 }
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
 
 1;

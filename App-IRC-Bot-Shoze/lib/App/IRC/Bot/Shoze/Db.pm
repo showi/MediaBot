@@ -1,5 +1,21 @@
 package App::IRC::Bot::Shoze::Db;
 
+=head1 NAME
+
+App::IRC::Bot::Shoze::Db - A singleton object that aggregate all our database objects.
+
+=cut
+
+=head1 SYNOPSIS
+
+   my $C = new App::IRC::Bot::Shoze::Db();
+   
+   ...
+   
+   Return singleton object that permit OO access to our database object
+
+=cut
+
 use strict;
 use warnings;
 
@@ -74,8 +90,18 @@ our %fields    = (
       undef,
 );
 
-# Constructor
-# Aggregate other Db modules so we have a kind of OO acces to SQL databases
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+Aggregate other Db modules so we have a kind of OO acces to SQL databases
+
+RETURN: Singleton object
+
+=cut
+
 sub new {
     my ($proto) = @_;
     if ($Singleton) {
@@ -116,7 +142,12 @@ sub new {
     return $Singleton;
 }
 
-# Opening database connection
+=item init
+
+Initialize database connection
+
+=cut
+
 sub init {
     my $s = shift;
     my $c = App::IRC::Bot::Shoze::Config->new;
@@ -133,7 +164,12 @@ sub init {
     return 0;
 }
 
-# Closing database connection
+=item close
+
+Close database connection
+
+=cut
+
 sub close {
     my ($s) = @_;
     $s->handle->disconnect if defined $s->handle;
@@ -141,12 +177,29 @@ sub close {
     $s->is_open(0);
 }
 
-# Try to reopen database handle or die, must find better way to handle
-# failure for longtime running service. (USELESSS, do nothing ^^)
+=item die_if_not_open
+
+    Die if we can't reopen database connection (USELESS, must be removed)
+=cut
+
 sub die_if_not_open {
     my ($s) = @_;
     $s->init() unless $s->is_open();
 }
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
 
 1;
 

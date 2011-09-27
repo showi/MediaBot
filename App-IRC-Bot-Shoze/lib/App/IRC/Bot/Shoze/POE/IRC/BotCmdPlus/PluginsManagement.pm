@@ -1,5 +1,17 @@
 package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::PluginsManagement;
 
+=head1 NAME
+
+App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::PluginsManagement - PLugins management
+
+=cut
+
+=head1 SYNOPSIS
+    
+This module permit to load/unload plugin even while the bot is running
+
+=cut
+
 use strict;
 use warnings;
 use Class::Unload;
@@ -22,6 +34,14 @@ our %fields = (
     irc     => undef,
     loaded  => undef
 );
+
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+=cut
 
 sub new {
     my ( $proto, $parent ) = @_;
@@ -61,6 +81,10 @@ sub new {
     return $s;
 }
 
+=item PCI_register
+
+=cut
+
 sub PCI_register {
     my ( $s, $irc ) = splice @_, 0, 2;
     $s->irc($irc);
@@ -76,6 +100,11 @@ sub PCI_register {
     return 1;
 }
 
+
+=item PCI_unregister
+
+=cut
+
 sub PCI_unregister {
     my ( $s, $irc ) = splice @_, 0, 2;
     my $C = $irc->plugin_get('BotCmdPlus');
@@ -86,10 +115,20 @@ sub PCI_unregister {
     return 1;
 }
 
+
+=item is_valid_plugin
+
+=cut
+
 sub is_valid_plugin {
     my($s, $name) = @_;
     return 0 unless $name =~ /^\w+$/;    
 }
+
+
+=item _reload_plugin
+
+=cut
 
 sub _reload_plugin {
     my ( $s, $name ) = @_;
@@ -98,6 +137,11 @@ sub _reload_plugin {
     $err = 0 unless $s->_load_plugin($name);
     return $err;
 }
+
+
+=item _load_plugin
+
+=cut
 
 sub _load_plugin {
     my ( $s, $oname ) = @_;
@@ -132,12 +176,22 @@ sub _load_plugin {
     return 0;
 }
 
+
+=item _load_all_plugin
+
+=cut
+
 sub _load_all_plugin {
     my ($s) = shift;
     for ( @{ $s->plugins } ) {
         $s->_load_plugin($_);
     }
 }
+
+
+=item _unload_plugin
+
+=cut
 
 sub _unload_plugin {
     my ( $s, $oname ) = @_;
@@ -150,12 +204,21 @@ sub _unload_plugin {
 
 }
 
+=item _unload_all_plugin
+
+=cut
+
 sub _unload_all_plugin {
     my ($s) = shift;
     for ( @{ $s->plugins } ) {
         $s->_unload_plugin($_);
     }
 }
+
+
+=item plugin_reload
+
+=cut
 
 sub plugin_reload {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
@@ -178,6 +241,11 @@ sub plugin_reload {
     }
     return PCI_EAT_ALL;
 }
+
+
+=item plugin_load
+
+=cut
 
 sub plugin_load {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
@@ -205,6 +273,11 @@ sub plugin_load {
     return PCI_EAT_ALL;
 }
 
+
+=item plugin_unload
+
+=cut
+
 sub plugin_unload {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -230,5 +303,19 @@ sub plugin_unload {
     }
     return PCI_EAT_ALL;
 }
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
 
 1;

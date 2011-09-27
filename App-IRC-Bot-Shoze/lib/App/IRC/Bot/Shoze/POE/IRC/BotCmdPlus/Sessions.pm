@@ -1,5 +1,17 @@
 package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Sessions;
 
+=head1 NAME
+
+App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Sessions - User tracking
+
+=cut
+
+=head1 SYNOPSIS
+    
+This module track users
+
+=cut
+
 use strict;
 use warnings;
 
@@ -19,6 +31,14 @@ use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(_get_nick)
   ;    # Must move BotCmd::Helper in Db
 our %fields = ( cmd => undef, irc => undef );
 
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+=cut
+
 sub new {
     my ( $proto, $parent ) = @_;
     my $class = ref($proto) || $proto;
@@ -30,6 +50,10 @@ sub new {
     return $s;
 }
 
+=item PCI_register
+
+=cut
+
 sub PCI_register {
     my ( $self, $irc ) = splice @_, 0, 2;
     $irc->plugin_register( $self, 'SERVER',
@@ -38,10 +62,18 @@ sub PCI_register {
     return 1;
 }
 
+=item PCI_unregister
+
+=cut
+
 sub PCI_unregister {
     my ( $self, $irc ) = splice @_, 0, 2;
     return 1;
 }
+
+=item S_connected
+
+=cut
 
 sub S_connected {
     my ( $self, $irc ) = splice @_, 0, 2;
@@ -50,6 +82,10 @@ sub S_connected {
     App::IRC::Bot::Shoze::Db->new->NetworkChannels->clear_joined($Network);
     return PCI_EAT_NONE;
 }
+
+=item destroy_session
+
+=cut
 
 sub destroy_session {
     my ( $self, $irc ) = splice @_, 0, 2;
@@ -69,6 +105,10 @@ sub destroy_session {
     $db->Sessions->delete( $NewSession->id );
 }
 
+=item S_nick
+
+=cut
+
 sub S_nick {
     my ( $self, $irc ) = splice @_, 0, 2;
     my ( $who, $msg ) = ( ${ $_[0] }, ${ $_[1] } );
@@ -85,6 +125,10 @@ sub S_nick {
     $NewSession->nick($msg);
     $db->Sessions->update($NewSession);
 }
+
+=item _default
+
+=cut
 
 sub _default {
     my ( $s, $irc, $event ) = splice @_, 0, 3;
@@ -122,5 +166,19 @@ sub _default {
     }
     return PCI_EAT_NONE;
 }
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
 
 1;

@@ -1,5 +1,15 @@
 package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::ChannelAutoUserMode;
 
+=head1 NAME
+
+App::IRC::Bot::Shoze::Db::ChannelAutoUserMode - ChannelAutoUserMode plugin
+
+=cut
+
+=head1 SYNOPSIS
+
+=cut
+
 use strict;
 use warnings;
 
@@ -19,6 +29,14 @@ use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper
 
 our %fields = ( cmd => undef, _parent => undef );
 
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+=cut
+
 sub new {
     my ( $proto, $parent ) = @_;
     my $class = ref($proto) || $proto;
@@ -32,16 +50,28 @@ sub new {
     return $s;
 }
 
+=item PCI_register
+
+=cut
+
 sub PCI_register {
     my ( $s, $irc ) = splice @_, 0, 2;
     $irc->plugin_register( $s, 'SERVER', qw(join) );
     return 1;
 }
 
+=item PCI_unregister
+
+=cut
+
 sub PCI_unregister {
     my ( $s, $irc ) = splice @_, 0, 2;
     return 1;
 }
+
+=item S_join
+
+=cut
 
 sub S_join {
     my ( $s, $irc ) = splice @_, 0, 2;
@@ -86,5 +116,19 @@ sub S_join {
     }
     return PCI_EAT_NONE;
 }
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
 
 1;

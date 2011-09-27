@@ -1,5 +1,15 @@
 package App::IRC::Bot::Shoze::POE::IRC::Apero;
 
+=head1 NAME
+
+App::IRC::Bot::Shoze::POE::IRC::Apero - Apero plugin 
+
+=cut
+
+=head1 SYNOPSIS
+
+=cut
+
 use strict;
 use warnings;
 
@@ -20,6 +30,14 @@ use Data::Dumper qw(Dumper);
 
 our %fields = ( triggers => undef, );
 
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+=cut
+
 sub new {
     my ($proto) = @_;
     my $class = ref($proto) || $proto;
@@ -31,6 +49,10 @@ sub new {
     $s->triggers( {} );
     return $s;
 }
+
+=item PCI_register
+
+=cut
 
 sub PCI_register {
     my ( $self, $irc ) = splice @_, 0, 2;
@@ -46,11 +68,19 @@ sub PCI_register {
     return 1;
 }
 
+=item PCI_unregister
+
+=cut
+
 sub PCI_unregister {
     my ($self) = @_;
     delete $self->{triggers};
     return 1;
 }
+
+=item _have_trigger
+
+=cut
 
 sub _have_trigger {
     my ( $s, $db, $cmd ) = @_;
@@ -61,6 +91,10 @@ sub _have_trigger {
         }
     }
 }
+
+=item S_public
+
+=cut
 
 sub S_public {
     my ( $self, $irc ) = splice @_, 0, 2;
@@ -145,5 +179,19 @@ sub S_public {
     }
     return PCI_EAT_ALL;
 }
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
 
 1;

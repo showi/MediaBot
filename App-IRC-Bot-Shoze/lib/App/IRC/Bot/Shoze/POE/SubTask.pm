@@ -1,11 +1,20 @@
-###############################################################################
-# This module permit to launc external command into sub process (fork)
-# On exit the subprocess emit an event that requesting plugin can listen
-# This plugin is a rewrite of a recipe found on POE Cookbook
-#
-# Todo: Write SubTask::Request and SubTask::Response
-###############################################################################
 package App::IRC::Bot::Shoze::POE::SubTask;
+
+=head1 NAME
+
+App::IRC::Bot::Shoze::POE::SubTask - Execute task in subprocess 
+
+=cut
+
+=head1 SYNOPSIS
+    
+ This module permit to launc external command into sub process (fork)
+ On exit the subprocess emit an event that requesting plugin can listen
+ This plugin is a rewrite of a recipe found on POE Cookbook
+
+ Todo: Write SubTask::Request and SubTask::Response
+
+=cut
 
 use strict;
 use warnings;
@@ -14,7 +23,6 @@ use Carp;
 
 use YAML;
 use POE qw(Wheel::Run Filter::Reference);
-sub MAX_CONCURRENT_TASKS () { 3 }
 
 use Storable;
 
@@ -33,6 +41,14 @@ our %fields = (
     tasks   => undef,
 );
 
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+=cut
+
 sub new {
     my ( $proto, $parent ) = @_;
     croak "No parent object passed as first parameter"
@@ -49,10 +65,24 @@ sub new {
     return $s;
 }
 
+=item MAX_CONCURRENT_TASKS
+
+=cut
+
+sub MAX_CONCURRENT_TASKS () { 3 }
+
+=item _stop
+
+=cut
+
 sub _stop {
     DEBUG( "Deleting session with alias " . $_[OBJECT]->alias, 1 );
     delete $_[OBJECT]->{session};
 }
+
+=item add_task
+
+=cut
 
 sub add_task {
     my ( $s, $data ) = @_;
@@ -72,24 +102,37 @@ sub add_task {
     $poe_kernel->post( $s->session, 'next_task' );
 }
 
-# Start the session that will manage all the children.  The _start and
-# next_task events are handled by the same function.
+=item _stop
 
-# Start as many tasks as needed so that the number of tasks is no more
-# than MAX_CONCURRENT_TASKS.  Every wheel event is accompanied by the
-# wheel's ID.  This function saves each wheel by its ID so it can be
-# referred to when its events are handled.
-# Wheel::Run's Program may be a code reference.  Here it's called via
-# a short anonymous sub so we can pass in parameters.
+ Start the session that will manage all the children.  The _start and
+ next_task events are handled by the same function.
+
+ Start as many tasks as needed so that the number of tasks is no more
+ than MAX_CONCURRENT_TASKS.  Every wheel event is accompanied by the
+ wheel's ID.  This function saves each wheel by its ID so it can be
+ referred to when its events are handled.
+ Wheel::Run's Program may be a code reference.  Here it's called via
+ a short anonymous sub so we can pass in parameters.
+
+=cut
+
 sub _start {
     shift->start_tasks(@_);
 }
+
+=item next_task
+
+=cut
 
 sub next_task {
     my $s = shift;
     print "SELF: $s\n";
     $s->start_tasks(@_);
 }
+
+=item start_tasks
+
+=cut
 
 sub start_tasks {
     my $s = $_[OBJECT];
@@ -111,11 +154,16 @@ sub start_tasks {
     }
 }
 
-# This function is not a POE function!  It is a plain sub that will be
-# run in a forked off child.  It uses POE::Filter::Reference so that
-# it can return arbitrary information.  All POE filters can be used by
-# themselves, but their parameters and return values are always list
-# references.
+=item do_stuff
+
+ This function is not a POE function!  It is a plain sub that will be
+ run in a forked off child.  It uses POE::Filter::Reference so that
+ it can return arbitrary information.  All POE filters can be used by
+ themselves, but their parameters and return values are always list
+ references.
+
+=cut
+
 sub do_stuff {
     my $s = $_[OBJECT];
     binmode(STDOUT);    # Required for this to work on MSWin32
@@ -142,9 +190,14 @@ sub do_stuff {
     print @$output;
 }
 
-# Handle information returned from the task.  Since we're using
-# POE::Filter::Reference, the $result is however it was created in the
-# child process.  In this sample, it's a hash reference.
+=item task_result
+
+ Handle information returned from the task.  Since we're using
+ POE::Filter::Reference, the $result is however it was created in the
+ child process.  In this sample, it's a hash reference.
+
+=cut
+
 sub task_result {
     my $s = $_[OBJECT];
     my $r = $_[ARG0];
@@ -159,17 +212,28 @@ sub task_result {
     #$session->{HEAP}->
 }
 
-# Catch and display information from the child's STDERR.  This was
-# useful for debugging since the child's warnings and errors were not
-# being displayed otherwise.
+=item task_debug
+
+
+ Catch and display information from the child's STDERR.  This was
+ useful for debugging since the child's warnings and errors were not
+ being displayed otherwise.
+
+=cut
+
 sub task_debug {
     my $s      = $_[OBJECT];
     my $result = $_[ARG0];
     print "Debug: $result\n";
 }
 
-# The task is done.  Delete the child wheel, and try to start a new
-# task to take its place.
+=item task_done
+
+ The task is done.  Delete the child wheel, and try to start a new
+ task to take its place.
+
+=cut
+
 sub task_done {
     my $s = $_[OBJECT];
     my ( $kernel, $heap, $task_id ) = @_[ KERNEL, HEAP, ARG0 ];
@@ -177,7 +241,12 @@ sub task_done {
     $kernel->yield("next_task");
 }
 
-# Detect the CHLD signal as each of our children exits.
+=item sig_child
+
+ Detect the CHLD signal as each of our children exits.
+
+=cut
+
 sub sig_child {
     my $s = $_[OBJECT];
     my ( $heap, $sig, $pid, $exit_val ) = @_[ HEAP, ARG0, ARG1, ARG2 ];
@@ -185,5 +254,19 @@ sub sig_child {
 
     LOG("warn $$: Child $pid exited");
 }
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
 
 1;

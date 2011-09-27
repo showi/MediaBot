@@ -1,5 +1,17 @@
 package App::IRC::Bot::Shoze::Db::Users;
 
+=head1 NAME
+
+App::IRC::Bot::Shoze::Db::Users - Methods for easy SQL table access
+
+=cut
+
+=head1 SYNOPSIS
+    
+Easy SQL table access
+
+=cut
+
 use strict;
 use warnings;
 
@@ -20,8 +32,14 @@ our %fields = (
     _parent => undef,
 );
 
-# Constructor
-#############
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+=cut
+
 sub new {
     my ( $proto, $parent ) = @_;
     DEBUG( "Creating new " . __PACKAGE__ , 8);
@@ -36,11 +54,19 @@ sub new {
     return $s;
 }
 
+=item list
+
+=cut
+
 sub list {
     my $s = shift;
     my $C = new App::IRC::Bot::Shoze::Db::Users::Object( $s->_parent );
     return $C->_list();
 }
+
+=item get
+
+=cut
 
 sub get {
     my ( $s, $id ) = @_;
@@ -49,12 +75,20 @@ sub get {
     return $C->_get( $id );
 }
 
+=item get_by
+
+=cut
+
 sub get_by {
     my ( $s, $hash ) = @_;
     DEBUG( __PACKAGE__ . "::get_by($hash)", 3);
     my $C = new App::IRC::Bot::Shoze::Db::Users::Object( $s->_parent );
     return $C->_get_by( $hash );
 }
+
+=item create
+
+=cut
 
 sub create {
     my ( $s, $name, $password, $hostmask ) = @_;
@@ -72,6 +106,10 @@ sub create {
     return $C->_create();
 }
 
+=item check_password
+
+=cut
+
 sub check_password {
     my ( $s, $User, $password ) = @_;
     $s->_parent->die_if_not_open();
@@ -85,5 +123,19 @@ sub check_password {
     }
     return 0;
 }
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
 
 1;

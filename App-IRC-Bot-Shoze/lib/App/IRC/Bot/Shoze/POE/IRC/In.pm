@@ -1,5 +1,15 @@
 package App::IRC::Bot::Shoze::POE::IRC::In;
 
+=head1 NAME
+
+App::IRC::Bot::Shoze::POE::IRC::In - IRC input event 
+
+=cut
+
+=head1 SYNOPSIS
+
+=cut
+
 use strict;
 use warnings;
 
@@ -19,6 +29,14 @@ use Data::Dumper qw(Dumper);
 
 our %fields = ( _parent => undef, _irc => undef );
 
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+=cut
+
 sub new {
     my ( $proto, $parent, $irc ) = @_;
     croak "No parent object passed as first parameter"
@@ -33,6 +51,10 @@ sub new {
     $s->_irc($irc);
     return $s;
 }
+
+=item user_join
+
+=cut
 
 sub user_join {
     my ( $s, $who, $channel ) = @_;
@@ -75,6 +97,10 @@ sub user_join {
     return 1;
 }
 
+=item user_part
+
+=cut
+
 sub user_part {
     my ( $s, $who, $channel ) = @_;
     
@@ -111,5 +137,19 @@ sub user_part {
     }
     return 1;
 }
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
 
 1;

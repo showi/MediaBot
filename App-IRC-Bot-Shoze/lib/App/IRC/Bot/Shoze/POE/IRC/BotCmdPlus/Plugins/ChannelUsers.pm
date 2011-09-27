@@ -1,10 +1,19 @@
-###############################################################################
-# The plugin allow admin and channel owner to link user to channel and
-# manage their rights.
-# TODO: Find another name so we want confuse this plugin with
-# NetworkChannelUsers who store current people who have joined this channel
-##############################################################################
 package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::ChannelUsers;
+
+=head1 NAME
+
+App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::ChannelUsers - ChannelUsers plugin
+
+=cut
+
+=head1 SYNOPSIS
+    
+The plugin allow admin and channel owner to link user to channel and
+manage their rights.
+TODO: Find another name so we want confuse this plugin with
+NetworkChannelUsers who store current people who have joined this channel
+
+=cut
 
 use strict;
 use warnings;
@@ -22,6 +31,14 @@ use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(:ALL);
 use App::IRC::Bot::Shoze::Db::ChannelUsers::Object;
 
 our %fields = ( cmd => undef );
+
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+=cut
 
 sub new {
     my ( $proto, $parent ) = @_;
@@ -72,7 +89,10 @@ sub new {
     return $s;
 }
 
-###############################################################################
+=item channel_user_add
+
+=cut
+
 sub channel_user_add {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -133,7 +153,10 @@ sub channel_user_add {
     return PCI_EAT_ALL;
 }
 
-###############################################################################
+=item channel_user_set
+
+=cut
+
 sub channel_user_set {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -206,7 +229,10 @@ sub channel_user_set {
     return PCI_EAT_ALL;
 }
 
-###############################################################################
+=item channel_user_list
+
+=cut
+
 sub channel_user_list {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -255,7 +281,10 @@ sub channel_user_list {
     return PCI_EAT_ALL;
 }
 
-###############################################################################
+=item channel_user_info
+
+=cut
+
 sub channel_user_info {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -309,7 +338,10 @@ sub channel_user_info {
     return PCI_EAT_ALL;
 }
 
-###############################################################################
+=item channel_user_del
+
+=cut
+
 sub channel_user_del {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -366,6 +398,19 @@ sub channel_user_del {
     }
     return PCI_EAT_ALL;
 }
-###############################################################################
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
 
 1;

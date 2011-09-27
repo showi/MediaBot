@@ -1,12 +1,17 @@
-###############################################################################
-# Plugins::Users
-#---------------
-#
-# This plugin allow user to login, logout and for administrator to manage
-# users (add, del, view information, change values)
-#
-###############################################################################
 package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Users;
+
+=head1 NAME
+
+App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Users - Users plugin
+
+=cut
+
+=head1 SYNOPSIS
+
+This plugin allow user to login, logout and for administrator to manage
+users (add, del, view information, change values)
+
+=cut
 
 use strict;
 use warnings;
@@ -24,7 +29,14 @@ use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(:ALL);
 
 our %fields = ( cmd => undef );
 
-###############################################################################
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+=cut
+
 sub new {
     my ( $proto, $parent ) = @_;
     my $class = ref($proto) || $proto;
@@ -83,7 +95,10 @@ sub new {
     return $s;
 }
 
-###############################################################################
+=item login
+
+=cut
+
 sub login {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -120,7 +135,10 @@ sub login {
     return PCI_EAT_ALL;
 }
 
-###############################################################################
+=item logout
+
+=cut
+
 sub logout {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -139,7 +157,10 @@ sub logout {
     return PCI_EAT_ALL;
 }
 
-###############################################################################
+=item user_set
+
+=cut
+
 sub user_set {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -201,7 +222,9 @@ sub user_set {
     return PCI_EAT_ALL;
 }
 
-###############################################################################
+=item user_add
+
+=cut
 sub user_add {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -242,7 +265,10 @@ sub user_add {
     return PCI_EAT_ALL;
 }
 
-###############################################################################
+=item user_del
+
+=cut
+
 sub user_del {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -278,7 +304,10 @@ sub user_del {
     return PCI_EAT_ALL;
 }
 
-###############################################################################
+=item user_list
+
+=cut
+
 sub user_list {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -304,7 +333,10 @@ sub user_list {
     return PCI_EAT_ALL;
 }
 
-###############################################################################
+=item user_info
+
+=cut
+
 sub user_info {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -332,5 +364,19 @@ sub user_info {
     $s->_send_lines( $irc, 'notice', '#me#', $Session, @lines );
     return PCI_EAT_ALL;
 }
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
 
 1;

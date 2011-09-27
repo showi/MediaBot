@@ -1,5 +1,17 @@
 package App::IRC::Bot::Shoze::Db::NetworkSessions;
 
+=head1 NAME
+
+App::IRC::Bot::Shoze::Db::NetworkSessions - Methods for easy SQL table access
+
+=cut
+
+=head1 SYNOPSIS
+    
+Easy SQL table access
+
+=cut
+
 use strict;
 use warnings;
 
@@ -18,8 +30,14 @@ our %fields = (
     _parent => undef,
 );
 
-# Constructor
-#############
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+=cut
+
 sub new {
     my ( $proto, $parent ) = @_;
     DEBUG( "Creating new " . __PACKAGE__, 8 );
@@ -34,7 +52,10 @@ sub new {
     return $s;
 }
 
-###############################################################################
+=item create
+
+=cut
+
 sub create {
     my ( $s, $Nick, $user, $hostname, $real ) = @_;
     croak "Need Nick object as first parameter"
@@ -55,7 +76,10 @@ sub create {
     return $O->_create();
 }
 
-###############################################################################
+=item update
+
+=cut
+
 sub update {
     my ( $s, $Session ) = @_;
     croak "Need Session object as first parameter"
@@ -87,7 +111,10 @@ sub update {
     return $Session->_update();
 }
 
-###############################################################################
+=item delete_idle
+
+=cut
+
 sub delete_idle {
     my ($s)    = @_;
     my $tlimit = time - 600;
@@ -104,9 +131,10 @@ SQL
 
 }
 
-###############################################################################
-# Get session with extend informations from user table if user's logged
-###############################################################################
+=item get_extended
+
+=cut
+
 sub get_extended {
     my ( $s, $Network, $nick, $user, $hostname ) = @_;
     my $db = App::IRC::Bot::Shoze::Db->new;
@@ -156,7 +184,10 @@ SQL
 
 }
 
-###############################################################################
+=item get_by
+
+=cut
+
 sub get_by {
     my ( $s, $Nick, $hash ) = @_;
     croak "Need Nick object as first parameter"
@@ -166,5 +197,19 @@ sub get_by {
       new App::IRC::Bot::Shoze::Db::NetworkSessions::Object( $s->_parent );
     return $N->_get_by($hash);
 }
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
 
 1;

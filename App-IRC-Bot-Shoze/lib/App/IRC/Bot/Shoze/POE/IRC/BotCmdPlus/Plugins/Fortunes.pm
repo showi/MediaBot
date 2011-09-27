@@ -1,5 +1,15 @@
 package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Fortunes;
 
+=head1 NAME
+
+App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Fortunes - Fortune  plugin
+
+=cut
+
+=head1 SYNOPSIS
+
+=cut
+
 use strict;
 use warnings;
 
@@ -20,6 +30,14 @@ use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper
 use App::IRC::Bot::Shoze::POE::SubTask::Request;
 
 our %fields = ( cmd => undef, _parent => undef, program => undef );
+
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+=cut
 
 sub new {
     my ( $proto, $parent ) = @_;
@@ -49,6 +67,11 @@ sub new {
     return $s;
 }
 
+
+=item PCI_register
+
+=cut
+
 sub PCI_register {
     my ( $s, $irc ) = splice @_, 0, 2;
     $irc->plugin_register( $s, 'SERVER', qw(tld_result) );
@@ -56,11 +79,19 @@ sub PCI_register {
     return 1;
 }
 
+=item PCI_unregister
+
+=cut
+
 sub PCI_unregister {
     my ( $s, $irc ) = splice @_, 0, 2;
     $s->_unregister_cmd($irc);
     return 1;
 }
+
+=item fortune
+
+=cut
 
 sub fortune {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
@@ -77,5 +108,19 @@ sub fortune {
     $s->_send_lines( $irc, 'privmsg', '#me#', $where, split(/\n/, $res));
     return PCI_EAT_ALL;
 }
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
 
 1;

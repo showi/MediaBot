@@ -1,5 +1,15 @@
 package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Help;
 
+=head1 NAME
+
+App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Help - Help plugin
+
+=cut
+
+=head1 SYNOPSIS
+
+=cut
+
 use strict;
 use warnings;
 
@@ -16,6 +26,14 @@ use App::IRC::Bot::Shoze::String;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(:ALL);
 
 our %fields = ( cmd => undef );
+
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+=cut
 
 sub new {
     my ( $proto, $parent ) = @_;
@@ -37,6 +55,10 @@ sub new {
     );
     return $s;
 }
+
+=item help
+
+=cut
 
 sub help {
     my ( $self, $Session,  $irc, $event ) = splice @_, 0, 4;
@@ -67,5 +89,19 @@ sub help {
     }
     return PCI_EAT_ALL;
 }
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
 
 1;

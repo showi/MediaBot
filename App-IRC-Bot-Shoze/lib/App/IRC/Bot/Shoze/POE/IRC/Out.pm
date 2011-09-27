@@ -1,5 +1,15 @@
 package App::IRC::Bot::Shoze::POE::IRC::Out;
 
+=head1 NAME
+
+App::IRC::Bot::Shoze::POE::IRC::Out - IRC bot output 
+
+=cut
+
+=head1 SYNOPSIS
+
+=cut
+
 use strict;
 use warnings;
 
@@ -19,6 +29,14 @@ use Data::Dumper qw(Dumper);
 
 our %fields = ( _parent => undef, _irc => undef );
 
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+=cut
+
 sub new {
     my ( $proto, $parent, $irc ) = @_;
     croak "No parent object passed as first parameter"
@@ -34,9 +52,10 @@ sub new {
     return $s;
 }
 
-############
-# Messages #
-############
+
+=item send_msg
+
+=cut
 
 sub send_msg {
     my ($s, $type, $who, $target, $msg) = @_;
@@ -53,11 +72,19 @@ sub send_msg {
     $s->_irc->yield( $type => $dest => $msg );
 }
 
+=item notice
+
+=cut
+
 sub notice {
     my ( $s, $who, $target, $msg ) = @_;
     $s->send_msg('notice', $who, $target, $msg);
     #$s->_irc->yield( notice => $target => $msg );
 }
+
+=item privmsg
+
+=cut
 
 sub privmsg {
     my ( $s, $who, $target, $msg ) = @_;
@@ -66,6 +93,10 @@ sub privmsg {
 #    $s->_irc->yield( privmsg => $target => $msg );
 }
 
+=item ctcp_action
+
+=cut
+
 sub ctcp_action {
     my ( $s, $who, $target, $msg ) = @_;
     #$s->send_msg('notice', $who, $target, $msg);
@@ -73,9 +104,9 @@ sub ctcp_action {
     $s->_irc->yield( ctcp => $target => "ACTION $msg" );
 }
 
-##############
-#
-##############
+=item log
+
+=cut
 
 sub log {
     my ( $s, $type, $who, $target, $msg ) = @_;
@@ -95,6 +126,10 @@ sub log {
     }
 }
 
+=item join
+
+=cut
+
 sub join {
     my ( $s, $who, $where, $Channel ) = @_;
     my $msg = $Channel->_usable_name;
@@ -103,11 +138,29 @@ sub join {
     $s->_irc->yield( join => $msg );
 }
 
+=item part
+
+=cut
+
 sub part {
     my ( $s, $who, $where, $Channel ) = @_;
     my $msg = $Channel->_usable_name;
     $s->log( 'part', $who, $where, $Channel->_usable_name );
     $s->_irc->yield( part => $Channel->_usable_name );
 }
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
 
 1;

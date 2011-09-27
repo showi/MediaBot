@@ -1,5 +1,15 @@
 package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::ChannelEvent;
 
+=head1 NAME
+
+App::IRC::Bot::Shoze::Db::ChannelEvent - ChannelEvent plugin
+
+=cut
+
+=head1 SYNOPSIS
+
+=cut
+
 use strict;
 use warnings;
 
@@ -19,6 +29,14 @@ use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(_join);
 
 our %fields = ( cmd => undef, irc => undef );
 
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+=cut
+
 sub new {
     my ( $proto, $parent ) = @_;
     my $class = ref($proto) || $proto;
@@ -30,6 +48,10 @@ sub new {
     return $s;
 }
 
+=item PCI_register
+
+=cut
+
 sub PCI_register {
     my ( $self, $irc ) = splice @_, 0, 2;
     $irc->plugin_register( $self, 'SERVER', qw(324 join part invite) );
@@ -37,13 +59,22 @@ sub PCI_register {
     return 1;
 }
 
+=item PCI_unregister
+
+=cut
+
 sub PCI_unregister {
     my ( $self, $irc ) = splice @_, 0, 2;
     return 1;
 }
 
+=item S_324
+
 # 324 RPL_CHANNELMODEIS
 # "<canal> <mode> <paramètres de mode >"
+
+=cut
+
 sub S_324 {
     my ( $self, $irc ) = splice @_, 0, 2;
     my ( $who, $where ) = ( ${ $_[0] }, ${ $_[1] } );
@@ -124,6 +155,10 @@ sub S_324 {
     return PCI_EAT_ALL;
 }
 
+=item S_join
+
+=cut
+
 sub S_join {
     my ( $self, $irc ) = splice @_, 0, 2;
     my ( $who, $where ) = ( ${ $_[0] }, ${ $_[1] } );
@@ -142,6 +177,10 @@ sub S_join {
     }
     return PCI_EAT_NONE;
 }
+
+=item S_invite
+
+=cut
 
 sub S_invite {
     my ( $s, $irc ) = splice @_, 0, 2;
@@ -170,6 +209,10 @@ sub S_invite {
     return PCI_EAT_NONE;
 }
 
+=item S_part
+
+=cut
+
 sub S_part {
     my ( $self, $irc ) = splice @_, 0, 2;
     my ( $who, $where ) = ( ${ $_[0] }, ${ $_[1] } );
@@ -196,4 +239,19 @@ sub S_part {
     }
     return PCI_EAT_NONE;
 }
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
+
 1;

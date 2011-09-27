@@ -1,5 +1,15 @@
 package App::IRC::Bot::Shoze::POE::IRC;
 
+=head1 NAME
+
+App::IRC::Bot::Shoze::POE::IRC -  
+
+=cut
+
+=head1 SYNOPSIS
+
+=cut
+
 use strict;
 use warnings;
 
@@ -32,12 +42,16 @@ use Data::Dumper qw(Dumper);
 
 our %fields = (
     _parent => undef,
-    #Out     => undef,
-    #session => undef,
-    #poco    => undef,
-    #network_id => undef,
     components => undef,
 );
+
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+=cut
 
 sub new {
     my ( $proto, $parent ) = @_;
@@ -56,6 +70,10 @@ sub new {
     }
     return $s;
 }
+
+=item _init_poe
+
+=cut
 
 sub _init_poe () {
     my $s = shift;
@@ -78,10 +96,18 @@ sub _init_poe () {
     #unless $s->Out;
 }
 
+=item _stop
+
+=cut
+
 sub _stop {
     DEBUG( "Deleting session with alias " . $_[OBJECT]->alias, 1 );
     delete $_[OBJECT]->{session};
 }
+
+=item _start
+
+=cut
 
 sub _start {
     my ( $kernel, $heap, $s ) = @_[ KERNEL, HEAP, OBJECT ];
@@ -153,6 +179,10 @@ sub _start {
     return;
 }
 
+=item _default
+
+=cut
+
 sub _default {
     my ( $event, $args ) = @_[ ARG0 .. $#_ ];
     my @output = ("$event: ");
@@ -168,12 +198,20 @@ sub _default {
     return;
 }
 
+=item lag_o_meter
+
+=cut
+
 sub lag_o_meter {
     my ( $kernel, $heap ) = @_[ KERNEL, HEAP ];
     LOG( '[IRC] AutoReco ' . time() . ' Lag: ' . $heap->{connector}->lag() );
     $kernel->delay( 'lag_o_meter' => 60 );
     return;
 }
+
+=item irc_ctcp_ping
+
+=cut
 
 sub irc_ctcp_ping {
     my $s = $_[0];
@@ -183,5 +221,19 @@ sub irc_ctcp_ping {
     my $irc     = $sender->get_heap();      # obtain the poco's object
     $irc->yield( ctcpreply => $nick => "PING $what" );
 }
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
 
 1;

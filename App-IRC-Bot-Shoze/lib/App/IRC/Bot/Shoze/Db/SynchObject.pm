@@ -1,9 +1,62 @@
 package App::IRC::Bot::Shoze::Db::SynchObject;
 
+=head1 NAME
+
+App::IRC::Bot::Shoze::Db::SynchObject - Underlying methods exported for our database object
+
+=cut
+
+=head1 SYNOPSIS
+    
+This module export a lot of methods that permit to automatically create, update, delete 
+SQL rows. The intent is to have faster access to new SQL table and less coding. There's also 
+facilities for table fields updated_on and created_on. Database object use a special AUTOLOAD 
+method that keep track of modified fields so we can just update those fields on table row update
+
+=cut
+
 use strict;
 use warnings;
 
 use Carp;
+
+=head1 EXPORT_OK
+
+=over
+
+=item _add_permitted_field 
+
+=item _init_fields 
+
+=item _get _get_by 
+
+=item _create 
+
+=item _delete 
+
+=item _delete_by 
+
+=item _update 
+
+=item _update_by 
+  
+=item _list 
+
+=item _list_match
+
+=item _list_by
+
+=item _pretty 
+
+=item AUTOLOAD 
+
+=item synched 
+
+=item is_synch
+
+=back
+
+=cut
 
 use Exporter;
 use Encode qw(decode);
@@ -33,8 +86,14 @@ our %fields = (
     id           => undef,
 );
 
-# Constructor
-#############
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new (never used ...)
+
+=cut
+
 sub new {
     my ( $proto, $object_name, $object_db ) = @_;
     DEBUG( "Creating new " . __PACKAGE__, 8);
@@ -50,7 +109,10 @@ sub new {
     return $s;
 }
 
-###############################################################################
+=item _init_fields
+
+=cut
+
 sub _init_fields {
     my $s = shift;
     for my $k(keys %{$s->{_permitted}}) {
@@ -59,7 +121,10 @@ sub _init_fields {
     }
 }
 
-###############################################################################
+=item AUTOLOAD
+
+=cut
+
 sub AUTOLOAD {
     my $self = shift;
     my $name = $AUTOLOAD;
@@ -92,26 +157,38 @@ sub AUTOLOAD {
     }
 }
 
-###############################################################################
+=item synched
+
+=cut
+
 sub synched {
     my $s = shift;
     $s->{_changed} = undef;
 }
 
-###############################################################################
+=item is_synch
+
+=cut
+
 sub is_synch {
     my $s = shift;
     return 0 if defined $s->{_changed};
     return 1;
 }
 
-###############################################################################
+=item _add_permitted_field
+
+=cut
+
 sub _add_permitted_field {
     my ( $s, $name ) = @_;
     $s->{_permitted}->{$name} = 1;
 }
 
-###############################################################################
+=item _get
+
+=cut
+
 sub _get {
     my ( $s, $id ) = @_;
     $s->_object_db->die_if_not_open();
@@ -136,7 +213,10 @@ sub _get {
     return $s;
 }
 
-###############################################################################
+=item _delete
+
+=cut
+
 sub _delete {
     my ( $s ) = @_;
     $s->_object_db->die_if_not_open();
@@ -151,7 +231,10 @@ sub _delete {
     return $sth->rows;
 }
 
-###############################################################################
+=item _delete_by
+
+=cut
+
 sub _delete_by {
     my ( $s, $kv) = @_;
     $s->_object_db->die_if_not_open();
@@ -172,7 +255,10 @@ sub _delete_by {
     return $sth->rows;
 }
 
-###############################################################################
+=item _get_by
+
+=cut
+
 sub _get_by {
     my ( $s, $kv ) = @_;
     croak "Not an hash ref" unless ref($kv) =~ /^HASH/;
@@ -204,7 +290,10 @@ sub _get_by {
     return $s;
 }
 
-###############################################################################
+=item _list
+
+=cut
+
 sub _list {
     my ( $s) = @_;
     $s->_object_db->die_if_not_open();
@@ -228,7 +317,11 @@ sub _list {
     }
     return @list;
 }
-###############################################################################
+
+=item _list_by
+
+=cut
+
 sub _list_by {
     my ( $s, $matches ) = @_;
     $s->_object_db->die_if_not_open();
@@ -262,7 +355,11 @@ sub _list_by {
     }
     return @list;
 }
-###############################################################################
+
+=item _list_match
+
+=cut
+
 sub _list_match {
     my ( $s, $matches ) = @_;
     $s->_object_db->die_if_not_open();
@@ -293,7 +390,10 @@ sub _list_match {
     return @list;
 }
 
-###############################################################################
+=item _create
+
+=cut
+
 sub _create {
     my ($s) = @_;
     return if $s->is_synch;
@@ -334,7 +434,10 @@ sub _create {
     return $sth->rows;
 }
 
-###############################################################################
+=item _update
+
+=cut
+
 sub _update {
     my ($s) = @_;
     return if $s->is_synch;
@@ -363,7 +466,10 @@ sub _update {
     return $sth->rows;
 }
 
-###############################################################################
+=item _update_by
+
+=cut
+
 sub _update_by {
     my ($s, $kv) = @_;
     return if $s->is_synch;
@@ -394,7 +500,10 @@ sub _update_by {
     return $sth->rows;
 }
 
-###############################################################################
+=item _pretty
+
+=cut
+
 sub _pretty {
     my $s   = shift;
     my $str = '-' x 25 . "\n";
@@ -414,5 +523,18 @@ sub _pretty {
     return $str;
 }
 
-###############################################################################
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
+
 1;

@@ -1,5 +1,15 @@
 package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Info;
 
+=head1 NAME
+
+App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Info - Info plugin
+
+=cut
+
+=head1 SYNOPSIS
+
+=cut
+
 use strict;
 use warnings;
 
@@ -17,6 +27,14 @@ use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(:ALL);
 use Data::Dumper;
 
 our %fields = ( cmd => undef, );
+
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+=cut
 
 sub new {
     my ( $proto, $parent ) = @_;
@@ -39,6 +57,10 @@ sub new {
     return $s;
 }
 
+=item version
+
+=cut
+
 sub version {
     my ( $self, $Session,  $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -59,4 +81,17 @@ sub version {
     return PCI_EAT_ALL;
 }
 
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
 1;

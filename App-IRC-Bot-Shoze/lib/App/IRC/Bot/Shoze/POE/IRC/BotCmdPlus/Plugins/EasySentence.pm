@@ -1,5 +1,15 @@
 package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::EasySentence;
 
+=head1 NAME
+
+App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::EasySentence - EasySentence plugin
+
+=cut
+
+=head1 SYNOPSIS
+
+=cut
+
 use strict;
 use warnings;
 
@@ -19,7 +29,14 @@ use App::IRC::Bot::Shoze::Db::EasySentence::Object;
 our %fields =
   ( cmd => undef, kind => undef, _parent => undef, authtypes => undef, );
 
-###############################################################################
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+=cut
+
 sub new {
     my ( $proto, $parent ) = @_;
     my $class = ref($proto) || $proto;
@@ -70,7 +87,10 @@ sub new {
     return $s;
 }
 
-###############################################################################
+=item sentence_add
+
+=cut
+
 sub sentence_add {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -112,7 +132,10 @@ sub sentence_add {
     return PCI_EAT_ALL;
 }
 
-###############################################################################
+=item sentence_list
+
+=cut
+
 sub sentence_list {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -145,7 +168,10 @@ sub sentence_list {
     return PCI_EAT_ALL;
 }
 
-###############################################################################
+=item insulte
+
+=cut
+
 sub insulte {
     my ( $self, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -167,7 +193,10 @@ sub insulte {
     return PCI_EAT_ALL;
 }
 
-###############################################################################
+=item carambar
+
+=cut
+
 sub carambar {
     my ( $self, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -191,7 +220,10 @@ sub carambar {
     return PCI_EAT_ALL;
 }
 
-###############################################################################
+=item proverbe
+
+=cut
+
 sub proverbe {
     my ( $self, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -214,5 +246,19 @@ sub proverbe {
     $self->_send_lines( $irc, 'privmsg', '#me#', $where, @lines );
     return PCI_EAT_ALL;
 }
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
 
 1;

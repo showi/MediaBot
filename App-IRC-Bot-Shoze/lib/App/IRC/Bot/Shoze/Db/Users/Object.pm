@@ -1,5 +1,17 @@
 package App::IRC::Bot::Shoze::Db::Users::Object;
 
+=head1 NAME
+
+App::IRC::Bot::Shoze::Db::BotLogs::Object - Store one row from SQL database
+
+=cut
+
+=head1 SYNOPSIS
+    
+Store row from SQL database
+
+=cut
+
 use strict;
 use warnings;
 
@@ -29,6 +41,14 @@ our %fields = (
     _object_db   => undef,
 );
 
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+=cut
+
 sub new {
     my ( $proto, $object_db ) = @_;
     DEBUG( "Creating new " . __PACKAGE__, 8 );
@@ -48,10 +68,17 @@ sub new {
     return $s;
 }
 
-sub _usable_name {
-    my $s = shift;
-    return $s->type . $s->name;
+=back
 
-}
+=head1 LICENSE AND COPYRIGHT
 
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
 1;

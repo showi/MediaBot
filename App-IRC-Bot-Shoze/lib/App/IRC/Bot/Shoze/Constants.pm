@@ -1,5 +1,18 @@
 package App::IRC::Bot::Shoze::Constants;
 
+=head1 NAME
+
+App::IRC::Bot::Shoze::Constants - Where all Shoze constants reside
+
+=cut
+
+=head1 SYNOPSIS
+
+    use App::IRC::Bot::Shoze::Constants qw(:ALL)
+    
+    ...
+    
+=cut
 use strict;
 use warnings;
 
@@ -39,5 +52,18 @@ use constant {
 
     BOT_USER_ACCESSDENIED => 100,
 };
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+
+=cut
 
 1;

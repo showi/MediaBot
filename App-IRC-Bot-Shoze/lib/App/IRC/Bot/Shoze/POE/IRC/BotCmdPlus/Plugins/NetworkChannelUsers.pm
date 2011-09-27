@@ -1,5 +1,15 @@
 package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::NetworkChannelUsers;
 
+=head1 NAME
+
+App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::NetworkChannelUsers - NetworkChannelUsers plugin
+
+=cut
+
+=head1 SYNOPSIS
+
+=cut
+
 use strict;
 use warnings;
 
@@ -21,6 +31,14 @@ use App::IRC::Bot::Shoze::Db::NetworkChannelUsers::Object;
 
 our %fields = ( cmd => undef, _parent => undef );
 
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+=cut
+
 sub new {
     my ( $proto, $parent ) = @_;
     my $class = ref($proto) || $proto;
@@ -34,6 +52,10 @@ sub new {
     return $s;
 }
 
+=item PCI_register
+
+=cut
+
 sub PCI_register {
     my ( $s, $irc ) = splice @_, 0, 2;
     $irc->plugin_register( $s, 'SERVER',
@@ -41,20 +63,37 @@ sub PCI_register {
     return 1;
 }
 
+=item PCI_unregister
+
+=cut
+
 sub PCI_unregister {
     my ( $s, $irc ) = splice @_, 0, 2;
     return 1;
 }
+
+=item _empty
+
+=cut
 
 sub _empty {
     my ( $s, $db ) = @_;
     App::IRC::Bot::Shoze::Db->new->ChannelUserList->empty;
 }
 
+=item S_registered
+
+=cut
+
 sub S_registered {
     my ( $s, $irc ) = @_;
     print "Registered: " . $irc->session_id . "\n";
 }
+
+=item S_connected
+
+=cut
+
 sub S_connected {
     my ( $s, $irc ) = @_;
     my $db      = App::IRC::Bot::Shoze::Db->new;
@@ -62,12 +101,20 @@ sub S_connected {
     return PCI_EAT_NONE;
 }
 
+=item S_disconnected
+
+=cut
+
 sub S_disconnected {
     my ( $s, $irc ) = @_;
     my $db      = App::IRC::Bot::Shoze::Db->new;
     $db->NetworkNicks->empty($irc->{Network});
     return PCI_EAT_NONE;
 }
+
+=item S_quit
+
+=cut
 
 sub S_quit {
     my ( $s, $irc ) = splice @_, 0, 2;
@@ -90,17 +137,29 @@ sub S_quit {
     return PCI_EAT_NONE;
 }
 
+=item S_part
+
+=cut
+
 sub S_part {
     my ( $s, $irc ) = splice @_, 0, 2;
     $irc->{In}->user_part(${ $_[0] }, ${ $_[1] });
     return PCI_EAT_NONE;
 }
 
+=item S_join
+
+=cut
+
 sub S_join {
     my ( $s, $irc ) = splice @_, 0, 2;
     $irc->{In}->user_join(${ $_[0] }, ${ $_[1] });
     return PCI_EAT_NONE;
 }
+
+=item S_mode
+
+=cut
 
 sub S_mode {
     my ( $s, $irc ) = splice @_, 0, 2;
@@ -155,6 +214,10 @@ sub S_mode {
     return PCI_EAT_NONE;
 }
 
+=item mode_channel
+
+=cut
+
 sub mode_channel {
     my ( $s, $irc, $Channel, $sign, $mode, $arg ) = @_;
 
@@ -190,6 +253,10 @@ sub mode_channel {
     return $Channel->_update;
 }
 
+=item mode_user
+
+=cut
+
 sub mode_user {
     my ( $s, $irc, $Channel, $sign, $mode, $nick ) = @_;
     my $db = App::IRC::Bot::Shoze::Db->new;
@@ -218,7 +285,10 @@ sub mode_user {
     return $NCU->_update;
 }
 
-#
+=item S_whois
+
+=cut
+
 sub S_whois {
     my ( $s, $irc ) = splice @_, 0, 2;
     my $whois = ${ $_[0] };
@@ -248,7 +318,10 @@ sub S_whois {
     return PCI_EAT_NONE;
 }
 
-# Names event
+=item S_353
+
+=cut
+
 sub S_353 {
     my ( $s, $irc ) = splice @_, 0, 2;
     my $db = App::IRC::Bot::Shoze::Db->new;
@@ -292,7 +365,10 @@ sub S_353 {
     return PCI_EAT_NONE;
 }
 
-# Mode event
+=item S_324
+
+=cut
+
 sub S_324 {
     my ( $self, $irc ) = splice @_, 0, 2;
     my ( $who, $where ) = ( ${ $_[0] }, ${ $_[1] } );
@@ -330,5 +406,19 @@ sub S_324 {
     $Channel->_update;
     return PCI_EAT_NONE;
 }
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
 
 1;

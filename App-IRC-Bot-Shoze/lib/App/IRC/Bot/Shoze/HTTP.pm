@@ -1,7 +1,20 @@
 package App::IRC::Bot::Shoze::HTTP;
 
-# Restfull authentication
-# http://broadcast.oreilly.com/2009/12/principles-for-standardized-rest-authentication.html
+
+=head1 NAME
+
+App::IRC::Bot::Shoze::HTTP - REST interface between the bot and the world
+
+=cut
+
+=head1 SYNOPSISt
+
+    # Restfull authentication
+    # http://broadcast.oreilly.com/2009/12/principles-for-standardized-rest-authentication.html
+
+=cut
+
+
 use strict;
 use warnings;
 
@@ -27,7 +40,14 @@ our %fields = (
     Channels => undef,
 );
 
-# Constructor
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+=cut
+
 sub new {
     my ( $proto, $parent ) = @_;
     DEBUG( "Creating new " . __PACKAGE__, 5 );
@@ -43,23 +63,14 @@ sub new {
     return $s;
 }
 
+=item request
+
+=cut
 sub request {
     my ( $s, $host, $port, $ressource, $action, $apikey, $apikey_private, $format ) = @_;
-#    my $module = ucfirst($ressource);
-#    $module =~ s/^(.*)\/+$/$1/;
-#    $module =~s /\//::/g;
-#    $module = "App::IRC::Bot::Shoze::HTTP$module";
-#    my $res = eval "require $module";
-#    unless($res) {
-#        print "Cannot load module $module\n";
-#        return
-#    } else {
-#        print "Module $module loaded\n";
-#    }
+
     $format = 'html' unless $format;
 
-#    croak "Invalid ressource $ressource ($module)"
-#      unless ( defined $s->{$module} );
     my @dactions = qw(get create delete list);
     croak "Invalid action $action"
       unless grep ( $action, @dactions );
@@ -99,6 +110,10 @@ sub request {
 
 }
 
+=item bad_request_noapikey
+
+=cut
+
 sub bad_request_noapikey {
     my $s = shift;
     my $r = HTTP::Response->new( 400, "No API key" );
@@ -109,6 +124,10 @@ sub bad_request_noapikey {
     " );
     return $r;
 }
+
+=item bad_request_invalidapikey
+
+=cut
 
 sub bad_request_invalidapikey {
     my $s = shift;
@@ -121,6 +140,10 @@ sub bad_request_invalidapikey {
     return $r;
 }
 
+=item bad_request_badsignature
+
+=cut
+
 sub bad_request_badsignature {
     my $s = shift;
     my $r = HTTP::Response->new( 400, "Bad signature" );
@@ -132,6 +155,10 @@ sub bad_request_badsignature {
     return $r;
 }
 
+=item bad_request_timegone
+
+=cut
+
 sub bad_request_timegone {
     my $s = shift;
     my $r = HTTP::Response->new( 400, "Bad signature" );
@@ -142,6 +169,10 @@ sub bad_request_timegone {
     " );
     return $r;
 }
+
+=item sign_uri
+
+=cut
 
 sub sign_uri {
     my ( $s, $uri, $key ) = @_;
@@ -163,6 +194,10 @@ sub sign_uri {
     my $insignature = $hmac->hexdigest;
     return $insignature;
 }
+
+=item dispatch
+
+=cut
 
 sub dispatch {
     my ( $s, $http_request ) = @_;
@@ -246,5 +281,20 @@ sub dispatch {
     $r->content($msg);
     return $r;
 }
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+
+=cut
 
 1;

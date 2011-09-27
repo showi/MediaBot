@@ -1,11 +1,16 @@
-###############################################################################
-# Plugins:: NetworkChannels
-#---------------
-#
-# This plugin allow administrator to manage channels and user
-#
-###############################################################################
 package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::NetworkChannels;
+
+=head1 NAME
+
+App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::NetworkChannels - NetworkChannels plugin
+
+=cut
+
+=head1 SYNOPSIS
+
+This plugin allow administrator to manage channels and user
+
+=cut
 
 use strict;
 use warnings;
@@ -23,7 +28,14 @@ use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(:ALL);
 
 our %fields = ( cmd => undef );
 
-###############################################################################
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+=cut
+
 sub new {
     my ( $proto, $parent ) = @_;
     my $class = ref($proto) || $proto;
@@ -117,7 +129,10 @@ sub new {
     return $s;
 }
 
-###############################################################################
+=item channel_del
+
+=cut
+
 sub channel_del {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -157,7 +172,10 @@ sub channel_del {
     return PCI_EAT_ALL;
 }
 
-###############################################################################
+=item channel_add
+
+=cut
+
 sub channel_add {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -196,7 +214,10 @@ sub channel_add {
     return PCI_EAT_ALL;
 }
 
-###############################################################################
+=item channel_info
+
+=cut
+
 sub channel_info {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -255,7 +276,10 @@ sub channel_info {
     return PCI_EAT_ALL;
 }
 
-###############################################################################
+=item channel_set
+
+=cut
+
 sub channel_set {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -322,7 +346,10 @@ sub channel_set {
     return PCI_EAT_ALL;
 }
 
-###############################################################################
+=item channel_list
+
+=cut
+
 sub channel_list {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -357,7 +384,10 @@ sub channel_list {
     return PCI_EAT_ALL;
 }
 
-###############################################################################
+=item channel_set_owner
+
+=cut
+
 sub channel_set_owner {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -425,7 +455,10 @@ sub channel_set_owner {
 
 }
 
-###############################################################################
+=item join
+
+=cut
+
 sub join {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -458,6 +491,10 @@ sub join {
     return PCI_EAT_ALL;
 }
 
+=item part
+
+=cut
+
 sub part {
     my ( $self, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -476,7 +513,10 @@ sub part {
     return PCI_EAT_ALL;
 }
 
-###############################################################################
+=item topic
+
+=cut
+
 sub topic {
     my ( $self, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -533,7 +573,10 @@ sub topic {
     return PCI_EAT_ALL;
 }
 
-###############################################################################
+=item op
+
+=cut
+
 sub op {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -572,7 +615,10 @@ sub op {
     $s->_modes( $irc, '+', 'o', $Channel, @nicks );
 }
 
-###############################################################################
+=item deop
+
+=cut
+
 sub deop {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -612,7 +658,10 @@ sub deop {
     return PCI_EAT_ALL;
 }
 
-###############################################################################
+=item voice
+
+=cut
+
 sub voice {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -651,6 +700,10 @@ sub voice {
     return PCI_EAT_ALL;
 }
 
+=item devoice
+
+=cut
+
 sub devoice {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -688,18 +741,39 @@ sub devoice {
     $s->_modes( $irc, '-', 'v', $Channel, @nicks );
     return PCI_EAT_ALL;
 }
-###############################################################################
+
+=item deop_who_on
+
+=cut
+
 sub deop_who_on {
     my $s = shift;
     my ( $irc, $nick, $channel ) = @_;
     $irc->yield( 'mode', "$channel -o $nick" );
 }
 
-###############################################################################
+=item op_who_on
+
+=cut
+
 sub op_who_on {
     my $s = shift;
     my ( $irc, $nick, $channel ) = @_;
     $irc->yield( 'mode', "$channel +o $nick" );
 }
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
 
 1;

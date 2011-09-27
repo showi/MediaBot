@@ -1,5 +1,17 @@
 package App::IRC::Bot::Shoze::Db::NetworkChannelLogs;
 
+=head1 NAME
+
+App::IRC::Bot::Shoze::Db::NetworkChannelLogs - Methods for easy SQL table access
+
+=cut
+
+=head1 SYNOPSIS
+    
+Easy SQL table access
+
+=cut
+
 use strict;
 use warnings;
 
@@ -19,8 +31,14 @@ our %fields = (
     _parent => undef,
 );
 
-# Constructor
-#############
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+=cut
+
 sub new {
     my ( $proto, $parent ) = @_;
     DEBUG( "Creating new " . __PACKAGE__, 8 );
@@ -36,7 +54,10 @@ sub new {
     return $s;
 }
 
-###############################################################################
+=item list
+
+=cut
+
 sub list {
     my ( $s) = @_;
     my $db = App::IRC::Bot::Shoze::Db->new;
@@ -77,7 +98,13 @@ SQL
         push @list, $N;
     }
     return @list;
+
 }
+
+=item list_by
+
+=cut
+
 sub list_by {
     my ( $s, $Network, $hash ) = @_;
     croak "Need Network object as first parameter "
@@ -128,7 +155,10 @@ SQL
     return @list;
 }
 
-################################################################################
+=item create
+
+=cut
+
 sub create {
     my ( $s, $ChanSrc, $type, $ChanTarget, $user_id) = @_;
     croak "Need Channel object as second parameter "
@@ -145,7 +175,10 @@ sub create {
     return $C->_create();
 }
 
-################################################################################
+=item get_by
+
+=cut
+
 sub get_by {
     my ( $s, $hash ) = @_;
 
@@ -154,22 +187,18 @@ sub get_by {
 
 }
 
+=back
 
-#
-################################################################################
-#sub clear_joined {
-#    my ($s, $Network) = @_;
-#    my $db =  App::IRC::Bot::Shoze::Db->new;
-#    my $h     = $db->handle;
-#    my $query = <<SQL;
-#		UPDATE network_channels SET bot_joined = NULL WHERE network_id = ?;
-#SQL
-#    my $sth = $h->prepare($query)
-#      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-#    $sth->execute($Network->id)
-#      or die "Cannot execute query '$query' (" . $h->errstr . ")";
-#    return $sth->rows;
-#}
-#
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
 
 1;

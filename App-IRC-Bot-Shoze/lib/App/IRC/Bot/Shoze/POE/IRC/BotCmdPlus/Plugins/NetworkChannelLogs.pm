@@ -1,11 +1,16 @@
-###############################################################################
-# Plugins:: NetworkChannelLogs
-#---------------
-#
-# This plugin allow administrator to log channel
-#
-###############################################################################
 package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::NetworkChannelLogs;
+
+=head1 NAME
+
+App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::NetworkChannelLogs - NetworkChannelLogs plugin
+
+=cut
+
+=head1 SYNOPSIS
+
+This plugin allow administrator to log channel
+
+=cut
 
 use strict;
 use warnings;
@@ -23,6 +28,14 @@ use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper
   qw(get_cmd _register_cmd _unregister_cmd _n_error splitchannel _send_lines);
 
 our %fields = ( cmd => undef, logs => undef );
+
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+=cut
 
 sub new {
     my ( $proto, $parent ) = @_;
@@ -53,12 +66,20 @@ sub new {
     return $s;
 }
 
+=item PCI_register
+
+=cut
+
 sub PCI_register {
     my ( $s, $irc ) = splice @_, 0, 2;
     $s->_register_cmd($irc);
     $s->_register_event($irc);
     return 1;
 }
+
+=item _register_event
+
+=cut
 
 sub _register_event {
     my ( $s, $irc ) = @_;
@@ -86,12 +107,20 @@ sub _register_event {
     }
 }
 
+=item PCI_unregister
+
+=cut
+
 sub PCI_unregister {
     my ( $s, $irc ) = splice @_, 0, 2;
     $s->_unregister_cmd($irc);
     $s->logs(undef);
     return 1;
 }
+
+=item _default
+
+=cut
 
 sub _default {
     my ( $s, $irc, $event ) = splice @_, 0, 3;
@@ -124,6 +153,10 @@ sub _default {
     }
 }
 
+=item channel_log_list
+
+=cut
+
 sub channel_log_list {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
@@ -149,6 +182,10 @@ sub channel_log_list {
     $s->_send_lines( $irc, 'notice', '#me#', $Session, split( /\n/, $str ) );
     return PCI_EAT_ALL;
 }
+
+=item channel_log_add
+
+=cut
 
 sub channel_log_add {
     my ( $s, $Session, $irc, $event ) = splice @_, 0, 4;
@@ -216,5 +253,19 @@ sub channel_log_add {
     }
     return PCI_EAT_ALL;
 }
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
 
 1;

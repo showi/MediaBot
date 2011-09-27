@@ -1,5 +1,15 @@
 package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Dispatch;
 
+=head1 NAME
+
+App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Dispatch - Dispatch plugin
+
+=cut
+
+=head1 SYNOPSIS
+
+=cut
+
 use strict;
 use warnings;
 
@@ -8,7 +18,6 @@ use Carp;
 use POE;
 use POE::Component::IRC::Plugin qw(:ALL);
 use IRC::Utils qw(:ALL);
-#use Data::Dumper;
 
 use lib qw(../../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(DESTROY);
@@ -17,6 +26,14 @@ use App::IRC::Bot::Shoze::String;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(_get_nick);
 
 our %fields = ( cmd => undef, );
+
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+=cut
 
 sub new {
     my ( $proto, $parent ) = @_;
@@ -28,6 +45,10 @@ sub new {
     bless( $s, $class );
     return $s;
 }
+
+=item PCI_register
+
+=cut
 
 sub PCI_register {
     my ( $self, $irc ) = splice @_, 0, 2;
@@ -44,6 +65,10 @@ sub PCI_register {
     return 1;
 }
 
+=item PCI_unregister
+
+=cut
+
 sub PCI_unregister {
     my ( $self, $irc ) = splice @_, 0, 2;
 
@@ -52,6 +77,10 @@ sub PCI_unregister {
     delete $self->{irc};
     return 1;
 }
+
+=item _start
+
+=cut
 
 sub _start {
     my ( $kernel, $self ) = @_[ KERNEL, OBJECT ];
@@ -62,6 +91,10 @@ sub _start {
     return;
 }
 
+=item _shutdown
+
+=cut
+
 sub _shutdown {
     my ( $kernel, $self ) = @_[ KERNEL, OBJECT ];
     $kernel->alarm_remove_all();
@@ -69,12 +102,14 @@ sub _shutdown {
     return;
 }
 
-###############################################################################
-# We are dispatching all our commands here
-# - We check each user input for command trigger
-# - We check if user have the righet to execute the command
-# - We create a session with extended attributes that we pass to our plugins
-###############################################################################
+=item _default
+
+We are dispatching all our commands here
+ - We check each user input for command trigger
+ - We check if user have the righet to execute the command
+ - We create a session with extended attributes that we pass to our plugins
+=cut
+
 sub _default {
     my ( $s, $irc, $event ) = splice @_, 0, 3;
     if ($event =~ /^U_/) {
@@ -158,5 +193,19 @@ sub _default {
     LOG($Session->_pretty);
     return PCI_EAT_ALL;
 }
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
 
 1;

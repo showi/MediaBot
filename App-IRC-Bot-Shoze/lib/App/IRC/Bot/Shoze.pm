@@ -1,20 +1,22 @@
 package App::IRC::Bot::Shoze;
 
+=head1 NAME
+
+App::IRC::Bot::Shoze - Another IRC bot lurking around bit holes!
+
+=head1 VERSION
+
+Version 0.07
+
+=cut
+
 use 5.006;
 use strict;
 use warnings;
 
 use Carp;
 
-=head1 NAME
 
-App::IRC::Bot::Shoze - The great new App::IRC::Bot::Shoze!
-
-=head1 VERSION
-
-Version 0.01
-
-=cut
 
 our $PROGRAMNAME  = "Shoze";
 our $VERSION      = "0.0.7";
@@ -25,25 +27,10 @@ our $DEBUG        = 1;
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
-
-Perhaps a little code snippet.
-
-    use App::IRC::Bot::Shoze;
-
-    my $foo = App::IRC::Bot::Shoze->new();
-    ...
-
 =head1 EXPORT
 
-A list of functions that can be exported.  You can delete this section
-if you don't export anything, such as for a purely object-oriented module.
-
-=head1 SUBROUTINES/METHODS
-
-=head2 function1
-
 =cut
+
 use lib qw(../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
 use App::IRC::Bot::Shoze::Config;
@@ -55,13 +42,24 @@ use App::IRC::Bot::Shoze::Log;
 
 our %fields = (
     _path  => "",
-   # _debug => 1,
     POE    => undef,
     Log    => undef,
     HTTP   => undef,
 );
 
 our $Singleton = undef;
+
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+Return a new Shoze object(Singleton)
+
+parameter: path - The root for all files needed by the bot at run time
+
+=cut
 
 sub new {
     my ( $proto, $path ) = @_;
@@ -87,11 +85,19 @@ sub new {
     return $Singleton;
 }
 
+=item read_config
+
+Private method that read configuration file on startup
+
+=cut
+
 sub read_config {
     my $s = shift;
     my $C = new App::IRC::Bot::Shoze::Config($s->_path);
     $C->load_all();
 }
+
+=back
 
 =head1 AUTHOR
 

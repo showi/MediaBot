@@ -1,5 +1,17 @@
 package App::IRC::Bot::Shoze::Db::NetworkChannelUsers;
 
+=head1 NAME
+
+App::IRC::Bot::Shoze::Db::NetworkChannelUsers - Methods for easy SQL table access
+
+=cut
+
+=head1 SYNOPSIS
+    
+Easy SQL table access
+
+=cut
+
 use strict;
 use warnings;
 
@@ -19,8 +31,14 @@ our %fields = (
     _parent => undef,
 );
 
-# Constructor
-#############
+=head1 SUBROUTINES/METHODS
+
+=over
+
+=item new
+
+=cut
+
 sub new {
     my ( $proto, $parent ) = @_;
     DEBUG( "Creating new " . __PACKAGE__, 8);
@@ -35,6 +53,10 @@ sub new {
     return $s;
 }
 
+=item get_by
+
+=cut
+
 sub get_by {
     my ( $s, $Channel, $hash ) = @_;
     DEBUG( __PACKAGE__ . "::get_by($hash)", 4 );
@@ -45,6 +67,10 @@ sub get_by {
       new App::IRC::Bot::Shoze::Db::NetworkChannelUsers::Object( $s->_parent );
     return $C->_get_by($hash);
 }
+
+=item create
+
+=cut
 
 sub create {
     my ( $s, $Channel, $Nick ) = @_;
@@ -61,6 +87,10 @@ sub create {
     $C->nick_id( $Nick->id );
     return $C->_create;
 }
+
+=item list
+
+=cut
 
 sub list {
     my ($s, $Channel) = @_;
@@ -103,6 +133,10 @@ SQL
     return @list;
 }
 
+=item is_on
+
+=cut
+
 sub is_on {
      my ($s, $Nick) = @_;
     croak "Need Nick object as first parameter "
@@ -144,6 +178,9 @@ SQL
     return @list;
 }
 
+=item empty
+
+=cut
 
 sub empty {
     my ($s) = @_;
@@ -160,5 +197,19 @@ SQL
       or die "Cannot execute query '$query' (" . $h->errstr . ")";
     return $sth->rows;
 }
+
+=back
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2011 Joachim Basmaison.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+=cut
 
 1;

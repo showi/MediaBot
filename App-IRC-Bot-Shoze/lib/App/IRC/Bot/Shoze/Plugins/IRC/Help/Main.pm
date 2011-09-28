@@ -1,8 +1,8 @@
-package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Info;
+package App::IRC::Bot::Shoze::Plugins::IRC::Help::Main;
 
 =head1 NAME
 
-App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Info - Info plugin
+App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Help - Help plugin
 
 =cut
 
@@ -15,18 +15,17 @@ use warnings;
 
 use Carp;
 
-use POE;
 use POE::Component::IRC::Plugin qw(:ALL);
 
-use lib qw(../../../../../../../../);
+use Data::Dumper;
+
+use lib qw(../../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(:ALL);
 
-use Data::Dumper;
-
-our %fields = ( cmd => undef, );
+our %fields = ( cmd => undef );
 
 =head1 SUBROUTINES/METHODS
 
@@ -46,38 +45,47 @@ sub new {
     bless( $s, $class );
     $s->cmd(
         {
-            'version' => {
-                access           => 'msg|public',
+            'help' => {
+                access           => 'msg',
                 lvl              => 0,
-                help_cmd         => '!version',
-                help_description => 'Who am i!',
+                help_cmd         => '!help [regexp]',
+                help_description => 'Listing available command',
             },
         }
     );
     return $s;
 }
 
-=item version
+=item help
 
 =cut
 
-sub version {
+sub help {
     my ( $self, $Session,  $irc, $event ) = splice @_, 0, 4;
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
-    my $cmdname = 'version';
+    my $cmdname = 'help';
     my $PCMD    = $self->get_cmd($cmdname);
-
-    my $nick    = $Session->nick;
-    my $channel = $where->[0];
-    no warnings;
-    my $version =
-"I'm running $App::IRC::Bot::Shoze::PROGRAMNAME($App::IRC::Bot::Shoze::VERSIONNAME/$App::IRC::Bot::Shoze::VERSION)";
-    use warnings;
-    $where = $nick;
-    if ( $event =~ /^\w_public$/ ) {
-        $where = $channel;
+    my $C       = $irc->plugin_get('BotCmdPlus');
+    my $mylvl   = 0;
+    
+    my ($cmd, $match) = split(/\s+/, $msg);
+    if ($match =~ /^[\w\d]+$/) {
+        $match = qr/$match/;  
+    }else {
+      $match = undef;
     }
-    $irc->{Out}->privmsg('#me#', $where,  $version );
+    $mylvl = $Session->user_lvl if ($Session->user_id);
+    $irc->{Out}->notice('#me#', $Session, "[$cmdname] Listing command:" );
+    
+    for my $cmd ( sort keys %{ $C->cmd } ) {
+        if ($match) {
+            next unless $cmd =~ /$match/i;
+        }
+        my $plugin = $C->cmd->{$cmd}->{plugin}->cmd->{$cmd};
+
+        next if $mylvl < $plugin->{lvl};
+        $irc->{Out}->notice('#me#', $Session, " " . $plugin->{help_cmd});
+    }
     return PCI_EAT_ALL;
 }
 
@@ -94,4 +102,5 @@ by the Free Software Foundation; or the Artistic License.
 See http://dev.perl.org/licenses/ for more information.
 
 =cut
+
 1;

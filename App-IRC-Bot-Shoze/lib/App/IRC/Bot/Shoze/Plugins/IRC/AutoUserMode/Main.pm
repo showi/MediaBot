@@ -1,4 +1,4 @@
-package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::ChannelAutoUserMode;
+package App::IRC::Bot::Shoze::Plugins::IRC::AutoUserMode::Main;
 
 =head1 NAME
 
@@ -20,14 +20,14 @@ use Data::Dumper;
 use POE::Component::IRC::Plugin qw(:ALL);
 use IRC::Utils qw(:ALL);
 
-use lib qw(../../../../../../../../);
+use lib qw(../../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper
-  qw(_register_cmd _unregister_cmd get_cmd _n_error splitchannel);
+  qw(_register_cmd _register_database _unregister_cmd get_cmd _n_error splitchannel);
 
-our %fields = ( cmd => undef, _parent => undef );
+our %fields = ( cmd => undef, _parent => undef, database => undef);
 
 =head1 SUBROUTINES/METHODS
 
@@ -46,7 +46,14 @@ sub new {
     };
 
     bless( $s, $class );
-    $s->_parent($parent);
+
+        my @db;
+    push @db,
+        {
+            type => 'IRC',
+            name => 'AutoUserMode',
+        };
+    $s->database(\@db);
     return $s;
 }
 
@@ -56,6 +63,7 @@ sub new {
 
 sub PCI_register {
     my ( $s, $irc ) = splice @_, 0, 2;
+    $s->_register_database($irc);
     $irc->plugin_register( $s, 'SERVER', qw(join) );
     return 1;
 }
@@ -88,9 +96,9 @@ sub S_join {
     }
     print "Chanel: " . $Channel->id . "\n";
     my @GAutoMode =
-      $db->ChannelAutoUserMode->list_by( { channel_id => undef } );
+      $db->Plugins->AutoUserMode->list_by( { channel_id => undef } );
     my @LAutoMode =
-      $db->ChannelAutoUserMode->list_by( { channel_id => $Channel->id } );
+      $db->Plugins->AutoUserMode->list_by( { channel_id => $Channel->id } );
     my @AutoMode = ( @LAutoMode, @GAutoMode );
     for (@AutoMode) {
         print "automode: channel_id: "

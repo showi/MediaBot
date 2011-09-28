@@ -25,7 +25,7 @@ use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper
-  qw(get_cmd _register_cmd _unregister_cmd _n_error splitchannel _send_lines);
+  qw(get_cmd _register_cmd _unregister_cmd _n_error splitchannel _send_lines _send_lines_notice);
 
 our %fields = ( cmd => undef, logs => undef );
 
@@ -47,19 +47,18 @@ sub new {
     bless( $s, $class );
     $s->cmd(
         {
-            'channel_log_list' => {
-                access           => 'msg',
-                lvl              => 800,
-                help_cmd         => '!channel.log.list',
-                help_description => 'List logged channels',
-            },
-            'channel_log_add' => {
-                access => 'msg',
-                lvl    => 800,
-                help_cmd =>
-                  '!channel.log.add <channel src> <log type> <target>',
-                help_description => 'Add logged channel',
-            },
+           'channel_log_list' => {
+                                   access           => 'msg',
+                                   lvl              => 800,
+                                   help_cmd         => '!channel.log.list',
+                                   help_description => 'List logged channels',
+           },
+           'channel_log_add' => {
+               access   => 'msg',
+               lvl      => 800,
+               help_cmd => '!channel.log.add <channel src> <log type> <target>',
+               help_description => 'Add logged channel',
+           },
         }
     );
     $s->logs( {} );
@@ -92,13 +91,18 @@ sub _register_event {
         return;
     }
     for (@logs) {
+        next unless ( $_->active );
+        my $nid = $irc->{Network}->id;
+        next
+          if (    $_->src_network_channel_network_id != $nid
+               or $_->target_network_channel_network_id != $nid );
         my $src_channel =
           $_->src_network_channel_type . $_->src_network_channel_name;
         LOG( "Channel log, src: " . $src_channel );
         my $d = {
-            type   => $_->type,
-            target => $_->target_network_channel_type
-              . $_->target_network_channel_name,
+                  type   => $_->type,
+                  target => $_->target_network_channel_type
+                    . $_->target_network_channel_name,
         };
         unless ( defined $s->logs->{$src_channel} ) {
             $s->logs->{$src_channel} = ();
@@ -137,20 +141,23 @@ sub _default {
     my $db = App::IRC::Bot::Shoze::Db->new;
     my ( $type, $name ) = splitchannel($srcchannel);
     for ( @{ $s->logs->{$srcchannel} } ) {
-        my $Channel = $db->NetworkChannels->get_by($irc->{Network}, {type => $type, name => $name});
+        my $Channel = $db->NetworkChannels->get_by( $irc->{Network},
+                                             { type => $type, name => $name } );
         unless ($Channel) {
             WARN("Cannot get log channel $srcchannel");
             next;
         }
-        unless ($Channel->bot_joined) {
+        unless ( $Channel->bot_joined ) {
             WARN("We do not log to channel that we don't have joined");
             next;
         }
-        
+
         if ( $_->{type} eq "irc" ) {
-            $irc->privmsg('#me#', $_->{target},  "[" . time . "][$srcchannel][$who] $msg" );
+            $irc->{Out}->privmsg( '#me#', $_->{target},
+                                  "[" . time . "][$srcchannel][$who] $msg" );
         }
     }
+    return PCI_EAT_NONE;
 }
 
 =item channel_log_list
@@ -166,18 +173,23 @@ sub channel_log_list {
 
     my @list = $db->NetworkChannelLogs->list();
     unless (@list) {
-        return $s->_n_error( $irc, $Session->nick,
-            "No channel log for 'network'" . $irc->{Network}->name );
+        return
+          $s->_n_error( $irc, $Session->nick,
+                       "No channel log for 'network'" . $irc->{Network}->name );
     }
     my $str = "Listing log for network " . $irc->{Network}->name . "\n";
     for my $l (@list) {
+        my $nid = $irc->{Network}->id;
+        next
+          if (     $l->src_network_channel_network_id != $nid
+               and $l->target_network_channel_network_id != $nid );
         $str .= ( $l->active ? "[On ]" : "[Off]" );
         $str .=
           $l->src_network_channel_type . $l->src_network_channel_name . " => ";
         $str .=
           $l->target_network_channel_type . $l->target_network_channel_name;
         $str .= " (via " . $l->type . ")";
-        $str .= $str .= "\n";
+        $str = $str .= "\n";
     }
     $s->_send_lines( $irc, 'notice', '#me#', $Session, split( /\n/, $str ) );
     return PCI_EAT_ALL;
@@ -195,61 +207,67 @@ sub channel_log_add {
     my $db      = App::IRC::Bot::Shoze::Db->new;
 
     my ( $cmd, $chansrc, $logtype, $target ) = ( split( /\s+/, $msg ) );
-    return $s->_n_error( $irc, $Session,
-        "Invalid syntax: " . $PCMD->{help_description} )
+    return
+      $s->_n_error( $irc, $Session,
+                    "Invalid syntax: " . $PCMD->{help_description} )
       unless ( $chansrc || $logtype || $target );
 
     LOG("Want to log $chansrc to $target ($logtype)");
     my @authtype = qw(irc db file ws);
-    return $s->_n_error( $irc, $Session,
-        "Invalid logging facility '$logtype' must be one of "
-          . join( ", ", @authtype ) )
-      unless ( grep( /$logtype/, @authtype ) );
+    return
+      $s->_n_error(
+                    $irc,
+                    $Session,
+                    "Invalid logging facility '$logtype' must be one of "
+                      . join( ", ", @authtype )
+      ) unless ( grep( /$logtype/, @authtype ) );
     my ( $stype, $sname ) = splitchannel($chansrc);
-    my $SChan =
-      $db->NetworkChannels->get_by( $irc->{Network},
-        { type => $stype, name => $sname } );
-    return $s->_n_error( $irc, $Session,
-        "Cannot log channel '$chansrc': not managed" )
+    my $SChan = $db->NetworkChannels->get_by( $irc->{Network},
+                                           { type => $stype, name => $sname } );
+    return
+      $s->_n_error( $irc, $Session,
+                    "Cannot log channel '$chansrc': not managed" )
       unless $SChan;
 
     if ( $logtype eq "irc" ) {
-        return $s->_n_error( $irc, $Session,
-            "Cannot log channel to the the same channel ..." )
+        return
+          $s->_n_error( $irc, $Session,
+                        "Cannot log channel to the the same channel ..." )
           if ( $chansrc eq $target );
         my ( $ttype, $tname ) = splitchannel($target);
-        my $TChan =
-          $db->NetworkChannels->get_by( $irc->{Network},
-            { type => $ttype, name => $tname } );
-        return $s->_n_error( $irc, $Session,
-            "Target '$target' is not a managed channel" )
+        my $TChan = $db->NetworkChannels->get_by( $irc->{Network},
+                                           { type => $ttype, name => $tname } );
+        return
+          $s->_n_error( $irc, $Session,
+                        "Target '$target' is not a managed channel" )
           unless $TChan;
-        my $Log = $db->NetworkChannelLogs->get_by(
-            {
-                src_channel_id    => $SChan->id,
-                target_channel_id => $TChan->id,
-                type              => $logtype
-            }
-        );
-        return $s->_n_error( $irc, $Session,
-            "Channel '$chansrc' already logged to '$target' via IRC" )
+        my $Log =
+          $db->NetworkChannelLogs->get_by(
+                                           {
+                                             src_channel_id    => $SChan->id,
+                                             target_channel_id => $TChan->id,
+                                             type              => $logtype
+                                           }
+          );
+        return
+          $s->_n_error( $irc, $Session,
+                      "Channel '$chansrc' already logged to '$target' via IRC" )
           if $Log;
         my $ret =
           $db->NetworkChannelLogs->create( $SChan, $logtype, $TChan,
-            $Session->user_id );
+                                           $Session->user_id );
         unless ($ret) {
-            return $s->_n_error( $irc, $Session,
-                "Cannot log channel '$chansrc'  to '$target' via IRC" );
+            return
+              $s->_n_error( $irc, $Session,
+                        "Cannot log channel '$chansrc'  to '$target' via IRC" );
+        } else {
+            $irc->notice( '#me#', $Session->nick,
+                 "[$cmdname] Logging channel '$chansrc' to '$target' via IRC" );
         }
-        else {
-            $irc->notice('#me#', $Session->nick, 
-                  "[$cmdname] Logging channel '$chansrc' to '$target' via IRC"
-            );
-        }
-    }
-    else {
-        return $s->_n_error( $irc, $Session,
-            "Log facility '$logtype' not supported" );
+    } else {
+        return
+          $s->_n_error( $irc, $Session,
+                        "Log facility '$logtype' not supported" );
     }
     return PCI_EAT_ALL;
 }

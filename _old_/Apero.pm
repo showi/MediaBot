@@ -1,4 +1,4 @@
-package App::IRC::Bot::Shoze::POE::IRC::Apero;
+package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Apero;
 
 =head1 NAME
 
@@ -20,7 +20,7 @@ use IRC::Utils qw(:ALL);
 use Encode qw(encode_utf8 encode decode);
 use Unicode::Normalize;
 
-use lib qw(../../../../../../);
+use lib qw(../../../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
 use App::IRC::Bot::Shoze::Constants;
 use App::IRC::Bot::Shoze::Log;
@@ -58,7 +58,7 @@ sub PCI_register {
     my ( $self, $irc ) = splice @_, 0, 2;
     $irc->plugin_register( $self, 'SERVER', qw(public) );
     my $db       = App::IRC::Bot::Shoze::Db->new;
-    my @triggers = $db->Apero->list;
+    my @triggers = $db->PluginApero->list;
     $self->triggers( {} );
     for my $A (@triggers) {
         my $t = $A->trigger;
@@ -87,7 +87,7 @@ sub _have_trigger {
     for my $id ( keys %{ $s->triggers } ) {
         my $t = $s->triggers->{$id};
         if ( $cmd =~ /$t/i ) {
-            return $db->Apero->get($id);
+            return $db->PluginApero->get($id);
         }
     }
 }

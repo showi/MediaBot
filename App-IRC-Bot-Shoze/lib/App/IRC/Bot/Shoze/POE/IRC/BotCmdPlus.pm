@@ -41,8 +41,8 @@ sub new {
     my ($proto) = @_;
     my $class = ref($proto) || $proto;
     my $s = {
-        _permitted => \%fields,
-        %fields,
+              _permitted => \%fields,
+              %fields,
     };
     bless( $s, $class );
     $s->cmd( {} );
@@ -56,11 +56,11 @@ sub new {
 sub PCI_register {
     my ( $s, $irc ) = splice @_, 0, 2;
     $s->cmd( {} );
-    $irc->plugin_add( 'BotCmdPlus_Sessions',
-        new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Sessions($s) );
+    $irc->plugin_add( 'IRC_Core_Sessions',
+                 new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Sessions($s) );
 
-    $irc->plugin_add( 'BotCmdPlus_Dispatch',
-        new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Dispatch($s) );
+    $irc->plugin_add( 'IRC_Core_Dispatch',
+                 new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Dispatch($s) );
 
     return 1;
 }
@@ -71,11 +71,11 @@ sub PCI_register {
 
 sub PCI_unregister {
     my ( $s, $irc ) = splice @_, 0, 2;
-    $irc->plugin_del( 'BotCmdPlus_Sessions',
-        new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Sessions($s) );
+    $irc->plugin_del( 'IRC_Core_Sessions',
+                 new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Sessions($s) );
 
-    $irc->plugin_del( 'BotCmdPlus_Dispatch',
-        new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Dispatch($s) );
+    $irc->plugin_del( 'IRC_Core_Dispatch',
+                 new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Dispatch($s) );
     delete $s->{cmd};
     return 1;
 }
@@ -94,16 +94,18 @@ sub get_cmd {
 =cut
 
 sub register_command {
-    my ( $s, $plugin, $cmd, $access, $lvl ) = @_;
+    my ( $s, $plugin, $cmd, $access, $lvl, $argument_filter ) = @_;
     return if ref($cmd);
     DEBUG( "Registering command $cmd with access level $lvl ($plugin)", 5 );
+    DEBUG( "Argument filer: " . $argument_filter, 1 ) if $argument_filter;
     croak "Cannot register command '$cmd'"
       if defined $s->cmd->{$cmd};
     $s->cmd->{$cmd} = {
-        plugin => $plugin,
-        lvl    => $lvl,
-        access => $access,
+                        plugin => $plugin,
+                        lvl    => $lvl,
+                        access => $access,
     };
+    $s->cmd->{$cmd}->{argument_filter} = $argument_filter if $argument_filter;
 }
 
 =item unregister_command

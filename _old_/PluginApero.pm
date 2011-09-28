@@ -1,8 +1,8 @@
-package App::IRC::Bot::Shoze::Db::Links;
+package App::IRC::Bot::Shoze::Db::PluginApero;
 
 =head1 NAME
 
-App::IRC::Bot::Shoze::Db::Links - Methods for easy SQL table access
+App::IRC::Bot::Shoze::Db::Apero - Methods for easy SQL table access
 
 =cut
 
@@ -21,7 +21,7 @@ use IRC::Utils qw(:ALL);
 
 use lib qw(../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
-use App::IRC::Bot::Shoze::Db::Links::Object qw();
+use App::IRC::Bot::Shoze::Db::PluginApero::Object qw();
 use App::IRC::Bot::Shoze::Log;
 
 our $AUTOLOAD;
@@ -59,7 +59,7 @@ sub new {
 
 sub list {
     my $s = shift;
-    my $C = new App::IRC::Bot::Shoze::Db::Links::Object( $s->_parent );
+    my $C = new App::IRC::Bot::Shoze::Db::PluginApero::Object( $s->_parent );
     return $C->_list();
 }
 
@@ -70,7 +70,7 @@ sub list {
 sub get {
     my ( $s, $id ) = @_;
     DEBUG( __PACKAGE__ . "::get($id)", 3);
-    my $C = new App::IRC::Bot::Shoze::Db::Links::Object( $s->_parent );
+    my $C = new App::IRC::Bot::Shoze::Db::PluginApero::Object( $s->_parent );
     return $C->_get( $id );
 }
 
@@ -81,7 +81,7 @@ sub get {
 sub get_by {
     my ( $s, $hash ) = @_;
     DEBUG( __PACKAGE__ . "::get_by($hash)", 3);
-    my $C = new App::IRC::Bot::Shoze::Db::Links::Object( $s->_parent );
+    my $C = new App::IRC::Bot::Shoze::Db::PluginApero::Object( $s->_parent );
     return $C->_get_by( $hash );
 }
 
@@ -91,7 +91,7 @@ sub get_by {
 
 sub create {
     my ( $s, $trigger, $text) = @_;
-    my $A = new App::IRC::Bot::Shoze::Db::Links::Object( $s->_parent );
+    my $A = new App::IRC::Bot::Shoze::Db::PluginApero::Object( $s->_parent );
     $A->trigger($trigger);
     $A->text($text);
     return $A->_create();

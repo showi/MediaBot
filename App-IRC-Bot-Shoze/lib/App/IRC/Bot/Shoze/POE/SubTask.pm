@@ -21,7 +21,7 @@ use warnings;
 
 use Carp;
 
-use YAML;
+use YAML qw(thaw);
 use POE qw(Wheel::Run Filter::Reference);
 
 use Storable;
@@ -87,7 +87,11 @@ sub _stop {
 sub add_task {
     my ( $s, $data ) = @_;
     push @{ $s->tasks }, $data;
-    LOG( __PACKAGE__ . '::add_task(' . $s . " ### " . $data->{name} . ')' );
+    unless ($data->is_valid_request) {
+        WARN("Invalid SubTask request " . $data->name);
+        return;
+    }
+    LOG( __PACKAGE__ . '::add_task(' . $s . " ### " . $data->name . ')' );
     unless ( $s->session ) {
         $s->session(
             POE::Session->create(
@@ -170,7 +174,8 @@ sub do_stuff {
     my $task   = shift;
     my $filter = POE::Filter::Reference->new();
 
-    my $cmd       = $task->program . " " . $task->args;
+    my $cmd       = $task->program;
+    $cmd .= " " . $task->args if defined $task->args;
     my $cmdresult = `$cmd`;
     my $cmdstatus = $? . "";
     my $r         = {};
@@ -179,8 +184,10 @@ sub do_stuff {
         next unless defined $task->$k;
         $r->$k($task->$k);
     }
-    $r->data($cmdresult) if $cmdresult;
+    $r->data(thaw($cmdresult)) if $cmdresult;
     $r->status($cmdstatus) if defined $cmdstatus;
+    $r->status_msg($r->data->{status_msg}) 
+        if defined $r->data->{status_msg};
 
     # Generate some output via the filter.  Note the strange use of list
     # references.

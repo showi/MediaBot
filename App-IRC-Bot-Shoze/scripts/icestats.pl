@@ -9,17 +9,20 @@ use XML::Simple;
 use Data::Dumper;
 use YAML qw(Dump Bless);
 
-my $user     = "admin";
+use lib qw(../lib/);
+use App::IRC::Bot::Shoze;
+
+my $user     = "";
 my $password = "";
-my $hostname = "radiocapsule.com";
-my $port     = 15000;
+my $hostname = "";
+my $port     = 0;
 
 my $netloc   = "$hostname:$port";
 my $url      = "http://$netloc/admin/stats.xml";
 my $realm    = 'Icecast2 Server';
 
 my $ua = new LWP::UserAgent;
-$ua->agent("Shoze/0.0.7");
+$ua->agent($App::IRC::Bot::Shoze::PROGRAMNAME . " / " . $App::IRC::Bot::Shoze::VERSION);
 $ua->credentials( $netloc, $realm, $user, $password );
 my $request = HTTP::Request->new( GET => $url );
 my $response = $ua->request($request);

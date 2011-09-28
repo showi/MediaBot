@@ -1,8 +1,8 @@
-package App::IRC::Bot::Shoze::Db::EasySentence::Object;
+package App::IRC::Bot::Shoze::Plugins::IRC::AutoUserMode::Db::Object;
 
 =head1 NAME
 
-App::IRC::Bot::Shoze::Db::EasySentence::Object - Store one row from SQL database
+App::IRC::Bot::Shoze::Db::ChannelAutoUserMode::Object - Store one row from SQL database
 
 =cut
 
@@ -17,7 +17,7 @@ use warnings;
 
 use Carp;
 
-use lib qw(../../../../../../);
+use lib qw(../../../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(DESTROY);
 use App::IRC::Bot::Shoze::Db::SynchObject qw(:ALL);
 use App::IRC::Bot::Shoze::Log;
@@ -26,9 +26,10 @@ our $AUTOLOAD;
 
 our %fields = (
     id         => undef,
-    text       => undef,
-    author     => undef,
-    tags       => undef,
+    channel_id => undef,
+    time       => undef,
+    mode       => undef,
+    hostmask   => undef,
     updated_on => undef,
     created_on => undef,
 
@@ -45,8 +46,8 @@ our %fields = (
 =cut
 
 sub new {
-    my ( $proto, $object_db, $object_name ) = @_;
-    DEBUG( "Creating new " . __PACKAGE__ , 8);
+    my ( $proto, $object_db ) = @_;
+    DEBUG( "Creating new " . __PACKAGE__, 8);
     croak "No database object passed as first parameter"
       unless ref($object_db);
     my $class = ref($proto) || $proto;
@@ -54,11 +55,9 @@ sub new {
         _permitted => \%fields,
         %fields,
     };
-
     bless( $s, $class );
-    # DIRTY HACK VALUES IS SET TO 1 on init ...
-    $s->_init_fields();          
-    $s->_object_name($object_name);
+    $s->_init_fields;            # DIRTY HACK
+    $s->_object_name('plugin_auto_user_mode');
     $s->_object_db($object_db);
     return $s;
 }

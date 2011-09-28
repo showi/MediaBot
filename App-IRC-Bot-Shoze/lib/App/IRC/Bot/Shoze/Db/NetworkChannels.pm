@@ -27,7 +27,7 @@ use App::IRC::Bot::Shoze::Db::NetworkChannels::Object qw();
 use App::IRC::Bot::Shoze::Db::NetworkChannelUsers::Object;
 use App::IRC::Bot::Shoze::Db::NetworkChannelLogs::Object;
 use App::IRC::Bot::Shoze::Db::ChannelUsers::Object;
-use App::IRC::Bot::Shoze::Db::ChannelAutoUserMode::Object;
+#use App::IRC::Bot::Shoze::Db::ChannelAutoUserMode::Object;
 
 
 
@@ -194,6 +194,14 @@ sub delete {
     $ncu = new App::IRC::Bot::Shoze::Db::ChannelAutoUserMode::Object($db);
     $ncu->_delete_by( { channel_id => $Channel->id } );
 
+    # Deleting channel users for this channels
+    $ncu = new App::IRC::Bot::Shoze::Db::ChannelUsers::Object($db);
+    $ncu->_delete_by( { channel_id => $Channel->id } );
+    
+    # Deleting network channel users for this channels
+    $ncu = new App::IRC::Bot::Shoze::Db::NetworkChannelUsers::Object($db);
+    $ncu->_delete_by( { channel_id => $Channel->id } );
+    
     LOG( "Deleting channel '" . $Channel->name . "'" );
     return $Channel->_delete;
 }

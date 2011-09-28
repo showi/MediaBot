@@ -1,8 +1,8 @@
-package App::IRC::Bot::Shoze::Db::Apero;
+package App::IRC::Bot::Shoze::Plugins::IRC::EasySentences::Db;
 
 =head1 NAME
 
-App::IRC::Bot::Shoze::Db::Apero - Methods for easy SQL table access
+App::IRC::Bot::Shoze::Db::EasySentence - Methods for easy SQL table access
 
 =cut
 
@@ -19,9 +19,9 @@ use Carp;
 
 use IRC::Utils qw(:ALL);
 
-use lib qw(../../../../../);
+use lib qw(../../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
-use App::IRC::Bot::Shoze::Db::Apero::Object qw();
+use App::IRC::Bot::Shoze::Plugins::IRC::EasySentences::Db::Object qw();
 use App::IRC::Bot::Shoze::Log;
 
 our $AUTOLOAD;
@@ -53,25 +53,28 @@ sub new {
     return $s;
 }
 
+=item list_match
+
+=cut
+
+sub list_match {
+    my ($s, $name, $matches) = @_;
+    croak "Need a name to acces sentence list" 
+        unless $name;
+    my $C = new App::IRC::Bot::Shoze::Plugins::IRC::EasySentences::Db::Object( $s->_parent->_parent, $name);
+    return $C->_list_match($matches);
+}
+
 =item list
 
 =cut
 
 sub list {
-    my $s = shift;
-    my $C = new App::IRC::Bot::Shoze::Db::Apero::Object( $s->_parent );
+    my ($s, $name) = @_;
+    croak "Need a name to acces sentence list" 
+        unless $name;
+    my $C = new App::IRC::Bot::Shoze::Plugins::IRC::EasySentences::Db::Object ( $s->_parent->_parent, $name);
     return $C->_list();
-}
-
-=item get
-
-=cut
-
-sub get {
-    my ( $s, $id ) = @_;
-    DEBUG( __PACKAGE__ . "::get($id)", 3);
-    my $C = new App::IRC::Bot::Shoze::Db::Apero::Object( $s->_parent );
-    return $C->_get( $id );
 }
 
 =item get_by
@@ -79,9 +82,9 @@ sub get {
 =cut
 
 sub get_by {
-    my ( $s, $hash ) = @_;
+    my ( $s, $name, $hash ) = @_;
     DEBUG( __PACKAGE__ . "::get_by($hash)", 3);
-    my $C = new App::IRC::Bot::Shoze::Db::Apero::Object( $s->_parent );
+    my $C = new App::IRC::Bot::Shoze::Plugins::IRC::EasySentences::Db::Object ( $s->_parent->_parent, $name );
     return $C->_get_by( $hash );
 }
 
@@ -90,9 +93,8 @@ sub get_by {
 =cut
 
 sub create {
-    my ( $s, $trigger, $text) = @_;
-    my $A = new App::IRC::Bot::Shoze::Db::Apero::Object( $s->_parent );
-    $A->trigger($trigger);
+    my ( $s, $name, $text) = @_;
+    my $A = new App::IRC::Bot::Shoze::Plugins::IRC::EasySentences::Db::Object($s->_parent->_parent, $name );
     $A->text($text);
     return $A->_create();
 }

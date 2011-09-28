@@ -1,4 +1,4 @@
-package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::Users;
+package App::IRC::Bot::Shoze::Plugins::IRC::Users::Main;
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ use Carp;
 use POE::Component::IRC::Plugin qw(:ALL);
 use IRC::Utils qw(:ALL);
 
-use lib qw(../../../../../../../../);
+use lib qw(../../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;

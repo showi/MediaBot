@@ -40,6 +40,8 @@ use Exporter;
 
 =item _register_cmd 
 
+=item _register_database
+
 =item _unregister_cmd
 
 =item BOTLVL 
@@ -67,12 +69,13 @@ use Exporter;
 =back
 
 =cut
+
 our @ISA = qw(Exporter);
 
 our @MyExport = qw(_n_error _send_lines _send_lines_privmsg _send_lines_notice
   pretty_help get_cmd
   PCI_register PCI_unregister
-  _register_cmd _unregister_cmd
+  _register_cmd _unregister_cmd _register_database
   BOTLVL CHANLVL splitchannel _get_nick _get_session
   _add_channel_user _del_channel_user can_op can_voice _modes _join);
 
@@ -117,7 +120,22 @@ sub get_cmd {
 sub PCI_register {
     my ( $s, $irc ) = splice @_, 0, 2;
     $s->_register_cmd($irc);
+    $s->_register_database($irc);
     return 1;
+}
+
+=item _register_database
+
+=cut
+
+sub _register_database {
+    my ( $s, $irc ) = splice @_, 0, 2;
+    if ( defined $s->{database} ) {
+        my $db = App::IRC::Bot::Shoze::Db->new;
+        for ( @{ $s->database } ) {
+            $db->Plugins->load( $_->{type}, $_->{name} );
+        }
+    }
 }
 
 =item _register_cmd
@@ -129,9 +147,11 @@ sub _register_cmd {
     my $C = $irc->plugin_get('BotCmdPlus');
     for my $cmd ( %{ $s->cmd } ) {
         $C->register_command(
-            $s, $cmd,
-            $s->cmd->{$cmd}->{access},
-            $s->cmd->{$cmd}->{lvl}
+                              $s,
+                              $cmd,
+                              $s->cmd->{$cmd}->{access},
+                              $s->cmd->{$cmd}->{lvl},
+                              $s->cmd->{$cmd}->{argument_filter}
         );
     }
 }
@@ -142,6 +162,12 @@ sub _register_cmd {
 
 sub PCI_unregister {
     my ( $s, $irc ) = splice @_, 0, 2;
+    if ( defined $s->{database} ) {
+        my $db = App::IRC::Bot::Shoze::Db->new;
+        for ( @{ $s->database } ) {
+            $db->Plugins->unload( $_->{type}, $_->{name} );
+        }
+    }
     $s->_unregister_cmd($irc);
     return 1;
 }
@@ -165,7 +191,7 @@ sub _unregister_cmd {
 sub splitchannel {
     return ( undef, undef ) unless $_[0];
     $_[0] =~ /^(#|&)(.*)$/ and do {
-        return ($1, $2);
+        return ( $1, $2 );
     };
     return undef;
 }
@@ -176,10 +202,10 @@ sub splitchannel {
 
 sub _send_lines {
     my ( $s, $irc, $what, $who, $where, @lines ) = @_;
-    if ($what eq 'notice') {
-        $s->_send_lines_notice($irc, $who, $where, @lines);
-    } elsif($what eq 'privmsg') {
-        $s->_send_lines_privmsg($irc, $who, $where, @lines);
+    if ( $what eq 'notice' ) {
+        $s->_send_lines_notice( $irc, $who, $where, @lines );
+    } elsif ( $what eq 'privmsg' ) {
+        $s->_send_lines_privmsg( $irc, $who, $where, @lines );
     } else {
         croak "Unknown send type '$what'";
     }
@@ -188,10 +214,11 @@ sub _send_lines {
 =item _send_lines_notice
 
 =cut
+
 sub _send_lines_notice {
-   my ( $s, $irc, $who, $where, @lines ) = @_;
-   for (@lines) {
-        $irc->{Out}->notice($who, $where, $_ );
+    my ( $s, $irc, $who, $where, @lines ) = @_;
+    for (@lines) {
+        $irc->{Out}->notice( $who, $where, $_ );
     }
 }
 
@@ -200,9 +227,9 @@ sub _send_lines_notice {
 =cut
 
 sub _send_lines_privmsg {
-   my ( $s, $irc, $who, $where, @lines ) = @_;
-   for (@lines) {
-        $irc->{Out}->privmsg($who, $where, $_ );
+    my ( $s, $irc, $who, $where, @lines ) = @_;
+    for (@lines) {
+        $irc->{Out}->privmsg( $who, $where, $_ );
     }
 }
 
@@ -212,7 +239,7 @@ sub _send_lines_privmsg {
 
 sub _n_error {
     my ( $s, $irc, $where, $msg ) = @_;
-    $irc->{Out}->notice('#me#', $where, "Error: $msg" );
+    $irc->{Out}->notice( '#me#', $where, "Error: $msg" );
     return PCI_EAT_ALL;
 }
 
@@ -249,13 +276,14 @@ sub _get_session {
       unless ref($db) =~ /Shoze::Db/;
     croak "Need Nick Object as second parameter"
       unless ref($Nick) =~ /Db::Nicks::Object/;
-    my $Session = $db->NetworkSessions->get_by(
-        $Nick,
-        {
-            user     => $user,
-            hostname => $hostname
-        }
-    );
+    my $Session =
+      $db->NetworkSessions->get_by(
+                                    $Nick,
+                                    {
+                                       user     => $user,
+                                       hostname => $hostname
+                                    }
+      );
     unless ($Session) {
         my $res = $db->NetworkSessions->create( $Nick, $user, $hostname );
         return $s->_get_session( $db, $Nick, $user, $hostname ) if $res;
@@ -281,12 +309,11 @@ sub _get_nick {
     unless ($Nick) {
         my $res = $db->NetworkNicks->create( $Network, $nick );
         return undef unless $res;
-        $irc->yield(whois => $nick);
-        return $s->_get_nick($irc, $db, $Network, $nick );
+        $irc->yield( whois => $nick );
+        return $s->_get_nick( $irc, $db, $Network, $nick );
     }
     return $Nick;
 }
-
 
 =item _add_channel_user
 
@@ -320,7 +347,6 @@ sub _add_channel_user {
               . "'" );
     }
 }
-
 
 =item _del_channel_user
 
@@ -358,7 +384,6 @@ sub _del_channel_user {
     return PCI_EAT_NONE;
 }
 
-
 =item _can_op
 
 =cut
@@ -379,20 +404,17 @@ sub can_op {
     }
     if ( $Session->user_lvl >= 800 ) {
         return 1;
-    }
-    elsif ( $Channel->owner == $Session->user_id ) {
+    } elsif ( $Channel->owner == $Session->user_id ) {
         return 1;
-    }
-    else {
+    } else {
         my $ChannelUser = $db->ChannelUsers->get_by(
-            { channel_id => $Channel->id, user_id => $Session->user_id } );
+                 { channel_id => $Channel->id, user_id => $Session->user_id } );
         if ( $ChannelUser->lvl >= 400 ) {
             return 1;
         }
     }
     return 0;
 }
-
 
 =item can_voice
 
@@ -414,20 +436,17 @@ sub can_voice {
     }
     if ( $Session->user_lvl >= 800 ) {
         return 1;
-    }
-    elsif ( $Channel->owner == $Session->user_id ) {
+    } elsif ( $Channel->owner == $Session->user_id ) {
         return 1;
-    }
-    else {
+    } else {
         my $ChannelUser = $db->ChannelUsers->get_by(
-            { channel_id => $Channel->id, user_id => $Session->user_id } );
+                 { channel_id => $Channel->id, user_id => $Session->user_id } );
         if ( $ChannelUser->lvl >= 300 ) {
             return 1;
         }
     }
     return 0;
 }
-
 
 =item _modes
 
@@ -449,20 +468,19 @@ sub _modes {
         $i--;
     }
     if ($m) {
-         $irc->yield( mode => $Channel->_usable_name => "$sign$m $nicks" );
+        $irc->yield( mode => $Channel->_usable_name => "$sign$m $nicks" );
     }
 }
-
 
 =item _join
 
 =cut
 
 sub _join {
-    my ($s, $irc, $Channel) = @_;
+    my ( $s, $irc, $Channel ) = @_;
     my $msg = $Channel->_usable_name;
     $msg .= ' ' . $Channel->password if $Channel->password;
-    $irc->yield(join => $msg);
+    $irc->yield( join => $msg );
 }
 
 =back

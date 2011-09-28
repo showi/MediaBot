@@ -1,4 +1,4 @@
-package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::EasySentence;
+package App::IRC::Bot::Shoze::Plugins::IRC::EasySentences::Main;
 
 =head1 NAME
 
@@ -19,15 +19,15 @@ use POE::Component::IRC::Plugin qw(:ALL);
 use IRC::Utils qw(:ALL);
 use Encode qw(encode_utf8 encode decode);
 
-use lib qw(../../../../../../../../);
+use lib qw(../../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(:ALL);
-use App::IRC::Bot::Shoze::Db::EasySentence::Object;
+use App::IRC::Bot::Shoze::Plugins::IRC::EasySentences::Db::Object;
 
 our %fields =
-  ( cmd => undef, kind => undef, _parent => undef, authtypes => undef, );
+  ( cmd => undef, kind => undef, _parent => undef, authtypes => undef, database => undef);
 
 =head1 SUBROUTINES/METHODS
 
@@ -84,6 +84,17 @@ sub new {
             },
         }
     );
+#    $s->database((
+#            type => 'IRC',
+#            name => 'EasySentences',
+#        ));
+    my @db;
+    push @db,
+        {
+            type => 'IRC',
+            name => 'EasySentences',
+        };
+    $s->database(\@db);
     return $s;
 }
 
@@ -179,7 +190,7 @@ sub insulte {
     my $PCMD    = $self->get_cmd($cmdname);
     my $db      = App::IRC::Bot::Shoze::Db->new;
 
-    my @list = $db->Sentences->list('insulte');
+    my @list = $db->Plugins->EasySentences->list('insulte');
     unless (@list) {
         LOG("No insult in database!");
         return PCI_EAT_ALL;
@@ -204,7 +215,7 @@ sub carambar {
     my $PCMD    = $self->get_cmd($cmdname);
     my $db      = App::IRC::Bot::Shoze::Db->new;
 
-    my @list = $db->Sentences->list('carambar');
+    my @list = $db->Plugins->EasySentences->list('carambar');
     unless (@list) {
         LOG("No carambar in database!");
         return PCI_EAT_ALL;
@@ -231,7 +242,7 @@ sub proverbe {
     my $PCMD    = $self->get_cmd($cmdname);
     my $db      = App::IRC::Bot::Shoze::Db->new;
 
-    my @list = $db->Sentences->list('proverbe');
+    my @list = $db->Plugins->EasySentences->list('proverbe');
     unless (@list) {
         LOG("No proverbe in database!");
         return PCI_EAT_ALL;

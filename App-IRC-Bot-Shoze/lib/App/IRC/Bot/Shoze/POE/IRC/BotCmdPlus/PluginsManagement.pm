@@ -31,6 +31,7 @@ our %fields = (
     _parent => undef,
     cmd     => undef,
     plugins => undef,
+    core_plugins => undef,
     irc     => undef,
     loaded  => undef
 );
@@ -75,8 +76,10 @@ sub new {
             },
         }
     );
-    my @plugins =
-      qw(Users Info NetworkChannels NetworkChannelUsers NetworkChannelLogs ChannelUsers Help Tld EasySentence);
+    my @core_plugins = qw(Sessions Dispatch PluginsManagement);
+    $s->core_plugins( \@core_plugins );
+    my $C = App::IRC::Bot::Shoze::Config->new;
+    my @plugins = split(/\s+/, $C->bot->{plugins});
     $s->plugins( \@plugins );
     return $s;
 }
@@ -93,7 +96,8 @@ sub PCI_register {
         $C->register_command(
             $s, $cmd,
             $s->cmd->{$cmd}->{access},
-            $s->cmd->{$cmd}->{lvl}
+            $s->cmd->{$cmd}->{lvl},
+            $s->cmd->{$cmd}->{argument_filter}
         );
     }
     $s->_load_all_plugin();
@@ -146,13 +150,13 @@ sub _reload_plugin {
 sub _load_plugin {
     my ( $s, $oname ) = @_;
     my $name   = $oname;
-    my $plugin = "App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::$name";
+    my $plugin = 'App::IRC::Bot::Shoze::Plugins::IRC::'.$name.'::Main';
     unless ( $s->loaded->{$oname} ) {
         LOG("LOAD: Requiring module '$plugin'");
         my $ret = eval "require $plugin";
         unless ( defined $ret ) {
             carp "Cannot require plugin '$plugin, abort loading! ($?)'";
-            $s->irc->plugin_del("BotCmdPlus_$name");
+            $s->irc->plugin_del("Plugin_IRC_$name");
             Class::Unload->unload($plugin);
             return 0;
         }
@@ -165,12 +169,12 @@ sub _load_plugin {
             $code=  $plugin->new($s);
         }; 
         if ($@) {
-            $s->_unload_plugin($oname);
             WARN("Plugin Error: " . $@);
+            $s->_unload_plugin($oname);
             return 0;
         }
         LOG("Plugin code for '$oname' loaded");
-        $s->irc->plugin_add( "BotCmdPlus_$name", $code);
+        $s->irc->plugin_add( "Plugin_IRC_$name", $code);
         return 1;
     }
     return 0;
@@ -196,9 +200,9 @@ sub _load_all_plugin {
 sub _unload_plugin {
     my ( $s, $oname ) = @_;
     my $name   = $oname;
-    my $plugin = "App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::$name";
+    my $plugin = 'App::IRC::Bot::Shoze::Plugins::IRC::'.$name.'::Main';
     LOG("Removing plugin $plugin");
-    $s->irc->plugin_del("BotCmdPlus_$name");
+    $s->irc->plugin_del("Plugin_IRC_$name");
     Class::Unload->unload($plugin);
     delete $s->loaded->{$oname};
 

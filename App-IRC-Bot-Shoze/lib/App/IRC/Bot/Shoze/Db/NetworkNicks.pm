@@ -137,6 +137,13 @@ SQL
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
     $sth->execute( $Nick->id )
       or die "Cannot execute query '$query' (" . $h->errstr . ")";
+    $query = <<SQL;
+    UPDATE NetworkChannels SET owner = NULL WHERE owner = ?       
+SQL
+    $sth = $h->prepare($query)
+      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
+    $sth->execute( $Nick->id )
+      or die "Cannot execute query '$query' (" . $h->errstr . ")";
 }
 
 =item empty

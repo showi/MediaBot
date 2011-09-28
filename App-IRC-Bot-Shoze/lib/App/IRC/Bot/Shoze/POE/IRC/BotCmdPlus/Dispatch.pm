@@ -15,6 +15,8 @@ use warnings;
 
 use Carp;
 
+use Encode qw(encode decode);
+
 use POE;
 use POE::Component::IRC::Plugin qw(:ALL);
 use IRC::Utils qw(:ALL);
@@ -175,14 +177,27 @@ sub _default {
 
     my $pl  = $Master->cmd->{$cmd}->{plugin};
     my $lvl = $Master->cmd->{$cmd}->{lvl};
+    my $filter = qr/^[\w\d\s_-]*$/;
+    if (defined $Master->cmd->{$cmd}->{argument_filter}) {
+        print "Got specifig command filter\n";
+        $filter = $Master->cmd->{$cmd}->{argument_filter};
+    }
+    $cmd_args = decode('utf8', $cmd_args);
+    my $new_cmd_args = $s->string_filter($cmd_args, $filter);   
+    if($cmd_args ne $new_cmd_args) {
+        $irc->{Out}->notice('#me#', $Session,
+                  "Invalid command parameters $cmd_args" );
+            return PCI_EAT_ALL
+    } 
+    ${$_[2]} = "$prefix$cmd $new_cmd_args";
     if ( $lvl > 0 ) {
         unless ($Session->user_name) {
-            $irc->yield( notice => $Session->nick =>
+            $irc->{Out}->notice('#me#', $Session,
                   "You must be logged to execute this command" );
             return PCI_EAT_ALL;
         }
         if ( $Session->user_lvl < $lvl ) {
-            $irc->yield( notice => $Session->nick =>
+            $irc->{Out}->notice('#me#', $Session,
                   "You don't have the right to execute this command" );
             return PCI_EAT_ALL;
         }
@@ -194,6 +209,18 @@ sub _default {
     return PCI_EAT_ALL;
 }
 
+=item string_filter
+
+=cut
+
+sub string_filter {
+    my ($s, $str, $filter) = @_;
+    unless ($str =~ /$filter/) {
+       WARN("Filtering command parameters '$str'");
+       return "";
+    }
+    return $str;
+}
 =back
 
 =head1 LICENSE AND COPYRIGHT

@@ -29,8 +29,9 @@ our %fields = (
     args       => undef,
     who        => undef,
     where      => undef,
-    data       => undef,
+#    data       => undef,
     session_id => undef,
+    input_event => undef,
 );
 
 =head1 SUBROUTINES/METHODS
@@ -59,11 +60,25 @@ sub new {
 sub is_valid_program {
     my $s = shift;
     unless ( -x $s->program ) {
-        WARN(   "Programe '"
+        WARN(   "Program '"
               . $s->program
               . "' is not executable (check path&permission" );
         return 0;
     }
+}
+
+=item is_valid_request
+
+=cut
+
+sub is_valid_request {
+    my ($s) = @_;
+    return 0 unless $s->is_valid_program;
+    my @mandatory = qw(event input_event name program session_id who where);
+    for(@mandatory) {
+        return 0 unless defined $s->$_;
+    }   
+    return 1;
 }
 
 =back

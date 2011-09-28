@@ -363,7 +363,7 @@ sub channel_list {
             "[$cmdname] No channel in database " );
         return PCI_EAT_ALL;
     }
-    $irc->notice('#me#', $Session, "[$cmdname] Listing channel " );
+    $irc->{Out}->notice('#me#', $Session, "[$cmdname] Listing channel " );
     for my $Chan (@list) {
         my ( $owner, $Owner );
         if ( $Chan->owner ) {
@@ -379,7 +379,7 @@ sub channel_list {
         $str .= $Chan->_usable_name;
         $str .= ' (' . localtime( int $Chan->updated_on ) . ')'
           if $Chan->updated_on;
-        $irc->notice('#me#', $Session, $str );
+        $irc->{Out}->notice('#me#', $Session, $str );
     }
     return PCI_EAT_ALL;
 }
@@ -426,12 +426,12 @@ sub channel_set_owner {
         if (    ( $Session->user_lvl != 1000 )
             and ( $CurrentOwner->lvl >= $Session->user_lvl ) )
         {
-            $irc->notice('#me#', $Session,
+            $irc->{Out}->notice('#me#', $Session,
                   "[$cmdname] You cannot change this channel owner!" );
             return PCI_EAT_ALL;
         }
         elsif ( $CurrentOwner->id == $Owner->id ) {
-            $irc->notice('#me#', $Session->nick => "[$cmdname] Same owner!" );
+            $irc->{Out}->notice('#me#', $Session->nick => "[$cmdname] Same owner!" );
             return PCI_EAT_ALL;
         }
     }
@@ -439,14 +439,14 @@ sub channel_set_owner {
     $Channel->owner( $Owner->id );
 
     if ( $Channel->_update ) {
-        $irc->notice('#me#', $Session, "[$cmdname] "
+        $irc->{Out}->notice('#me#', $Session, "[$cmdname] "
               . $Channel->_usable_name
               . " owner set to "
               . $Owner->name );
         return PCI_EAT_ALL;
     }
     else {
-        $irc->notice('#me#', $Session->nick => "[$cmdname] Cannot set "
+        $irc->{Out}->notice('#me#', $Session->nick => "[$cmdname] Cannot set "
               . $Channel->_usable_name
               . " owner set to "
               . $Owner->name );

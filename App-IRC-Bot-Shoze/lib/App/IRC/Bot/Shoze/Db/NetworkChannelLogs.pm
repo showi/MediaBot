@@ -67,8 +67,8 @@ sub list {
 SELECT ncl.id AS id, ncl.type AS type, ncl.updated_on AS updated_on, ncl.created_on AS created_on,
 ncl.active AS active, ncl.src_channel_id AS src_channel_id,
 ncl.target_channel_id AS target_channel_id,
-ncs.type AS src_network_channel_type, ncs.name AS src_network_channel_name,
-nct.type AS target_network_channel_type, nct.name AS target_network_channel_name  
+ncs.type AS src_network_channel_type, ncs.name AS src_network_channel_name, ncs.network_id AS src_network_channel_network_id,
+nct.type AS target_network_channel_type, nct.name AS target_network_channel_name, nct.network_id AS target_network_channel_network_id
 FROM network_channel_logs AS ncl,
 network_channels AS ncs, network_channels AS nct, users AS u
 WHERE ncl.src_channel_id = ncs.id 
@@ -89,7 +89,7 @@ SQL
             $N->$k( $r->{$k} );
         }
         my @extf =
-          qw(src_network_channel_type src_network_channel_name target_network_channel_type target_network_channel_name);
+          qw(src_network_channel_type src_network_channel_name src_network_channel_network_id target_network_channel_type target_network_channel_name target_network_channel_network_id);
         for (@extf) {
             $N->_add_permitted_field($_);
             $N->$_( $r->{$_} );

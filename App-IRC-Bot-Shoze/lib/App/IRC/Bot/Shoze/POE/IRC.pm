@@ -33,10 +33,9 @@ use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::POE::IRC::Out;
 use App::IRC::Bot::Shoze::POE::IRC::In;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus;
-use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::PluginsManagement;
 
-use App::IRC::Bot::Shoze::POE::IRC::Apero;
-
+use App::IRC::Bot::Shoze::Plugins::IRC::Apero::Main;
+use App::IRC::Bot::Shoze::Plugins::IRC::Fortunes::Main;
 
 use Data::Dumper qw(Dumper);
 
@@ -141,16 +140,23 @@ sub _start {
     $heap->{connector} = POE::Component::IRC::Plugin::Connector->new();
     $irc->plugin_add( 'Connector' => $heap->{connector} );
     # Our plugins system
+    
     $irc->plugin_add( 'BotCmdPlus',
         new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus($s) );
     $irc->plugin_add(
-        'BotCmdPlus_PluginsManagement',
+        'BotCmdPlus_Core_PluginsManagement',
         new
           App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::PluginsManagement(
             $s
           )
     );
-    $irc->plugin_add( 'Apero', new App::IRC::Bot::Shoze::POE::IRC::Apero($s) );
+#    $irc->plugin_add('Plugin_IRC_Apero',
+#        App::IRC::Bot::Shoze::Plugins::IRC::Apero::Main->new($s)
+#    );
+#    $irc->plugin_add('Plugin_IRC_Fortunes',
+#        App::IRC::Bot::Shoze::Plugins::IRC::Fortunes::Main->new($s)
+#    );
+    #$irc->plugin_add( 'Apero', new App::IRC::Bot::Shoze::POE::IRC::Apero($s) );
 
     # End of our plugins
     my %channels;

@@ -1,4 +1,4 @@
-package App::IRC::Bot::Shoze::Db::Apero::Object;
+package App::IRC::Bot::Shoze::Db::PluginApero::Object;
 
 =head1 NAME
 
@@ -59,7 +59,7 @@ sub new {
 
     bless( $s, $class );
     $s->_init_fields();          # DIRTY HACK VALUES IS SET TO 1 on init ...
-    $s->_object_name('apero');
+    $s->_object_name('plugin_apero');
     $s->_object_db($object_db);
     return $s;
 }

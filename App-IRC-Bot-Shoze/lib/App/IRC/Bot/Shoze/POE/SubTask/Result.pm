@@ -31,7 +31,9 @@ our %fields = (
     where   => undef,
     data    => undef,
     status  => undef,
+    status_msg => undef,
     session_id => undef,
+    input_event => undef,
 );
 
 =head1 SUBROUTINES/METHODS

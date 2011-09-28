@@ -27,11 +27,13 @@ use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::Config;
 
+use App::IRC::Bot::Shoze::Db::Plugins;
+
 use App::IRC::Bot::Shoze::Db::BotLogs;
 
 use App::IRC::Bot::Shoze::Db::Users;
 use App::IRC::Bot::Shoze::Db::ChannelUsers;
-use App::IRC::Bot::Shoze::Db::ChannelAutoUserMode;
+#use App::IRC::Bot::Shoze::Db::ChannelAutoUserMode;
 
 use App::IRC::Bot::Shoze::Db::Networks;
 use App::IRC::Bot::Shoze::Db::NetworkNicks;
@@ -40,9 +42,9 @@ use App::IRC::Bot::Shoze::Db::NetworkChannelUsers;
 use App::IRC::Bot::Shoze::Db::NetworkChannelLogs;
 use App::IRC::Bot::Shoze::Db::NetworkSessions;
 
-
-use App::IRC::Bot::Shoze::Db::Apero;
-use App::IRC::Bot::Shoze::Db::EasySentence;
+#
+#use App::IRC::Bot::Shoze::Db::PluginApero;
+#use App::IRC::Bot::Shoze::Db::EasySentence;
 
 our $AUTOLOAD;
 
@@ -78,16 +80,8 @@ our %fields    = (
     
     # User linked to channels managed by the bot
     ChannelUsers => undef,   
-    
-    # Funny sentences triggered by !{command} 
-    Apero        => undef,   
-    
-    # Sentence like proverbe, carambar ...
-    Sentences    => undef,     
-    
-    # Permit to voice, op and ban user based on their hostmask
-    ChannelAutoUserMode =>
-      undef,
+
+    Plugins => undef,
 );
 
 =head1 SUBROUTINES/METHODS
@@ -115,6 +109,7 @@ sub new {
         %fields,
     };
     bless( $s, $class );
+    $s->Plugins(new App::IRC::Bot::Shoze::Db::Plugins($s));
     $Singleton = $s;
      
      # Initialize our database object
@@ -128,14 +123,12 @@ sub new {
     $s->NetworkChannelUsers(
         new App::IRC::Bot::Shoze::Db::NetworkChannelUsers($s) );
 
-    $s->ChannelAutoUserMode(
-        new App::IRC::Bot::Shoze::Db::ChannelAutoUserMode($s) );
     $s->ChannelUsers( new App::IRC::Bot::Shoze::Db::ChannelUsers($s) );
 
     $s->Users( new App::IRC::Bot::Shoze::Db::Users($s) );
 
-    $s->Apero( new App::IRC::Bot::Shoze::Db::Apero($s) );
-    $s->Sentences( new App::IRC::Bot::Shoze::Db::EasySentence($s) );
+    #$s->PluginApero( new App::IRC::Bot::Shoze::Db::PluginApero($s) );
+    #$s->Sentences( new App::IRC::Bot::Shoze::Db::EasySentence($s) );
 
     # Initialize database connection
     $s->init(); 
@@ -179,6 +172,7 @@ sub close {
 
 =item die_if_not_open
 
+  
     Die if we can't reopen database connection (USELESS, must be removed)
 =cut
 
@@ -186,6 +180,7 @@ sub die_if_not_open {
     my ($s) = @_;
     $s->init() unless $s->is_open();
 }
+
 
 =back
 

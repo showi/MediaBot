@@ -177,7 +177,7 @@ sub _default {
 
     my $pl  = $Master->cmd->{$cmd}->{plugin};
     my $lvl = $Master->cmd->{$cmd}->{lvl};
-    my $filter = qr/^[\w\d\s_-]*$/;
+    my $filter = qr/^[\w\d\s#_-]*$/;
     if (defined $Master->cmd->{$cmd}->{argument_filter}) {
         print "Got specifig command filter\n";
         $filter = $Master->cmd->{$cmd}->{argument_filter};

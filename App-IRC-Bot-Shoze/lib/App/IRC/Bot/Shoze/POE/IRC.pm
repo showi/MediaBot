@@ -141,10 +141,10 @@ sub _start {
     $irc->plugin_add( 'Connector' => $heap->{connector} );
     # Our plugins system
     
-    $irc->plugin_add( 'BotCmdPlus',
+    $irc->plugin_add( 'IRC_Core_BotCmdPlus',
         new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus($s) );
     $irc->plugin_add(
-        'BotCmdPlus_Core_PluginsManagement',
+        'IRC_Core_PluginsManagement',
         new
           App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::PluginsManagement(
             $s

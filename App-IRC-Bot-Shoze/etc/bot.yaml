@@ -2,4 +2,4 @@
 logfile: log/mediabot.log
 password_salt: $6$4fdF$SaQwN?m.DzA
 cmd_prefix: '!'
-plugins: Users Help Apero Fortunes Tld Icecast
+plugins: UserTracking Users NetworkChannels ChannelUsers AutoUserMode Info Tld Help Fortunes EasySentences Apero Icecast

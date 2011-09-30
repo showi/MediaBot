@@ -19,9 +19,9 @@ use Carp;
 
 
 our $PROGRAMNAME  = "Shoze";
-our $VERSION      = "0.0.7";
+our $VERSION      = "0.0.8";
 our $VERSIONNAME  = "regeneration";
-our $LASTVERSION  = "1314675373";
+our $LASTVERSION  = "1317284330";
 our $PROGRAMBIRTH = "1313893570";
 our $DEBUG        = 1;
 

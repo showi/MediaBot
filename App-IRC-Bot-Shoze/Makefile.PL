@@ -12,7 +12,7 @@ WriteMakefile(
        ? ( 'LICENSE' => 'perl' )
        : () ),
     PL_FILES  => {
-        'bin/start.pl' => 1,
+        
     },
     PREREQ_PM => {
         'POE'                                     => 0,
@@ -32,6 +32,7 @@ WriteMakefile(
         'Digest::HMAC'                            => 0,
         'Digest::SHA256'                          => 0,
         'POE::Filter::SSL'                        => 0,
+        'Class::Unload' => 0,
 
         'Test::More' => 0,
     },

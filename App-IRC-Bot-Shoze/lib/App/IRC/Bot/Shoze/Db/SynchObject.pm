@@ -54,6 +54,8 @@ use Carp;
 
 =item is_synch
 
+=item _serializable
+
 =back
 
 =cut
@@ -64,7 +66,7 @@ use Encode qw(decode);
 our @TAGS =
   qw(_add_permitted_field _init_fields 
   _get _get_by _create _delete _delete_by 
-  _update _update_by 
+  _update _update_by  _serializable
   _list _list_match _list_by _pretty AUTOLOAD synched is_synch);
 our @ISA         = qw(Exporter);
 our @EXPORT_OK   = @TAGS;
@@ -521,6 +523,20 @@ sub _pretty {
         $str .= "\n";
     }
     return $str;
+}
+
+=item _serializable
+
+=cut
+
+sub _serializable {
+    my ($s) = @_;
+    my %h;
+    for my $k(keys %{$s->{_permitted}}) {
+        next if $k =~ /^_/;
+        $h{$k} = $s->$k;
+    }
+    return \%h;
 }
 
 =back

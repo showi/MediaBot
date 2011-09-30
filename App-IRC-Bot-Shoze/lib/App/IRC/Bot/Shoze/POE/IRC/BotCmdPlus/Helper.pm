@@ -44,6 +44,8 @@ use Exporter;
 
 =item _unregister_cmd
 
+=item _unregister_database
+
 =item BOTLVL 
 
 =item CHANLVL 
@@ -75,7 +77,7 @@ our @ISA = qw(Exporter);
 our @MyExport = qw(_n_error _send_lines _send_lines_privmsg _send_lines_notice
   pretty_help get_cmd
   PCI_register PCI_unregister
-  _register_cmd _unregister_cmd _register_database
+  _register_cmd _unregister_cmd _register_database _unregister_database
   BOTLVL CHANLVL splitchannel _get_nick _get_session
   _add_channel_user _del_channel_user can_op can_voice _modes _join);
 
@@ -144,7 +146,7 @@ sub _register_database {
 
 sub _register_cmd {
     my ( $s, $irc ) = @_;
-    my $C = $irc->plugin_get('BotCmdPlus');
+    my $C = $irc->plugin_get('IRC_Core_BotCmdPlus');
     for my $cmd ( %{ $s->cmd } ) {
         $C->register_command(
                               $s,
@@ -162,12 +164,7 @@ sub _register_cmd {
 
 sub PCI_unregister {
     my ( $s, $irc ) = splice @_, 0, 2;
-    if ( defined $s->{database} ) {
-        my $db = App::IRC::Bot::Shoze::Db->new;
-        for ( @{ $s->database } ) {
-            $db->Plugins->unload( $_->{type}, $_->{name} );
-        }
-    }
+    $s->_unregister_database($irc);
     $s->_unregister_cmd($irc);
     return 1;
 }
@@ -178,9 +175,23 @@ sub PCI_unregister {
 
 sub _unregister_cmd {
     my ( $s, $irc ) = @_;
-    my $C = $irc->plugin_get('BotCmdPlus');
+    my $C = $irc->plugin_get('IRC_Core_BotCmdPlus');
     for my $cmd ( %{ $s->cmd } ) {
         $C->unregister_command($cmd);
+    }
+}
+
+=item _unregister_database
+
+=cut 
+
+sub _unregister_database {
+    my ($s, $irc) = @_;
+    if ( defined $s->{database} ) {
+        my $db = App::IRC::Bot::Shoze::Db->new;
+        for ( @{ $s->database } ) {
+            $db->Plugins->unload( $_->{type}, $_->{name} );
+        }
     }
 }
 
@@ -393,7 +404,7 @@ sub can_op {
     my $db       = App::IRC::Bot::Shoze::Db->new;
     my $hostmask = $Session->get_hostmask;
     my @CAUM =
-      $db->ChannelAutoUserMode->list_by( { channel_id => $Channel->id } );
+      $db->Plugins->AutoUserMode->list_by( { channel_id => $Channel->id } );
     for (@CAUM) {
         if ( matches_mask( $_->hostmask, $hostmask ) and $_->mode eq 'o' ) {
             return 1;
@@ -425,7 +436,7 @@ sub can_voice {
     my $db       = App::IRC::Bot::Shoze::Db->new;
     my $hostmask = $Session->get_hostmask;
     my @CAUM =
-      $db->ChannelAutoUserMode->list_by( { channel_id => $Channel->id } );
+      $db->Plugins->AutoUserMode->list_by( { channel_id => $Channel->id } );
     for (@CAUM) {
         if ( matches_mask( $_->hostmask, $hostmask ) and $_->mode =~ /[ov]/ ) {
             return 1;

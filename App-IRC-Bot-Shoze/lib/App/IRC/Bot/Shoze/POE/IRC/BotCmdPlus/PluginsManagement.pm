@@ -91,7 +91,7 @@ sub new {
 sub PCI_register {
     my ( $s, $irc ) = splice @_, 0, 2;
     $s->irc($irc);
-    my $C = $irc->plugin_get('BotCmdPlus');
+    my $C = $irc->plugin_get('IRC_Core_BotCmdPlus');
     for my $cmd ( keys %{ $s->cmd } ) {
         $C->register_command(
             $s, $cmd,
@@ -111,7 +111,7 @@ sub PCI_register {
 
 sub PCI_unregister {
     my ( $s, $irc ) = splice @_, 0, 2;
-    my $C = $irc->plugin_get('BotCmdPlus');
+    my $C = $irc->plugin_get('IRC_Core_BotCmdPlus');
     for my $cmd ( %{ $s->cmd } ) {
         $C->unregister_command($cmd);
     }
@@ -155,7 +155,7 @@ sub _load_plugin {
         LOG("LOAD: Requiring module '$plugin'");
         my $ret = eval "require $plugin";
         unless ( defined $ret ) {
-            carp "Cannot require plugin '$plugin, abort loading! ($?)'";
+            carp "Cannot require plugin '$plugin, abort loading! ($?, $@)'";
             $s->irc->plugin_del("Plugin_IRC_$name");
             Class::Unload->unload($plugin);
             return 0;

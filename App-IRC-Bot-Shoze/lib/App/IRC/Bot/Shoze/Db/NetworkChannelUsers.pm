@@ -96,13 +96,14 @@ sub list {
     my ($s, $Channel) = @_;
     croak "Need Channel object as first parameter "
       unless ref($Channel) =~ /Db::NetworkChannels::Object/;
-    my $db = $s->_get_root->Db;
+    my $db = App::IRC::Bot::Shoze::Db->new;
     $db->die_if_not_open();
     my $h     = $db->handle;
     my $query = <<SQL;
 SELECT ncu.id AS id, ncu.nick_id AS nick_id, ncu.channel_id AS channel_id, ncu.mode AS mode,
 nn.nick AS nick_nick, nc.name AS channel_name,
-u.name AS owner_name, nc.owner AS owner_id
+u.name AS user_name, u.lvl AS user_lvl, u.id AS user_id,
+nc.owner AS channel_owner
 FROM network_channel_users AS ncu, network_channels AS nc, network_nicks AS nn
 LEFT JOIN users AS u ON nc.owner = u.id
 WHERE ncu.channel_id = nc.id AND ncu.nick_id = nn.id AND nc.id = ?
@@ -121,7 +122,8 @@ SQL
         }
         my @extf = qw(
           session_nick session_user session_hostname session_id session_ignore
-          user_name user_lvl user_pending user_hostmask
+          user_id user_name user_lvl user_pending user_hostmask
+          channel_owner
         );
         for (@extf) {
             $N->_add_permitted_field($_);

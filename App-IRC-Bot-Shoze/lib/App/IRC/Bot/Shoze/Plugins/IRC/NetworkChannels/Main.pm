@@ -1,8 +1,8 @@
-package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::NetworkChannels;
+package App::IRC::Bot::Shoze::Plugins::IRC::NetworkChannels::Main;
 
 =head1 NAME
 
-App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::NetworkChannels - NetworkChannels plugin
+App::IRC::Bot::Shoze::Plugins::IRC::NetworkChannels::Main - NetworkChannels plugin
 
 =cut
 
@@ -20,7 +20,7 @@ use Carp;
 use POE::Component::IRC::Plugin qw(:ALL);
 use IRC::Utils qw(:ALL);
 
-use lib qw(../../../../../../../../);
+use lib qw(../../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;

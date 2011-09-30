@@ -161,7 +161,7 @@ sub S_public {
         my $rand = int( rand($1) ) + 1;
         $str =~ s/%IRAND(\d{})%/$rand/g;    # .
     };
-    $str = "p" . decode( 'utf8', $str );
+    $str = decode( 'utf8', $str );
     if ( $A->msg_type ) {
         if ( $A->msg_type eq "action" ) {
             $irc->{Out}->ctcp_action( $who, $where, $str );

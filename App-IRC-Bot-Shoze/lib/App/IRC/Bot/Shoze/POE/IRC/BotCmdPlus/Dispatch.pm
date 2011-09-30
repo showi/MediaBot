@@ -141,7 +141,7 @@ sub _default {
     }
     $cmd =~ s/\./_/g;
     LOG("Got a command: $cmd [$cmd_args]");
-    my $Master = $irc->plugin_get("BotCmdPlus");
+    my $Master = $irc->plugin_get("IRC_Core_BotCmdPlus");
     unless ( defined $Master->cmd->{$cmd} ) {
         LOG("No plugin have registered command '$cmd'");
         return PCI_EAT_NONE;

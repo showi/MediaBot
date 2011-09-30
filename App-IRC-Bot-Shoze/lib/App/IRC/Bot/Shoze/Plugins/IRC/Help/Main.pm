@@ -65,7 +65,7 @@ sub help {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'help';
     my $PCMD    = $self->get_cmd($cmdname);
-    my $C       = $irc->plugin_get('BotCmdPlus');
+    my $C       = $irc->plugin_get('IRC_Core_BotCmdPlus');
     my $mylvl   = 0;
     
     my ($cmd, $match) = split(/\s+/, $msg);

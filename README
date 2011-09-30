@@ -7,6 +7,9 @@ MediaBot is built on top of POE::Component::IRC. He must provide user and channe
 - Versions
 ----------
 
+0.0.8 2011/09/29 Change plugin structure, they now all lives in their own folder. Plugin can now register database object.
+----------------
+
 0.0.7 2011/09/18 Change in the underlying database to manage different irc network at the same time, track channel user ...
 ----------------
 

@@ -23,15 +23,17 @@ use App::IRC::Bot::Shoze::Log;
 use Data::Dumper qw(Dumper);
 
 our %fields = (
-    event      => undef,
-    name       => undef,
-    program    => undef,
-    args       => undef,
-    who        => undef,
-    where      => undef,
-#    data       => undef,
-    session_id => undef,
-    input_event => undef,
+                event       => undef,
+                name        => undef,
+                program     => undef,
+                args        => undef,
+                who         => undef,
+                where       => undef,
+                data        => undef,
+                session_id  => undef,
+                input_event => undef,
+                status      => undef,
+                status_msg  => undef,
 );
 
 =head1 SUBROUTINES/METHODS
@@ -46,8 +48,8 @@ sub new {
     my ($proto) = @_;
     my $class = ref($proto) || $proto;
     my $s = {
-        _permitted => \%fields,
-        %fields,
+              _permitted => \%fields,
+              %fields,
     };
     bless( $s, $class );
     return $s;
@@ -75,9 +77,9 @@ sub is_valid_request {
     my ($s) = @_;
     return 0 unless $s->is_valid_program;
     my @mandatory = qw(event input_event name program session_id who where);
-    for(@mandatory) {
+    for (@mandatory) {
         return 0 unless defined $s->$_;
-    }   
+    }
     return 1;
 }
 

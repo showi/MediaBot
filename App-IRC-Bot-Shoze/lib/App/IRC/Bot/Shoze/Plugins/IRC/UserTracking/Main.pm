@@ -1,4 +1,4 @@
-package App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::NetworkChannelUsers;
+package App::IRC::Bot::Shoze::Plugins::IRC::UserTracking::Main;
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ use POE::Session;
 use POE::Component::IRC::Plugin qw(:ALL);
 use IRC::Utils qw(:ALL);
 
-use lib qw(../../../../../../../../);
+use lib qw(../../../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;

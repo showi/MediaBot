@@ -118,10 +118,11 @@ sub _start {
     my $Network = $Db->Networks->get_by({name => $Config->{servers}->[0]->{network} });
     croak "Could not find network named " . $Config->{servers}->[0]->{network} . " (check irc.yaml)" 
         unless $Network;
-    
-    
-    LOG("Starting POE::IRC using network " . $Network->name);
-    
+     
+    ###########################################################################
+    # Spawn our IRC component
+    ###########################################################################
+    LOG("Starting POE::IRC using network " . $Network->name);  
     my $irc = POE::Component::IRC->spawn(
         nick => $Config->{nick}
           || $Config->{altnick}
@@ -129,18 +130,16 @@ sub _start {
         ircname => $Config->{name}
           || 'shoze',
     ) or croak "Oh noooo! $!";
+    
     $heap->{irc} = $irc;
     $s->components->{$irc->session_id} = $irc;
-    #$irc->{network_id} = $Network->id;
     $irc->{Network} = $Network;
     $irc->{Out} = new App::IRC::Bot::Shoze::POE::IRC::Out($s, $irc);
     $irc->{In} = new App::IRC::Bot::Shoze::POE::IRC::In($s, $irc);
-    #$heap->{Network} = $Network;
-    
-    $heap->{connector} = POE::Component::IRC::Plugin::Connector->new();
-    $irc->plugin_add( 'Connector' => $heap->{connector} );
-    # Our plugins system
-    
+      
+    ###########################################################################
+    # Loading our plugin System
+    ########################################################################### 
     $irc->plugin_add( 'IRC_Core_BotCmdPlus',
         new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus($s) );
     $irc->plugin_add(
@@ -150,19 +149,14 @@ sub _start {
             $s
           )
     );
-#    $irc->plugin_add('Plugin_IRC_Apero',
-#        App::IRC::Bot::Shoze::Plugins::IRC::Apero::Main->new($s)
-#    );
-#    $irc->plugin_add('Plugin_IRC_Fortunes',
-#        App::IRC::Bot::Shoze::Plugins::IRC::Fortunes::Main->new($s)
-#    );
-    #$irc->plugin_add( 'Apero', new App::IRC::Bot::Shoze::POE::IRC::Apero($s) );
 
-    # End of our plugins
+    ###########################################################################
+    # Autojoin Plugin
+    ########################################################################### 
     my %channels;
     for ( $Db->NetworkChannels->list($Network) ) {
         LOG( "[IRC] Autojoin " . $_->_usable_name );
-        $channels{ $_->_usable_name } = $_->password,;
+        $channels{ $_->_usable_name } = $_->wanted_password;
     }
     $irc->plugin_add(
         'AutoJoin',
@@ -173,7 +167,9 @@ sub _start {
             Retry_when_banned => 5,
         )
     );
-
+    ###########################################################################
+    # Connecting our server
+    ###########################################################################
     my $server =
         $Config->{servers}->[0]->{host} . ":"
       . $Config->{servers}->[0]->{port};
@@ -181,7 +177,15 @@ sub _start {
     $irc->yield( register => 'all' );
     $irc->yield( connect =>
           { Server => $Config->{servers}->[0]->{host} } );
+    
+    ###########################################################################
+    # AutoReconnection feature
+    ###########################################################################
+    $heap->{connector} = POE::Component::IRC::Plugin::Connector->new();
+    $irc->plugin_add( 'Connector' => $heap->{connector} );
+  
     $kernel->delay( 'lag_o_meter' => 60 );
+    
     return;
 }
 

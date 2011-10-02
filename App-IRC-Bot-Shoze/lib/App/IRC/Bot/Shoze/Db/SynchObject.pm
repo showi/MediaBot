@@ -271,8 +271,12 @@ sub _get_by {
     my @args;
     for my $k ( keys %{$kv} ) {
         next if $k =~ /^_/;
-        $query .= "$k = ? AND ";
-        push @args, $kv->{$k};
+        if (defined $kv->{$k}) {
+            $query .= "$k = ? AND ";
+            push @args, $kv->{$k};
+        } else {
+            $query .= "$k IS NULL AND ";
+        }
     }
     $query =~ s/^(.*)\s+AND\s+/$1/;
     DEBUG( "[" . $s->_object_name . "] GET_BY Query: $query", 4 );

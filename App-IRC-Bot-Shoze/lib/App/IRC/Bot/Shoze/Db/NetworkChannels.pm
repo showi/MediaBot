@@ -73,10 +73,12 @@ sub list {
     $db->die_if_not_open();
     my $h     = $db->handle;
     my $query = <<SQL;
-SELECT c.bot_mode AS bot_mode, c.mode AS mode, c.bot_joined AS bot_joined,
-		c.password AS password, c.auto_topic AS auto_topic, c.ulimit AS ulimit, 
+SELECT  c.bot_mode AS bot_mode, c.mode AS mode, c.wanted_mode AS wanted_mode,
+        c.bot_joined AS bot_joined,
+		c.password AS password, c.wanted_password AS wanted_password, 
+		c.auto_topic AS auto_topic, c.ulimit AS ulimit,  c.wanted_ulimit AS wanted_ulimit,
 		c.created_on AS created_on, c.updated_on AS updated_on, c.id AS id, 
-		c.auto_op AS auto_op, c.owner AS owner, c.topic AS topic, 
+		c.auto_op AS auto_op, c.owner AS owner, c.topic AS topic, c.wanted_topic AS wanted_topic,
 		c.auto_voice AS auto_voice, c.name AS name, c.active AS active,
 		c.auto_mode AS auto_mode, c.type AS type, c.created_by AS created_by, 
 		c.topic_setby AS topic_setby, c.topic_seton AS topic_seton,

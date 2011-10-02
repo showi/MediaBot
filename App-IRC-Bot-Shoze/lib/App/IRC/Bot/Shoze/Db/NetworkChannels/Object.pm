@@ -42,19 +42,19 @@ our %fields = (
     active          => undef,
     auto_mode       => undef,
     type            => undef,
-    created_by      => undef,
-    network_id      => undef,
-    updated_on      => undef,
-    created_on      => undef,
+    network_id      => undef,  
     wanted_mode     => undef,
     wanted_topic    => undef,
     wanted_password => undef,
     wanted_ulimit   => undef,
+    created_by => undef,
+    
+    created_on      => undef,
+    updated_on => undef,
 
     _object_name => undef,
     _object_db   => undef,
 );
-
 
 =head1 SUBROUTINES/METHODS
 
@@ -71,8 +71,8 @@ sub new {
       unless ref($object_db);
     my $class = ref($proto) || $proto;
     my $s = {
-        _permitted => \%fields,
-        %fields,
+              _permitted => \%fields,
+              %fields,
     };
     bless( $s, $class );
     $s->_init_fields;    # DIRTY HACK

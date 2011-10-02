@@ -177,6 +177,9 @@ sub _default {
 
     my $pl  = $Master->cmd->{$cmd}->{plugin};
     my $lvl = $Master->cmd->{$cmd}->{lvl};
+    # TODO: 
+    # Filter must include special character for command who require channel parameter &# and for hostmask
+    # All command must be reviewed
     my $filter = qr/^[\w\d\s#_-]*$/;
     if (defined $Master->cmd->{$cmd}->{argument_filter}) {
         print "Got specifig command filter\n";

@@ -34,6 +34,7 @@ Digest::HMAC
 Digest::SHA256
 POE::Filter::SSL (*)
 Class::Unload
+URL::Escape::XS
 
 
 cpan POE POE::Component::IRC POE::Component::IRC::Plugin POE::Component::IRC::Plugin::AutoJoin POE::Component::IRC::Plugin::CycleEmpty POE::Component::IRC::Plugin::Connector POE::Component::Server::TCP POE::Filter::Stream POE::Filter::SSL IRC::Utils HTTP::Status DBI DBD::SQLite Crypt::Passwd::XS Digest::HMAC Digest::SHA256

@@ -490,7 +490,7 @@ sub _modes {
 sub _join {
     my ( $s, $irc, $Channel ) = @_;
     my $msg = $Channel->_usable_name;
-    $msg .= ' ' . $Channel->password if $Channel->password;
+    $msg .= ' ' . $Channel->wanted_password if $Channel->wanted_password;
     $irc->yield( join => $msg );
 }
 

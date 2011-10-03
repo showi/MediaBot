@@ -78,8 +78,9 @@ sub PCI_unregister {
 sub S_connected {
     my ( $self, $irc ) = splice @_, 0, 2;
     my $db      = App::IRC::Bot::Shoze::Db->new;
-    my $Network = $irc->{Network};
-    App::IRC::Bot::Shoze::Db->new->NetworkChannels->clear_joined($Network);
+
+    $db->NetworkChannels->clear_joined($irc->{Network});
+    $db->NetworkSessions->clear($irc->{Network});
     return PCI_EAT_NONE;
 }
 

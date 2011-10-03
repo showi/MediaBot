@@ -22,6 +22,7 @@ use POE::Component::IRC::Plugin qw(:ALL);
 use IRC::Utils qw(:ALL);
 
 use lib qw(../../../../../../../);
+use App::IRC::Bot::Shoze::i18n;
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;
@@ -107,6 +108,8 @@ sub login {
     my $C       = $irc->plugin_get('BotCmdPlus');
     my $db      = App::IRC::Bot::Shoze::Db->new;
 
+    my $lh = App::IRC::Bot::Shoze::i18n->get_handle('fr_SLANG');
+    
     return $s->_n_error( $irc, $Session->nick, "[$cmdname] Already logged" )
       if $Session->user_id;
 
@@ -129,7 +132,7 @@ sub login {
             "[$cmdname] Invalid password" );
     }
     $irc->{Out}
-      ->notice( '#me#', $Session, "[$cmdname] Ok you're in" );
+      ->notice( '#me#', $Session, "[$cmdname] " .  $lh->maketext('Ok you\'re in!') );
     $Session->user_id( $User->id );
     $db->NetworkSessions->update($Session);
     return PCI_EAT_ALL;

@@ -63,9 +63,8 @@ use Carp;
 use Exporter;
 use Encode qw(decode);
 
-our @TAGS =
-  qw(_add_permitted_field _init_fields 
-  _get _get_by _create _delete _delete_by 
+our @TAGS = qw(_add_permitted_field _init_fields
+  _get _get_by _create _delete _delete_by
   _update _update_by  _serializable
   _list _list_match _list_by _pretty AUTOLOAD synched is_synch);
 our @ISA         = qw(Exporter);
@@ -82,10 +81,10 @@ use Data::Dumper;
 our $AUTOLOAD;
 
 our %fields = (
-    _object_name => undef,
-    _object_db   => undef,
-    _module_name => undef,
-    id           => undef,
+                _object_name => undef,
+                _object_db   => undef,
+                _module_name => undef,
+                id           => undef,
 );
 
 =head1 SUBROUTINES/METHODS
@@ -98,12 +97,12 @@ our %fields = (
 
 sub new {
     my ( $proto, $object_name, $object_db ) = @_;
-    DEBUG( "Creating new " . __PACKAGE__, 8);
+    DEBUG( "Creating new " . __PACKAGE__, 8 );
     croak "No database object passed as first argument" unless ref($object_db);
     my $class = ref($proto) || $proto;
     my $s = {
-        _permitted => \%fields,
-        %fields,
+              _permitted => \%fields,
+              %fields,
     };
     bless( $s, $class );
     $s->_object_name($object_name);
@@ -117,7 +116,7 @@ sub new {
 
 sub _init_fields {
     my $s = shift;
-    for my $k(keys %{$s->{_permitted}}) {
+    for my $k ( keys %{ $s->{_permitted} } ) {
         next if $k =~ /^_/;
         $s->$k(undef);
     }
@@ -131,8 +130,8 @@ sub AUTOLOAD {
     my $self = shift;
     my $name = $AUTOLOAD;
     $name =~ s/.*://;    # strip fully-qualified portion
-    my $type = ref($self) 
-        or croak "$self is not an object (AUTOLOAD: $name)";
+    my $type = ref($self)
+      or croak "$self is not an object (AUTOLOAD: $name)";
     unless ( exists $self->{_permitted}->{$name} ) {
         croak "Can't access `$name' field in class $type";
     }
@@ -141,20 +140,16 @@ sub AUTOLOAD {
         if ( $name !~ /^_/ ) {
             if ( not defined $self->{$name} and not defined $value ) {
 
-            }
-            elsif ( not defined $self->{$name} and defined $value ) {
+            } elsif ( not defined $self->{$name} and defined $value ) {
                 $self->{_changed}->{$name} = 1;
-            }
-            elsif ( defined $self->{$name} and not defined $value ) {
+            } elsif ( defined $self->{$name} and not defined $value ) {
                 $self->{_changed}->{$name} = 1;
-            }
-            elsif ( $self->{$name} ne $value ) {
+            } elsif ( $self->{$name} ne $value ) {
                 $self->{_changed}->{$name} = 1;
             }
         }
-        return $self->{$name} = $value;#decode('utf8', $value);
-    }
-    else {
+        return $self->{$name} = $value;    #decode('utf8', $value);
+    } else {
         return $self->{$name};
     }
 }
@@ -194,8 +189,8 @@ sub _add_permitted_field {
 sub _get {
     my ( $s, $id ) = @_;
     $s->_object_db->die_if_not_open();
-    my $h     = $s->_object_db->handle;
-    
+    my $h = $s->_object_db->handle;
+
     my $query = "SELECT * FROM  " . $s->_object_name . " WHERE id = ?;";
     DEBUG( "[" . $s->_object_name . "] GET Query: $query", 4 );
     my $sth = $h->prepare($query)
@@ -220,15 +215,15 @@ sub _get {
 =cut
 
 sub _delete {
-    my ( $s ) = @_;
+    my ($s) = @_;
     $s->_object_db->die_if_not_open();
-    my $h     = $s->_object_db->handle;
-    
+    my $h = $s->_object_db->handle;
+
     my $query = "DELETE FROM  " . $s->_object_name . " WHERE id = ?;";
     DEBUG( "[" . $s->_object_name . "] DELETE Query: $query", 4 );
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute($s->id)
+    $sth->execute( $s->id )
       or die "Cannot execute query '$query' (" . $h->errstr . ")";
     return $sth->rows;
 }
@@ -238,14 +233,14 @@ sub _delete {
 =cut
 
 sub _delete_by {
-    my ( $s, $kv) = @_;
+    my ( $s, $kv ) = @_;
     $s->_object_db->die_if_not_open();
-    my $h     = $s->_object_db->handle;
-    
+    my $h = $s->_object_db->handle;
+
     my $query = "DELETE FROM  " . $s->_object_name . " WHERE";
     my @args;
-    for my $k(keys %{$kv}) {
-        $query.= " $k = ? AND";
+    for my $k ( keys %{$kv} ) {
+        $query .= " $k = ? AND";
         push @args, $kv->{$k};
     }
     $query =~ s/^(.*)AND\s*/$1/;
@@ -265,15 +260,19 @@ sub _get_by {
     my ( $s, $kv ) = @_;
     croak "Not an hash ref" unless ref($kv) =~ /^HASH/;
     $s->_object_db->die_if_not_open();
-    my $h     = $s->_object_db->handle;
-    
+    my $h = $s->_object_db->handle;
+
     my $query = "SELECT * FROM  " . $s->_object_name . " WHERE ";
     my @args;
     for my $k ( keys %{$kv} ) {
         next if $k =~ /^_/;
-        if (defined $kv->{$k}) {
-            $query .= "$k = ? AND ";
-            push @args, $kv->{$k};
+        if ( defined $kv->{$k} ) {
+            if ( $kv->{$k} eq "#NOTNULL#" ) {
+                $query .= "$k NOT NULL AND ";
+            } else {
+                $query .= "$k = ? AND ";
+                push @args, $kv->{$k};
+            }
         } else {
             $query .= "$k IS NULL AND ";
         }
@@ -301,10 +300,10 @@ sub _get_by {
 =cut
 
 sub _list {
-    my ( $s) = @_;
+    my ($s) = @_;
     $s->_object_db->die_if_not_open();
-    my $h     = $s->_object_db->handle;
-    
+    my $h = $s->_object_db->handle;
+
     my $query = "SELECT * FROM  " . $s->_object_name . ";";
     DEBUG( "[" . $s->_object_name . "] LIST Query: $query", 4 );
     my $sth = $h->prepare($query)
@@ -331,14 +330,18 @@ sub _list {
 sub _list_by {
     my ( $s, $matches ) = @_;
     $s->_object_db->die_if_not_open();
-    my $h     = $s->_object_db->handle;
-    
+    my $h = $s->_object_db->handle;
+
     my $query = "SELECT * FROM  " . $s->_object_name . " WHERE";
     my @args;
-    for my $k (keys %{$matches}) {
-        if (defined $matches->{$k}) {
-            $query .= " $k = ? AND";
-            push @args, $matches->{$k};
+    for my $k ( keys %{$matches} ) {
+        if ( defined $matches->{$k} ) {
+            if ($matches->{$k} eq "#NOTNULL#") {
+                $query .= " $k NOT NULL AND"
+            } else {
+                $query .= " $k = ? AND";
+                push @args, $matches->{$k};
+            }
         } else {
             $query .= " $k IS NULL AND";
         }
@@ -369,11 +372,11 @@ sub _list_by {
 sub _list_match {
     my ( $s, $matches ) = @_;
     $s->_object_db->die_if_not_open();
-    my $h     = $s->_object_db->handle;
-    
+    my $h = $s->_object_db->handle;
+
     my $query = "SELECT * FROM  " . $s->_object_name . " WHERE";
     my @args;
-    for my $k (keys %{$matches}) {
+    for my $k ( keys %{$matches} ) {
         $query .= " $k LIKE ? AND";
         push @args, $matches->{$k};
     }
@@ -407,27 +410,28 @@ sub _create {
     my $h = $s->_object_db->handle;
     my @args;
     my $time = time;
-    if (defined $s->{_permitted}->{created_on}) {
+    if ( defined $s->{_permitted}->{created_on} ) {
+
         #LOG("Create created_on $time");
         $s->created_on($time);
     }
-    if (defined $s->{_permitted}->{updated_on}) {
+    if ( defined $s->{_permitted}->{updated_on} ) {
         $s->updated_on($time);
     }
     my $query = "INSERT INTO " . $s->_object_name . " (";
     for my $k ( keys %{ $s->{_permitted} } ) {
         $k =~ /^_/ and next;
         $k eq 'id' and next;
-        if (defined $s->{$k}) {
-        $query .= "$k, ";
-        push @args, $s->$k;
+        if ( defined $s->{$k} ) {
+            $query .= "$k, ";
+            push @args, $s->$k;
         }
     }
     $query =~ s/^(.*),\s*$/$1/;
     $query .= " ) VALUES (";
     my @newargs;
     for ( 1 .. @args ) {
-            $query .= "?,";
+        $query .= "?,";
     }
     $query =~ s/^(.*),\s*$/$1/;
     $query .= ");";
@@ -450,7 +454,7 @@ sub _update {
     $s->_object_db->die_if_not_open();
     my $h = $s->_object_db->handle;
     my @args;
-    if (defined $s->{_permitted}->{updated_on}) {
+    if ( defined $s->{_permitted}->{updated_on} ) {
         $s->updated_on(time);
     }
     my $query = "UPDATE " . $s->_object_name . " SET ";
@@ -477,12 +481,12 @@ sub _update {
 =cut
 
 sub _update_by {
-    my ($s, $kv) = @_;
+    my ( $s, $kv ) = @_;
     return if $s->is_synch;
     $s->_object_db->die_if_not_open();
     my $h = $s->_object_db->handle;
     my @args;
-    
+
     my $query = "UPDATE " . $s->_object_name . " SET ";
     for my $k ( keys %{ $s->{_changed} } ) {
         $k =~ /^_/ and next;
@@ -492,7 +496,7 @@ sub _update_by {
     }
     $query =~ s/^(.*),$/$1/;
     $query .= " WHERE";
-    for my $key(keys %{$kv}) {
+    for my $key ( keys %{$kv} ) {
         $query .= " $key = ? AND";
         push @args, $kv->{$key};
     }
@@ -513,15 +517,14 @@ sub _update_by {
 sub _pretty {
     my $s   = shift;
     my $str = '-' x 25 . "\n";
-    $str.= 'SQL TABLE: ' . $s->_object_name . "\n";
-    $str.= '-' x 25 . "\n";
+    $str .= 'SQL TABLE: ' . $s->_object_name . "\n";
+    $str .= '-' x 25 . "\n";
     for my $k ( sort keys %{ $s->{_permitted} } ) {
         next if $k =~ /^_/;
         $str .= "  $k: ";
         if ( defined $s->$k ) {
             $str .= $s->$k;
-        }
-        else {
+        } else {
             $str .= '<<UNDEF>>';
         }
         $str .= "\n";
@@ -536,7 +539,7 @@ sub _pretty {
 sub _serializable {
     my ($s) = @_;
     my %h;
-    for my $k(keys %{$s->{_permitted}}) {
+    for my $k ( keys %{ $s->{_permitted} } ) {
         next if $k =~ /^_/;
         $h{$k} = $s->$k;
     }

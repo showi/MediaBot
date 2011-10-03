@@ -17,7 +17,6 @@ use warnings;
 use Carp;
 
 
-
 our $PROGRAMNAME  = "Shoze";
 our $VERSION      = "0.0.8";
 our $VERSIONNAME  = "regeneration";

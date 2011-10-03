@@ -16,11 +16,12 @@ use warnings;
 use strict;
 
 use Carp;
-  BEGIN {
-    package POE::Kernel;
-    use constant ASSERT_DEFAULT => 1;
-  }
-  
+
+#BEGIN {
+#    package POE::Kernel;
+#    use constant ASSERT_DEFAULT => 1;
+#}
+
 use POE qw(
   Component
   Component::IRC
@@ -43,7 +44,6 @@ use POE::Component::IRC::Plugin qw( :ALL );
 use App::IRC::Bot::Shoze::POE::IRC;
 use App::IRC::Bot::Shoze::POE::WS;
 use App::IRC::Bot::Shoze::POE::SubTask;
-
 
 our $AUTOLOAD;
 
@@ -69,13 +69,13 @@ sub new {
     croak "No parent specified" unless ref $parent;
     my $class = ref($proto) || $proto;
     my $s = {
-        _permitted => \%fields,
-        %fields,
+              _permitted => \%fields,
+              %fields,
     };
     bless( $s, $class );
     $s->_parent($parent);
-   
-    $s->IRC( new App::IRC::Bot::Shoze::POE::IRC($s));
+
+    $s->IRC( new App::IRC::Bot::Shoze::POE::IRC($s) );
     $s->SubTask( new App::IRC::Bot::Shoze::POE::SubTask($s) );
     $s->WS( new App::IRC::Bot::Shoze::POE::WS($s) );
     return $s;

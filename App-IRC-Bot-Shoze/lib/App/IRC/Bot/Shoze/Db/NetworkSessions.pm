@@ -26,8 +26,8 @@ use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(_get_nick);
 our $AUTOLOAD;
 
 our %fields = (
-    handle  => undef,
-    _parent => undef,
+                handle  => undef,
+                _parent => undef,
 );
 
 =head1 SUBROUTINES/METHODS
@@ -44,8 +44,8 @@ sub new {
     croak "No parent specified" unless ref $parent;
     my $class = ref($proto) || $proto;
     my $s = {
-        _permitted => \%fields,
-        %fields,
+              _permitted => \%fields,
+              %fields,
     };
     bless( $s, $class );
     $s->_parent($parent);
@@ -90,8 +90,7 @@ sub update {
     if ( $Session->ignore ) {
         if ( $Session->ignore < $time ) {
             $Session->ignore(undef);
-        }
-        else {
+        } else {
             return 0;
         }
     }
@@ -99,12 +98,10 @@ sub update {
         $Session->flood_start($time);
         $Session->flood_end( $time + 120 );
         $Session->flood_numcmd(0);
-    }
-    else {
+    } else {
         if ( $Session->flood_numcmd > 20 ) {
             $Session->ignore( $time + 30 );
-        }
-        else {
+        } else {
             $Session->flood_numcmd( $Session->flood_numcmd + 1 );
         }
     }
@@ -136,12 +133,21 @@ SQL
 =cut
 
 sub get_extended {
-    my ( $s, $Network, $nick, $user, $hostname ) = @_;
+
+    #my ( $s, $Network, $nick, $user, $hostname ) = @_;
+    my ( $s, $Network, $kv ) = @_;
     my $db = App::IRC::Bot::Shoze::Db->new;
-    my $Nick = $db->NetworkNicks->get_by( $Network, { nick => $nick } );
-    unless ($Nick) {
-        WARN( "Cannot get nick '$nick' for network " . $Network->name );
-        return undef;
+    if ( $kv->{nick} ) {
+        my $Nick =
+          $db->NetworkNicks->get_by( $Network, { nick => $kv->{nick} } );
+        unless ($Nick) {
+            WARN(   "Cannot get nick '"
+                  . $kv->{nick}
+                  . "' for network "
+                  . $Network->name );
+            return undef;
+        }
+        $kv->{nick_id} = $Nick->id;
     }
     my $h     = $db->handle;
     my $query = <<SQL;
@@ -149,18 +155,36 @@ sub get_extended {
     ns.flood_numcmd AS flood_numcmd, ns.flood_end AS flood_end, 
     ns.flood_start AS flood_start, ns.user AS user, ns.hostname AS hostname,
     ns.id AS id, ns.first_access AS first_access, ns.nick_id AS nick_id, 
+    ns.updated_on AS updated_on, ns.created_on AS created_on,
     ns.user_id AS user_id, nn.nick AS nick, u.name AS user_name, u.lvl AS user_lvl,
     u.pending AS user_pending, u.hostmask AS user_hostmask, u.password AS user_password,
     u.is_bot AS user_is_bot, u.created_on AS user_created_on
     FROM network_sessions AS ns, network_nicks AS nn
     LEFT JOIN users AS u ON ns.user_id = u.id
-    WHERE ns.nick_id = nn.id AND nn.nick = ? AND ns.user = ? AND ns.hostname = ?
+    WHERE ns.nick_id = nn.id AND
 SQL
+    my @args;
+    for my $k ( keys %{$kv} ) {
+        next if $k =~ /^_/;
+        next if $k eq 'nick';
+        if ( defined $kv->{$k} ) {
+            if ( $kv->{$k} eq "#NOTNULL#" ) {
+                $query .= " ns.$k NOT NULL AND";
+            } else {
+                $query .= " ns.$k = ? AND";
+                push @args, $kv->{$k};
+            }
+        } else {
+            $query .= " ns.$k IS NULL AND";
+        }
+    }
+    $query =~ s/^(.*)\s+AND\s*$/$1/s;
     LOG( __PACKAGE__ . "::get_extended: " . $query, 5 );
-    LOG( __PACKAGE__ . " params: $nick, $user, $hostname" );
+
+    #LOG( __PACKAGE__ . " params: $nick, $user, $hostname" );
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute( $nick, $user, $hostname )
+    $sth->execute(@args)
       or die "Cannot execute query '$query' (" . $h->errstr . ")";
     LOG( "Rows: " . $sth->rows );
 
@@ -181,7 +205,89 @@ SQL
     }
     $S->synched;
     return $S;
+}
 
+=item list_by
+
+=cut
+
+sub list_by {
+
+    #my ( $s, $Network, $nick, $user, $hostname ) = @_;
+    my ( $s, $Network, $kv ) = @_;
+    my $db = App::IRC::Bot::Shoze::Db->new;
+    if ( $kv->{nick} ) {
+        my $Nick =
+          $db->NetworkNicks->get_by( $Network, { nick => $kv->{nick} } );
+        unless ($Nick) {
+            WARN(   "Cannot get nick '"
+                  . $kv->{nick}
+                  . "' for network "
+                  . $Network->name );
+            return undef;
+        }
+        $kv->{nick_id} = $Nick->id;
+    }
+    my $h     = $db->handle;
+    my $query = <<SQL;
+    SELECT ns.real AS real, ns.last_access AS last_access, ns.ignore AS ignore, 
+    ns.flood_numcmd AS flood_numcmd, ns.flood_end AS flood_end, 
+    ns.flood_start AS flood_start, ns.user AS user, ns.hostname AS hostname,
+    ns.id AS id, ns.first_access AS first_access, ns.nick_id AS nick_id, 
+    ns.updated_on AS updated_on, ns.created_on AS created_on,
+    ns.user_id AS user_id, nn.nick AS nick, u.name AS user_name, u.lvl AS user_lvl,
+    u.pending AS user_pending, u.hostmask AS user_hostmask, u.password AS user_password,
+    u.is_bot AS user_is_bot, u.created_on AS user_created_on
+    FROM network_sessions AS ns, network_nicks AS nn
+    LEFT JOIN users AS u ON ns.user_id = u.id
+    WHERE ns.nick_id = nn.id AND ns.nick_id IN (SELECT id FROM network_nicks WHERE network_nicks.network_id = ?) AND
+SQL
+    my @args;
+    push @args, $Network->id;
+    for my $k ( keys %{$kv} ) {
+        next if $k =~ /^_/;
+        next if $k eq 'nick';
+        if ( defined $kv->{$k} ) {
+            if ( $kv->{$k} eq "#NOTNULL#" ) {
+                $query .= " ns.$k NOT NULL AND";
+            } else {
+                $query .= " ns.$k = ? AND";
+                push @args, $kv->{$k};
+            }
+        } else {
+            $query .= " ns.$k IS NULL AND";
+        }
+    }
+    $query =~ s/^(.*)\s+AND\s*$/$1/s;
+    LOG( __PACKAGE__ . "::get_extended: " . $query, 5 );
+
+    #LOG( __PACKAGE__ . " params: $nick, $user, $hostname" );
+    my $sth = $h->prepare($query)
+      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
+    $sth->execute(@args)
+      or die "Cannot execute query '$query' (" . $h->errstr . ")";
+    LOG( "Rows: " . $sth->rows );
+
+    #return undef if  $sth->rows < 1;
+    LOG( __PACKAGE__ . " got result" );
+    my @SL;
+    while ( my $r = $sth->fetchrow_hashref ) {
+        my $S = new App::IRC::Bot::Shoze::Db::NetworkSessions::Object($db);
+        for my $k ( keys %{$S} ) {
+            next if $k =~ /^_.*/;
+            $S->$k( $r->{$k} );
+        }
+        my @extf = qw(
+          nick user_name user_lvl user_pending user_hostmask user_password user_is_bot user_created_on
+        );
+        for (@extf) {
+            $S->_add_permitted_field($_);
+            $S->$_( $r->{$_} );
+        }
+        $S->synched;
+        push @SL, $S;
+    }
+    return @SL;
 }
 
 =item get_by
@@ -196,6 +302,28 @@ sub get_by {
     my $N =
       new App::IRC::Bot::Shoze::Db::NetworkSessions::Object( $s->_parent );
     return $N->_get_by($hash);
+}
+
+=item clear
+
+=cut
+
+sub clear {
+    my ($s, $Network) = @_;
+          croak "Need Network object as first parameter"
+      unless ref($Network) =~ /Db::Networks::Object/;  
+    my $db = App::IRC::Bot::Shoze::Db->new;
+
+    my $h     = $db->handle;
+    my $query = <<SQL;
+    DELETE FROM network_sessions WHERE nick_id IN (SELECT id FROM network_nicks WHERE network_id = ?)    
+SQL
+    LOG( __PACKAGE__ . "::empty: " . $query, 5 );
+    my $sth = $h->prepare($query)
+      or die "Cannot prepare query '$query' (" . $h->errstr . ")";
+    $sth->execute($Network->id)
+      or die "Cannot execute query '$query' (" . $h->errstr . ")";
+    return $sth->rows;
 }
 
 =back

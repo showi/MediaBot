@@ -52,6 +52,15 @@ our @ISA    = qw(Exporter);
 our @EXPORT = qw(str_chomp esc_ascii esc_nick esc_ident esc_host esc_password str_fixsize);
 our $AUTOLOAD;
 
+our $regexp_empty    = qr/^$/;
+our $regexp_user     = qr/^\w[\w\d_-]+$/;
+our $regexp_password = qr/^[\w\d_-]+$/;
+our $regexp_hostmask = qr/^[\w\d.\[\]*@!~_-]+$/;
+our $regexp_channel = qr/^[\w\d#&_-]+$/;
+our $regexp_key = qr/^[\w\d_-]+$/;
+our $regexp_everything = qr/^.+$/;
+
+
 =head1 SUBROUTINES/METHODS
 
 =over

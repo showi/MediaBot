@@ -60,8 +60,6 @@ sub new {
                lvl              => 0,
                help_cmd         => '!tld <tld>',
                help_description => 'Give ue tld',
-
-               #rgument_filter  => qr/^.*$/,
            },
         }
     );

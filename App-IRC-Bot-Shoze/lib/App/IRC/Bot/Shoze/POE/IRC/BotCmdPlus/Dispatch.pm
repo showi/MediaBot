@@ -87,7 +87,8 @@ sub _start {
     my ( $kernel, $self ) = @_[ KERNEL, OBJECT ];
     $self->{SESSION_ID} = $_[SESSION]->ID();
 
-# Make sure our POE session stays around. Could use aliases but that is so messy :)
+    # Make sure our POE session stays around. Could use aliases but that is so
+    # messy :)
     $kernel->refcount_increment( $self->{SESSION_ID}, __PACKAGE__ );
     return;
 }
@@ -114,16 +115,18 @@ We are dispatching all our commands here
 sub _default {
     my ( $s, $irc, $event ) = splice @_, 0, 3;
     if ( $event =~ /^U_/ ) {
-        print "Public Event: $event\n";
+        DEBUG("Public Event: $event\n");
         return PCI_EAT_NONE;
     }
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
-
     LOG( "Dispatcher[$event] $where/ $who / $msg", 3 );
 
     my $Config = App::IRC::Bot::Shoze::Config->new;
     my $prefix = $Config->bot->{cmd_prefix};
 
+    ##########################################################################
+    # Do we have a command
+    ##########################################################################
     my ( $cmd, $cmd_args );
     if ( $event eq "S_msg" ) {
         $msg =~ /^($prefix)?([\w\d][\w\d._-]*)(\s+(.*))?$/ or do {
@@ -151,10 +154,14 @@ sub _default {
         LOG("Plugin not responding on $event '$cmd'");
         return PCI_EAT_NONE;
     }
+
     my $db      = App::IRC::Bot::Shoze::Db->new;
     my $Network = $irc->{Network}
       or croak "No registered Network object within irc session";
 
+    ###########################################################################
+    # Get Session Object
+    ###########################################################################
     my ( $nick, $user, $hostname ) = parse_user($who);
     my $Nick = $s->_get_nick( $irc, $db, $Network, $nick );
     unless ($Nick) {
@@ -163,37 +170,49 @@ sub _default {
     }
     $db->NetworkSessions->delete_idle();
     my $Session = $db->NetworkSessions->get_extended( $Network,
-        { nick => $nick, user => $user, hostname => $hostname } );
+                      { nick => $nick, user => $user, hostname => $hostname } );
     unless ($Session) {
         WARN("Cannot get session for $nick, $user, $hostname");
         return PCI_EAT_NONE;
     }
     $Session->last_access(time);
     $Session->_update();
-    my $User;
-    if ( $Session->user_id ) {
-        $User = $db->Users->get_by( { id => $Session->user_id } );
-    }
+
+    ##########################################################################
+    # Fetching user information information
+    ##########################################################################
+    #    my $User;
+    #    if ( $Session->user_id ) {
+    #        $User = $db->Users->get_by( { id => $Session->user_id } );
+    #    }
 
     my $pl  = $Master->cmd->{$cmd}->{plugin};
     my $lvl = $Master->cmd->{$cmd}->{lvl};
 
-# TODO:
-# Filter must include special character for command who require channel parameter &# and for hostmask
-# All command must be reviewed
-    my $filter = qr/^[\w\d\s#_-]*$/;
-    if ( defined $Master->cmd->{$cmd}->{argument_filter} ) {
-        print "Got specifig command filter\n";
-        $filter = $Master->cmd->{$cmd}->{argument_filter};
+    ##########################################################################
+    # Filtering command parameters
+    ##########################################################################
+    my @params = split /\s+/, $cmd_args;
+    LOG( "Params: " . @params );
+    if (@params) {
+        my $filter = qr/^[\w\d]+$/;
+        if ( defined $Master->cmd->{$cmd}->{argument_filter} ) {
+            print "Got specifig command filter\n";
+            $filter = $Master->cmd->{$cmd}->{argument_filter};
+        }
+        $cmd_args = decode( 'utf8', $cmd_args );
+        my $new_cmd_args =
+          $s->string_filter( $irc, $Session, $cmd, $filter, @params );
+        unless ( defined $new_cmd_args ) {
+            return PCI_EAT_ALL;
+        }
+        ${ $_[2] } = "$prefix$cmd $new_cmd_args";
+    } else {
+        ${ $_[2] } = "$prefix$cmd";
     }
-    $cmd_args = decode( 'utf8', $cmd_args );
-    my $new_cmd_args = $s->string_filter( $cmd_args, $filter );
-    if ( $cmd_args ne $new_cmd_args ) {
-        $irc->{Out}
-          ->notice( '#me#', $Session, "Invalid command parameters $cmd_args" );
-        return PCI_EAT_ALL;
-    }
-    ${ $_[2] } = "$prefix$cmd $new_cmd_args";
+    ###########################################################################
+    # Checking command levels
+    ##########################################################################
     if ( $lvl > 0 ) {
         unless ( $Session->user_name ) {
             $irc->{Out}->notice( '#me#', $Session,
@@ -206,10 +225,15 @@ sub _default {
             return PCI_EAT_ALL;
         }
     }
+    
     LOG( "Calling $cmd on plugin $pl", 3 );
-    $irc->{Out}->log( 'dispatch', $who, $where, $msg );
+    #$irc->{Out}->log( 'dispatch', $who, $where, $msg );
+    
+    ###########################################################################
+    # We are passing the original parameters so plugin can modify theirs values
+    # for other plugins in the pipeline
+    ###########################################################################
     $pl->$cmd( $Session, $irc, $event, @_ );
-    LOG( $Session->_pretty );
     return PCI_EAT_ALL;
 }
 
@@ -218,12 +242,45 @@ sub _default {
 =cut
 
 sub string_filter {
-    my ( $s, $str, $filter ) = @_;
-    unless ( $str =~ /$filter/ ) {
-        WARN("Filtering command parameters '$str'");
-        return "";
+    my ( $s, $irc, $Session, $cmd, $filter, @params ) = @_;
+    LOG("Filter: $filter");
+    my $ref_filter = ref($filter);
+    LOG( "Ref filter: " . ref($filter) );
+    if ( $ref_filter eq 'CODE' ) {
+        return &$filter( $irc, $Session, $cmd, @params );
     }
-    return $str;
+    my $rstr;
+    if ( $ref_filter eq 'ARRAY' ) {
+        unless ( scalar(@params) == scalar(@$filter) ) {
+            $irc->{Out}->notice( '#me#', $Session,
+                               "$cmd need " . scalar(@$filter) . " arguments." );
+            return undef;
+        }
+        for (@$filter) {
+            my $arg = shift @params;
+            if ( $arg !~ /$_/ ) {
+                $irc->{Out}
+                  ->notice( '#me#', $Session, "Invalid parameter '$arg'" );
+                return undef;
+            }
+            $rstr .= $arg . ' ';
+        }
+    } elsif ( $ref_filter eq 'Regexp' ) {
+        for my $arg (@params) {
+            unless ( $arg =~ /$filter/ ) {
+                $irc->{Out}
+                  ->notice( '#me#', $Session, "Invalid parameter '$arg'" );
+                return undef;
+            }
+            $rstr .= "$arg ";
+
+        }
+    } else {
+        WARN("Unknow filter type: $ref_filter for command $cmd");
+        return undef;
+    }
+    $rstr =~ s/^(.*)\s+$/$1/ if $rstr;
+    return $rstr;
 }
 
 =back

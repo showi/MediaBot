@@ -18,8 +18,12 @@ use warnings;
 
 use Carp;
 
+our $VERSION           = '0.0.1';
+our $MAINCOMPATIBILITY = '0.0.8';
+
 use POE::Component::IRC::Plugin qw(:ALL);
 use IRC::Utils qw(:ALL);
+use Crypt::Passwd::XS;
 
 use lib qw(../../../../../../../);
 use App::IRC::Bot::Shoze::i18n;
@@ -27,6 +31,8 @@ use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(:ALL);
+
+use Data::Dumper qw(Dumper);
 
 our %fields = ( cmd => undef );
 
@@ -47,7 +53,7 @@ sub new {
     };
     bless( $s, $class );
     $s->cmd(
-        {
+         {
            'login' => {
                         access           => 'msg',
                         lvl              => 0,
@@ -84,7 +90,7 @@ sub new {
            },
            'user_set' => {
                   access => 'msg',
-                  lvl    => 800,
+                  lvl    => 200,
                   help_cmd =>
                     '!user.set <username> <hostmask|pending|lvl> <value>',
                   help_description => 'Adding user',
@@ -101,14 +107,13 @@ sub new {
                             help_description => 'Lisging user',
            },
            'user_info' => {
-               access           => 'msg',
-               lvl              => 800,
-               help_cmd         => '!user.info <user name>',
-               help_description => 'Information about a given user',
-               argument_filter =>
-                 [$App::IRC::Bot::Shoze::String::regexp_user]
+                 access           => 'msg',
+                 lvl              => 200,
+                 help_cmd         => '!user.info <user name>',
+                 help_description => 'Information about a given user',
+                 argument_filter => [$App::IRC::Bot::Shoze::String::regexp_user]
            },
-        }
+         }
     );
     return $s;
 }
@@ -123,39 +128,47 @@ sub login {
     my $cmdname = 'login';
     my $PCMD    = $s->get_cmd($cmdname);
     my $C       = $irc->plugin_get('BotCmdPlus');
-    my $db      = App::IRC::Bot::Shoze::Db->new;
+    my $db      = $Session->_object_db;
+    my $lh      = $Session->_lh;
 
-    my $lh = App::IRC::Bot::Shoze::i18n->get_handle('fr_SLANG');
-
-    return $s->_n_error( $irc, $Session->nick, "[$cmdname] Already logged" )
+    return
+      $s->_n_error( $irc, $Session,
+                    "[$cmdname] " . $lh->maketext('Already logged in') )
       if $Session->user_id;
 
     my ( $cmd, $user, $password ) = split( /\s+/, $msg );
-    return $s->_n_error( $irc, $Session, "[$cmdname] No password supplied" )
+    return
+      $s->_n_error( $irc, $Session,
+                    "[$cmdname] " . $lh->maketext('No password supplied') )
       unless $password;
 
     LOG("We need to authenticate user '$user' with password '$password'");
     my $User = $db->Users->get_by( { name => $user } );
-    return $s->_n_error( $irc, $Session, "[$cmdname] Invalid username" )
+    return
+      $s->_n_error( $irc, $Session,
+           "[$cmdname] " . $lh->maketext( 'Invalid username \'[_1]\'', $user ) )
       unless $User;
 
     unless ( matches_mask( $User->hostmask, $who ) ) {
-        return $s->_n_error( $irc, $Session,
-                             "[$cmdname] Hostmask doesn't match" );
+        return
+          $s->_n_error( $irc, $Session,
+                     "[$cmdname] " . $lh->maketext('Hostmask doesn\'t match') );
     }
     unless ( $db->Users->check_password( $User, $password ) ) {
-        return $s->_n_error( $irc, $Session, "[$cmdname] Invalid password" );
+        return
+          $s->_n_error( $irc, $Session,
+                        "[$cmdname] " . $lh->maketext('Invalid password') );
     }
-    $irc->{Out}->notice(
-                         '#me#', $Session,
-                         "[$cmdname] "
-                           . $lh->maketext(
-                                            'Logged in as [_1]',
-                                            $user
-                           )
-    );
+    if ( $User->pending ) {
+        return
+          $s->_n_error( $irc, $Session,
+                   "[$cmdname] " . $lh->maketext('You\'re on pending status') );
+    }
     $Session->user_id( $User->id );
     $db->NetworkSessions->update($Session);
+    print Dumper $Session;
+    $irc->{Out}->respond_user( $Session,
+                  "[$cmdname] " . $lh->maketext( 'Logged in as [_1]', $user ) );
     return PCI_EAT_ALL;
 }
 
@@ -169,14 +182,18 @@ sub logout {
     my $cmdname = 'logout';
     my $PCMD    = $s->get_cmd($cmdname);
     my $C       = $irc->plugin_get('BotCmdPlus');
-    my $db      = App::IRC::Bot::Shoze::Db->new;
+    my $db      = $Session->_object_db;
+    my $lh      = $Session->_lh;
 
     unless ( defined $Session->user_id ) {
-        return $s->_n_error( $irc, $Session, "[$cmdname] You're not logged" );
+        return
+          $s->_n_error( $irc, $Session,
+                        "[$cmdname] " . $lh->maketext('You are not logged') );
     }
     $Session->user_id(undef);
     $db->NetworkSessions->update($Session);
-    $irc->{Out}->notice( '#me#', $Session, "[$cmdname] Bye!" );
+    $irc->{Out}
+      ->respond_user( $Session, "[$cmdname] " . $lh->maketext('Bye!') );
     return PCI_EAT_ALL;
 }
 
@@ -189,16 +206,18 @@ sub user_set {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'user_set';
     my $PCMD    = $s->get_cmd($cmdname);
-    my $db      = App::IRC::Bot::Shoze::Db->new;
+    my $db      = $Session->_object_db;
+    my $lh      = $Session->_lh;
 
-    if ( $Session->user_lvl < $PCMD->{lvl} ) {
-        return
-          $s->_n_error( $irc, $Session,
-                 "[$cmdname] You don't have the right to set user key&value!" );
-    }
     my ( $cmd, $name, $key, $value ) = split /\s+/, str_chomp($msg);
-    my @vkeys = qw(hostmask pending lvl);
-    unless ( grep $key, @vkeys ) {
+    my @vkeys;
+    if ( $Session->user_lvl < 800 ) {
+        $name  = $Session->user_name;
+        @vkeys = qw(hostmask password);
+    } else {
+        @vkeys = qw(password hostmask pending lvl);
+    }
+    unless ( grep /^$key$/, @vkeys ) {
         return $s->_n_error( $irc, $Session,
                              "[$cmdname] Invalid field '$key'" );
     }
@@ -207,6 +226,16 @@ sub user_set {
         return
           $s->_n_error( $irc, $Session,
                         "[$cmdname] Username '$name' doesn't exist!" );
+    }
+    if ( $Session->user_lvl < 800 ) {
+        if ( $UserTarget->id != $Session->user_id ) {
+            return
+              $s->_n_error(
+                $irc,
+                $Session,
+"[$cmdname] You don't have the right to modify other user settings"
+              );
+        }
     }
     if ( $key eq 'hostmask' ) {
         $value = normalize_mask($value);
@@ -231,17 +260,23 @@ sub user_set {
     } elsif ( $key eq 'pending' ) {
         $value = abs( int($value) );
         $value = 1 if $value;
+    } elsif ( $key eq 'password' ) {
+        my $Config = App::IRC::Bot::Shoze::Config->new;
+        my $salt = $Config->bot->{password_salt};
+        $value = Crypt::Passwd::XS::crypt( $value, $salt );
     } else {
         return $s->_n_error( $irc, $Session,
                              "[$cmdname] Invalid field '$key'" );
     }
     $UserTarget->$key($value);
     my $res = $UserTarget->_update();
-
+    if ($key eq 'password') {
+        $value = '*****';
+    }
     #$db->Users->set( $UserTarget->id, $key, $value );
     if ($res) {
-        $irc->{Out}->notice( '#me#', $Session,
-                             "[$cmdname] '$name' $key set to '$value'" );
+        $irc->{Out}
+          ->respond_user( $Session, "[$cmdname] '$name' $key set to '$value'" );
     } else {
         return
           $s->_n_error( $irc, $Session,
@@ -259,23 +294,34 @@ sub user_add {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'user_add';
     my $PCMD    = $s->get_cmd($cmdname);
-    my $db      = App::IRC::Bot::Shoze::Db->new;
+    my $db      = $Session->_object_db;
+    my $lh      = $Session->_lh;
 
     my ( $cmd, $name, $password, $hostmask ) = split /\s+/, $msg;
     unless ( is_valid_nick_name($name) ) {
-        return $s->_n_error( $irc, $Session,
-                             "[$cmdname] Invalid username $name" );
+        return
+          $s->_n_error(
+                        $irc,
+                        $Session,
+                        "[$cmdname] "
+                          . $lh->maketext( 'Invalid username \'[_1]\'', $name )
+          );
     }
     my $NewUser;
     if ( $NewUser = $db->Users->get_by( { name => $name } ) ) {
         return
-          $s->_n_error( $irc, $Session,
-                        "[$cmdname] Username '$name' already exist!" );
+          $s->_n_error(
+                        $irc,
+                        $Session,
+                        "[$cmdname] "
+                          . $lh->maketext( 'User \'[_1]\' already exist',
+                                           $name )
+          );
     }
     unless ( $password =~ /^[\w\d_-]+$/ ) {
         return
           $s->_n_error( $irc, $Session,
-                        "[$cmdname] Invalid password $password" );
+                        "[$cmdname] " . $lh->('Invalid password') );
     }
     if ($hostmask) {
         $hostmask = normalize_mask($hostmask);
@@ -285,12 +331,17 @@ sub user_add {
     LOG("Adding user $name with password $password [$hostmask]");
     my $res = $db->Users->create( $name, $password, $hostmask );
     if ($res) {
-        $irc->{Out}->notice( '#me#', $Session,
-                             "[$cmdname] Successfully created user '$name'" );
+        $irc->{Out}->respond_user( $Session,
+                       "[$cmdname] " . $lh->maketext('User \'[_1]\' created') );
     } else {
         return
-          $s->_n_error( $irc, $Session,
-                        "[$cmdname] Cannot create user '$name'" );
+          $s->_n_error(
+                        $irc,
+                        $Session,
+                        "[$cmdname] "
+                          . $lh->maketext( 'Cannot create user \'[_1]\'',
+                                           $name )
+          );
     }
     return PCI_EAT_ALL;
 }
@@ -304,36 +355,51 @@ sub user_del {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'user_del';
     my $PCMD    = $s->get_cmd($cmdname);
-    my $db      = App::IRC::Bot::Shoze::Db->new;
+    my $db      = $Session->_object_db;
+    my $lh      = $Session->_lh;
 
     my ( $cmd, $name ) = split /\s+/, $msg;
-    unless ( is_valid_nick_name($name) ) {
-        return $s->_n_error( $irc, $Session,
-                             "[$cmdname] Invalid username $name" );
-    }
+
     my $TargetUser;
     unless ( $TargetUser = $db->Users->get_by( { name => $name } ) ) {
         return
-          $s->_n_error( $irc, $Session->nick,
-                        "[$cmdname] Username '$name' doesn't exist!" );
+          $s->_n_error(
+                        $irc,
+                        $Session,
+                        "[$cmdname] "
+                          . $lh->maketext( 'Invalid username \'[_1]\'', $name )
+          );
     }
     if ( $TargetUser->lvl >= $Session->user_lvl ) {
         return
           $s->_n_error(
-              $irc,
-              $Session,
-              "[$cmdname] You cannot delete user with higer or same lvl as you!"
+                        $irc, $Session,
+                        "[$cmdname] "
+                          . $lh->maketext(
+'You cannot delete user with higher or same level as you'
+                          )
           );
     }
     DEBUG( "Delete user with id: " . $TargetUser->id, 4 );
     my $res = $TargetUser->_delete;
     if ($res) {
-        $irc->{Out}->notice( '#me#', $Session,
-                             "[$cmdname] Successfully deleted user '$name'" );
+        $irc->{Out}->respond_user(
+                                   $Session,
+                                   "[$cmdname] "
+                                     . $lh->maketext(
+                                           'User \'[_1]\' successfully deleted',
+                                           $name
+                                     )
+        );
     } else {
         return
-          $s->_n_error( $irc, $Session,
-                        "[$cmdname] Cannot delete user '$name'" );
+          $s->_n_error(
+                        $irc,
+                        $Session,
+                        "[$cmdname] "
+                          . $lh->maketext( 'Cannot delete user \'[_1]\'',
+                                           $name )
+          );
     }
     return PCI_EAT_ALL;
 }
@@ -347,20 +413,23 @@ sub user_list {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'user_list';
     my $PCMD    = $s->get_cmd($cmdname);
-    my $db      = App::IRC::Bot::Shoze::Db->new;
+    my $db      = $Session->_object_db;
+    my $lh      = $Session->_lh;
 
     my @list = $db->Users->list;
     unless (@list) {
-        return $s->_n_error( $irc, $Session,
-                             "[$cmdname] No user in database " );
+        return
+          $s->_n_error( $irc, $Session,
+                        "[$cmdname] " . $lh->maketext('No user in database') );
     }
-    $irc->{Out}->notice( '#me#', $Session, "[$cmdname] Listing user " );
+    $irc->{Out}->respond_user( $Session,
+                               "[$cmdname] " . $lh->maketext('Listing users') );
     for my $User (@list) {
         my $str = " - ";
         $str .= "[" . $User->lvl . "] " . $User->name . " / " . $User->hostmask;
-        $str .= " [IsBot]" if $User->is_bot;
-        $str .= " [Pending]" if $User->pending;
-        $irc->{Out}->notice( '#me#', $Session, $str );
+        $str .= " [" . $lh->maketext('is bot') . "]" if $User->is_bot;
+        $str .= " [" . $lh->maketext('pending') . "]" if $User->pending;
+        $irc->{Out}->respond_user( $Session, $str );
     }
     return PCI_EAT_ALL;
 }
@@ -374,28 +443,52 @@ sub user_info {
     my ( $who, $where, $msg ) = ( ${ $_[0] }, ${ $_[1] }, ${ $_[2] } );
     my $cmdname = 'user_info';
     my $PCMD    = $s->get_cmd($cmdname);
-    my $db      = App::IRC::Bot::Shoze::Db->new;
+    my $db      = $Session->_object_db;
+    my $lh      = $Session->_lh;
 
-    my $name = ( split( /\s+/, $msg ) )[1];
-    $name =~ /^([\w\d_-]+)$/ or do {
-        return
-          $s->_n_error( $irc, $Session,
-                        "[$cmdname] Invalid user name '$name'!" );
-    };
+    my $name;
+    if ( $Session->user_lvl < 800 ) {
+        $name = $Session->user_name;
+    } else {
+        $name = ( split( /\s+/, $msg ) )[1];
+    }
     my $TargetUser = $db->Users->get_by( { name => $name } );
     unless ($TargetUser) {
         return
-          $s->_n_error( $irc, $Session,
-                        "[$cmdname] User named $name not found!" );
+          $s->_n_error(
+                        $irc,
+                        $Session,
+                        "[$cmdname] "
+                          . $lh->maketext( 'Invalid username \'[_1]\'', $name )
+          );
     }
-    my $out = "User information [$name]\n";
-    $out .= "lvl: " . $TargetUser->lvl . "\n";
-    $out .= "hostmask: " . $TargetUser->hostmask . "\n";
-    $out .= "pending: " . ( $TargetUser->pending ? "Yes" : "No" ) . "\n";
-    $out .= "is bot: " . ( $TargetUser->is_bot ? "Yes" : "No" ) . "\n";
-    $out .= "created on: " . localtime( int $TargetUser->created_on ) . "\n";
+    my $lh_yes = $lh->maketext('yes');
+    my $lh_no  = $lh->maketext('no');
+    my $out =
+      "[$cmdname] " . $lh->maketext('User information') . ": " . $name . "\n";
+    $out .= ' - ' . $lh->maketext('level') . ': ' . $TargetUser->lvl . "\n";
+    $out .=
+      ' - ' . $lh->maketext('hostmask') . ': ' . $TargetUser->hostmask . "\n";
+    $out .= ' - '
+      . $lh->maketext('pending') . ': '
+      . ( $TargetUser->pending ? $lh_yes : $lh_no ) . "\n";
+    $out .= ' - '
+      . $lh->maketext('is bot') . ': '
+      . ( $TargetUser->is_bot ? $lh_yes : $lh_no ) . "\n";
+    $out .= ' - ' . $lh->maketext('language') . ': ' . $TargetUser->lang . "\n";
+    $out .= ' - '
+      . $lh->maketext('output') . ': '
+      . $TargetUser->output_method . "\n";
+    $out .=
+        ' - ' 
+      . $lh->maketext('created on') . ': '
+      . (
+          $TargetUser->created_on
+          ? localtime( int $TargetUser->created_on )
+          : ''
+      ) . "\n";
     my @lines = split( /\n/, $out );
-    $s->_send_lines( $irc, 'notice', '#me#', $Session, @lines );
+    $irc->{Out}->respond_user_lines( $Session, @lines );
     return PCI_EAT_ALL;
 }
 

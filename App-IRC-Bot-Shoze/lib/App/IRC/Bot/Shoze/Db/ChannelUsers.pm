@@ -68,7 +68,9 @@ sub get_by {
 =cut
 
 sub list {
-    my ($s) = @_;
+    my ($s , $Channel) = @_;
+    croak "Need Channel object as first parameter "
+      unless ref($Channel) =~ /Db::NetworkChannels::Object/;
     LOG("List ChannelUsers");
     my $db = App::IRC::Bot::Shoze::Db->new;
     $db->die_if_not_open();
@@ -78,11 +80,11 @@ sub list {
         nc.name AS channel_name, nc.type AS channel_type,
         u.name AS user_name, u.lvl AS user_lvl
         FROM channel_users AS cu, network_channels AS nc, users AS u
-        WHERE cu.user_id = u.id AND cu.channel_id = nc.id;
+        WHERE cu.user_id = u.id AND cu.channel_id = nc.id AND nc.id = ?;
 SQL
     my $sth = $h->prepare($query)
       or die "Cannot prepare query '$query' (" . $h->errstr . ")";
-    $sth->execute()
+    $sth->execute($Channel->id)
       or die "Cannot execute query '$query' (" . $h->errstr . ")";
     my @list;
 

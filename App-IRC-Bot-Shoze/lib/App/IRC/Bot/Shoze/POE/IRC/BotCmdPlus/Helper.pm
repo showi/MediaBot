@@ -208,6 +208,7 @@ sub splitchannel {
     return undef;
 }
 
+
 =item _send_lines
 
 =cut
@@ -250,8 +251,8 @@ sub _send_lines_privmsg {
 =cut
 
 sub _n_error {
-    my ( $s, $irc, $where, $msg ) = @_;
-    $irc->{Out}->notice( '#me#', $where, "Error: $msg" );
+    my ( $s, $irc, $Session, $msg ) = @_;
+    $irc->{Out}->respond_user( $Session, "Error: $msg" );
     return PCI_EAT_ALL;
 }
 
@@ -462,14 +463,30 @@ sub can_voice {
 
 =item _modes
 
+This method permit to set user mode in batch mode.
+We prevent user to de[op|voice] the bot and send a bad_behaviour in response
+
 =cut
 
 sub _modes {
-    my ( $s, $irc, $sign, $mode, $Channel, @nicks ) = @_;
-    my $max = 6;
+    my ( $s, $irc, $Session, $sign, $mode, $Channel, @nicks ) = @_;
+    my $max = 2;
+#    my $ISupport = $irc->plugin_get('ISupport');
+#    if ($ISupport) {
+        $max = $irc->isupport('MODES');
+#    }
+    LOG("IRC  max mode: $max");
     my ( $m, $nicks ) = '';
     my $i = $max;
     for (@nicks) {
+        if ($_ eq $irc->nick_name) {
+            if ($sign eq '-' and $mode =~ /[ov]/) {
+                WARN("User " . $Session->nick . ' is trying to de(op|voice) the bot.');
+                $irc->yield( mode => $Channel->_usable_name => '-o ' . $Session->nick);
+                $irc->send_event_now('irc_bad_behavior', $Session, $Channel, 'mode', $sign, $mode);
+                return 0;
+            }
+        }
         if ( $i < 1 ) {
             $irc->yield( mode => $Channel->_usable_name => "$sign$m $nicks" );
             ( $m, $nicks ) = '';
@@ -482,6 +499,7 @@ sub _modes {
     if ($m) {
         $irc->yield( mode => $Channel->_usable_name => "$sign$m $nicks" );
     }
+    return 1;
 }
 
 =item _join

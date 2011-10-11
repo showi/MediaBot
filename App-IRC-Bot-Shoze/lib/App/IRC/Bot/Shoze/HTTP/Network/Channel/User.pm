@@ -76,7 +76,7 @@ sub give {
     my $r  = HTTP::Response->new(200);
     my $db = App::IRC::Bot::Shoze::Db->new;
 
-    my @L = $db->NetworkChannelUsers->list($s->_parent->_Channel);
+    my @L = $db->ChannelUsers->list($s->_parent->_Channel);
     my @NL;
     for my $U (@L) {
         my %h;
@@ -99,6 +99,7 @@ sub give {
 
 sub request {
     my ( $s, $request, $paths, $n ) = @_;
+    LOG("Request in " . __PACKAGE__);
     if ( $request->uri->path eq '/' ) {
         return $s->give_root($request);
     }

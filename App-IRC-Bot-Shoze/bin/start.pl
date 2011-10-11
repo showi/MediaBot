@@ -25,7 +25,7 @@ my $BASE_PATH = "/home/sho/workspace/MediaBot/App-IRC-Bot-Shoze/";
 #$BASE_PATH = "/";
 my $LOG_PATH = $BASE_PATH . "log/";
 
-$App::IRC::Bot::Shoze::Log::Debug = 9;
+$App::IRC::Bot::Shoze::Log::Debug = 1;
 
 ###########################################
 # END OF EDIT

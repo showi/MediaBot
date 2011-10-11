@@ -21,6 +21,7 @@ use lib qw(../../../../../);
 use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY _get_root);
 use App::IRC::Bot::Shoze::Db::NetworkSessions::Object qw();
 use App::IRC::Bot::Shoze::Log;
+use App::IRC::Bot::Shoze::i18n;
 
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(_get_nick);
 our $AUTOLOAD;
@@ -156,9 +157,11 @@ sub get_extended {
     ns.flood_start AS flood_start, ns.user AS user, ns.hostname AS hostname,
     ns.id AS id, ns.first_access AS first_access, ns.nick_id AS nick_id, 
     ns.updated_on AS updated_on, ns.created_on AS created_on,
-    ns.user_id AS user_id, nn.nick AS nick, u.name AS user_name, u.lvl AS user_lvl,
-    u.pending AS user_pending, u.hostmask AS user_hostmask, u.password AS user_password,
-    u.is_bot AS user_is_bot, u.created_on AS user_created_on
+    ns.user_id AS user_id, nn.nick AS nick, u.name AS user_name, 
+    u.lvl AS user_lvl, u.pending AS user_pending, u.hostmask AS user_hostmask,
+    u.password AS user_password, u.is_bot AS user_is_bot,
+    u.created_on AS user_created_on, u.output_method AS user_output_method,
+    u.lang AS user_lang
     FROM network_sessions AS ns, network_nicks AS nn
     LEFT JOIN users AS u ON ns.user_id = u.id
     WHERE ns.nick_id = nn.id AND
@@ -197,13 +200,14 @@ SQL
         $S->$k( $r->{$k} );
     }
     my @extf = qw(
-      nick user_name user_lvl user_pending user_hostmask user_password user_is_bot user_created_on
+      nick user_name user_lvl user_pending user_hostmask user_password user_is_bot user_created_on user_output_method user_lang
     );
     for (@extf) {
         $S->_add_permitted_field($_);
         $S->$_( $r->{$_} );
     }
     $S->synched;
+    $S->set_language_handle();
     return $S;
 }
 

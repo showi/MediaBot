@@ -2,11 +2,15 @@ package App::IRC::Bot::Shoze::Plugins::IRC::UserTracking::Main;
 
 =head1 NAME
 
-App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::NetworkChannelUsers - NetworkChannelUsers plugin
+App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Plugins::UserTracking - UserTracking plugin
 
 =cut
 
 =head1 SYNOPSIS
+
+This plugin permit to track user events and put them into database. 
+
+TODO: We are also tracking server events that can be put into their own plugin.
 
 =cut
 
@@ -14,6 +18,7 @@ use strict;
 use warnings;
 
 use Carp;
+
 use Encode qw(encode decode);
 use Data::Dumper;
 
@@ -28,6 +33,10 @@ use App::IRC::Bot::Shoze::String;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper
   qw(_register_cmd _unregister_cmd get_cmd _n_error splitchannel _get_nick _get_session _add_channel_user _del_channel_user);
 use App::IRC::Bot::Shoze::Db::NetworkChannelUsers::Object;
+
+
+our $VERSION = '0.0.1';
+our $MAINCOMPATIBILITY = '0.0.8';
 
 our %fields = ( cmd => undef, _parent => undef );
 

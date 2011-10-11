@@ -30,7 +30,7 @@ use Carp;
 use Exporter;
 use Encode qw(decode);
 
-our @TAGS        = qw(request bad_request is_valid_ressource);
+our @TAGS        = qw(bad_request is_valid_ressource);
 our @ISA         = qw(Exporter);
 our @EXPORT_OK   = @TAGS;
 our %EXPORT_TAGS = ( ALL => [@TAGS] );

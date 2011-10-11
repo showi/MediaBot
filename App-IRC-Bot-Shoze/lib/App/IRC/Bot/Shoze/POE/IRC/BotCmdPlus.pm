@@ -97,7 +97,7 @@ sub register_command {
     my ( $s, $plugin, $cmd, $access, $lvl, $argument_filter ) = @_;
     return if ref($cmd);
     DEBUG( "Registering command $cmd with access level $lvl ($plugin)", 5 );
-    DEBUG( "Argument filer: " . $argument_filter, 1 ) if $argument_filter;
+    #DEBUG( "Argument filter: " . $argument_filter, 1 ) if $argument_filter;
     croak "Cannot register command '$cmd'"
       if defined $s->cmd->{$cmd};
     $s->cmd->{$cmd} = {

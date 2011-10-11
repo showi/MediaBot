@@ -102,6 +102,8 @@ sub create {
     $C->pending(1);
     $C->lvl(200);
     $C->is_bot(0);
+    $C->output_method('notice');
+    $C->lang('en');
     $C->created_on(time);
     return $C->_create();
 }

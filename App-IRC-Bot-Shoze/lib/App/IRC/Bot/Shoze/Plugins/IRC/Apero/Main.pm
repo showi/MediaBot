@@ -25,10 +25,15 @@ use App::IRC::Bot::Shoze::Class qw(AUTOLOAD DESTROY);
 use App::IRC::Bot::Shoze::Constants;
 use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;
+use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(_register_database _unregister_database);
+use App::IRC::Bot::Shoze::Plugins::IRC::Apero::Install;
 
 use Data::Dumper qw(Dumper);
 
-our %fields = ( triggers => undef, );
+our $VERSION           = '0.0.1';
+our $MAINCOMPATIBILITY = '0.0.8';
+
+our %fields = ( triggers => undef, database => undef );
 
 =head1 SUBROUTINES/METHODS
 
@@ -42,11 +47,19 @@ sub new {
     my ($proto) = @_;
     my $class = ref($proto) || $proto;
     my $s = {
-        _permitted => \%fields,
-        %fields,
+              _permitted => \%fields,
+              %fields,
     };
     bless( $s, $class );
     $s->triggers( {} );
+    my @db;
+    push @db,
+      {
+        type => 'IRC',
+        name => 'Apero',
+      };
+    $s->database( \@db );
+    my $i = App::IRC::Bot::Shoze::Plugins::IRC::Apero::Install->new($s);
     return $s;
 }
 
@@ -55,16 +68,18 @@ sub new {
 =cut
 
 sub PCI_register {
-    my ( $self, $irc ) = splice @_, 0, 2;
-    $irc->plugin_register( $self, 'SERVER', qw(public) );
-    my $db       = App::IRC::Bot::Shoze::Db->new;
-    $db->Plugins->load('IRC', 'Apero');
+    my ( $s, $irc ) = splice @_, 0, 2;
+    $irc->plugin_register( $s, 'SERVER', qw(public) );
+    $s->_register_database($irc);
+    my $db = App::IRC::Bot::Shoze::Db->new;
+
+    #    $db->Plugins->load( 'IRC', 'Apero' );
     my @triggers = $db->Plugins->Apero->list;
-    $self->triggers( {} );
+    $s->triggers( {} );
     for my $A (@triggers) {
         my $t = $A->trigger;
         DEBUG( "Registering trigger $t", 8 );
-        $self->triggers->{ $A->id } = qr/$t/i;
+        $s->triggers->{ $A->id } = qr/$t/i;
     }
     return 1;
 }
@@ -74,8 +89,10 @@ sub PCI_register {
 =cut
 
 sub PCI_unregister {
-    my ($self) = @_;
-    delete $self->{triggers};
+    my ( $s, $irc ) = @_;
+    my $db = App::IRC::Bot::Shoze::Db->new;
+    $s->_unregister_database($irc);
+    delete $s->{triggers};
     return 1;
 }
 
@@ -120,11 +137,9 @@ sub S_public {
 
     if ( $#params == 0 ) {
         $type = 'chan' if grep /^#[^\s]+$/, $params[0];
-    }
-    elsif ( $#params > 0 ) {
+    } elsif ( $#params > 0 ) {
         $type = 'users';
-    }
-    else {
+    } else {
         push @target, $nick;
     }
     my $str;
@@ -132,12 +147,10 @@ sub S_public {
     if ( $type eq 'chan' ) {
         if ( $A->chantext ) {
             @choices = split( /\|/, $A->chantext );
-        }
-        else {
+        } else {
             @choices = split( /\|/, $A->text );
         }
-    }
-    else {
+    } else {
         @choices = split( /\|/, $A->text );
     }
     $str = $choices[ int( rand( $#choices + 1 ) ) ];
@@ -150,8 +163,7 @@ sub S_public {
         }
         $people .= " et " . $target[ $be + 1 ];
         $str =~ s/%WHO%/$people/g;
-    }
-    else {
+    } else {
         my $one = $target[0];
         $str =~ s/%WHO%/$one/g;
     }
@@ -165,8 +177,7 @@ sub S_public {
     if ( $A->msg_type ) {
         if ( $A->msg_type eq "action" ) {
             $irc->{Out}->ctcp_action( $who, $where, $str );
-        }
-        else {
+        } else {
             WARN(   "Apero id: "
                   . $A->id
                   . " unknown msg_type '"
@@ -174,8 +185,7 @@ sub S_public {
                   . "'" );
             $irc->{Out}->privmsg( $who, $where, $str );
         }
-    }
-    else {
+    } else {
         $irc->{Out}->privmsg( $who, $where, $str );
     }
     return PCI_EAT_ALL;

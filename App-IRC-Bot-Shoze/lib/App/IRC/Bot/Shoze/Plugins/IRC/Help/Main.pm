@@ -25,6 +25,9 @@ use App::IRC::Bot::Shoze::Log;
 use App::IRC::Bot::Shoze::String;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::Helper qw(:ALL);
 
+our $VERSION           = '0.0.1';
+our $MAINCOMPATIBILITY = '0.0.8';
+
 our %fields = ( cmd => undef );
 
 =head1 SUBROUTINES/METHODS
@@ -67,6 +70,7 @@ sub help {
     my $PCMD    = $self->get_cmd($cmdname);
     my $C       = $irc->plugin_get('IRC_Core_BotCmdPlus');
     my $mylvl   = 0;
+    my $lh      = $Session->_lh;
     
     my ($cmd, $match) = split(/\s+/, $msg);
     if ($match =~ /^[\w\d]+$/) {
@@ -75,7 +79,7 @@ sub help {
       $match = undef;
     }
     $mylvl = $Session->user_lvl if ($Session->user_id);
-    $irc->{Out}->notice('#me#', $Session, "[$cmdname] Listing command:" );
+    $irc->{Out}->respond_user($Session, "[$cmdname] " . $lh->maketext('Listing commands for level [_1]', $Session->user_lvl) );
     
     for my $cmd ( sort keys %{ $C->cmd } ) {
         if ($match) {
@@ -84,7 +88,7 @@ sub help {
         my $plugin = $C->cmd->{$cmd}->{plugin}->cmd->{$cmd};
 
         next if $mylvl < $plugin->{lvl};
-        $irc->{Out}->notice('#me#', $Session, " " . $plugin->{help_cmd});
+        $irc->{Out}->respond_user($Session, " " . $plugin->{help_cmd});
     }
     return PCI_EAT_ALL;
 }

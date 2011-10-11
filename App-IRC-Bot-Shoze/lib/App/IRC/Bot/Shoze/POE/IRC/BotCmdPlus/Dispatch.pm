@@ -108,7 +108,7 @@ sub _shutdown {
 
 We are dispatching all our commands here
  - We check each user input for command trigger
- - We check if user have the righet to execute the command
+ - We check if user have the right to execute the command
  - We create a session with extended attributes that we pass to our plugins
 =cut
 
@@ -142,7 +142,7 @@ sub _default {
         ( $cmd, $cmd_args ) = ( $1, str_chomp($2) );
     }
     $cmd =~ s/\./_/g;
-    LOG("Got a command: $cmd [$cmd_args]");
+    LOG("Got a command: $cmd [" . (defined $cmd_args? $cmd_args: '') . "]");
     my $Master = $irc->plugin_get("IRC_Core_BotCmdPlus");
     unless ( defined $Master->cmd->{$cmd} ) {
         LOG("No plugin have registered command '$cmd'");
@@ -197,7 +197,7 @@ sub _default {
     if (@params) {
         my $filter = qr/^[\w\d]+$/;
         if ( defined $Master->cmd->{$cmd}->{argument_filter} ) {
-            print "Got specifig command filter\n";
+            LOG("Got specific command filter");
             $filter = $Master->cmd->{$cmd}->{argument_filter};
         }
         $cmd_args = decode( 'utf8', $cmd_args );

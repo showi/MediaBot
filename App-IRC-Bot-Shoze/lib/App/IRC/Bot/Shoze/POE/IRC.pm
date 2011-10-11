@@ -20,6 +20,7 @@ use POE qw(
   Component::IRC::Plugin::AutoJoin
   Component::IRC::Plugin::CycleEmpty
   Component::IRC::Plugin::Connector
+  Component::IRC::Plugin::ISupport
 );
 
 use POE::Component::IRC::Plugin qw(:ALL);
@@ -34,14 +35,14 @@ use App::IRC::Bot::Shoze::POE::IRC::Out;
 use App::IRC::Bot::Shoze::POE::IRC::In;
 use App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus;
 
-use App::IRC::Bot::Shoze::Plugins::IRC::Apero::Main;
-use App::IRC::Bot::Shoze::Plugins::IRC::Fortunes::Main;
+#use App::IRC::Bot::Shoze::Plugins::IRC::Apero::Main;
+#use App::IRC::Bot::Shoze::Plugins::IRC::Fortunes::Main;
 
 use Data::Dumper qw(Dumper);
 
 our %fields = (
-    _parent => undef,
-    components => undef,
+                _parent    => undef,
+                components => undef,
 );
 
 =head1 SUBROUTINES/METHODS
@@ -58,13 +59,13 @@ sub new {
       unless ref($parent);
     my $class = ref($proto) || $proto;
     my $s = {
-        _permitted => \%fields,
-        %fields,
+              _permitted => \%fields,
+              %fields,
     };
     bless( $s, $class );
-    $s->components({});
+    $s->components( {} );
     $s->_parent($parent);
-    if (App::IRC::Bot::Shoze::Config->new->irc->{enable}) {
+    if ( App::IRC::Bot::Shoze::Config->new->irc->{enable} ) {
         $s->_init_poe();
     }
     return $s;
@@ -77,19 +78,22 @@ sub new {
 sub _init_poe () {
     my $s = shift;
     LOG("* Connecting to irc network");
+
     #$s->session(
-        POE::Session->create(
-            object_states => [
-                $s => { _start        => '_start' },
-                $s => { _stop         => '_stop' },
-                $s => { _default      => '_default' },
-                $s => { irc_ctcp_ping => 'irc_ctcp_ping' },
-                $s => { lag_o_meter   => 'lag_o_meter' },
-            ],
-            heap => {
-               #Shoze => $s->_get_root,
-            }
-        );
+    POE::Session->create(
+        object_states => [
+                           $s => { _start        => '_start' },
+                           $s => { _stop         => '_stop' },
+                           $s => { _default      => '_default' },
+                           $s => { irc_ctcp_ping => 'irc_ctcp_ping' },
+                           $s => { lag_o_meter   => 'lag_o_meter' },
+        ],
+        heap => {
+
+            #Shoze => $s->_get_root,
+        }
+    );
+
     #) unless $s->session;
     #$s->Out( new App::IRC::Bot::Shoze::POE::IRC::Out($s) )
     #unless $s->Out;
@@ -111,81 +115,85 @@ sub _stop {
 sub _start {
     my ( $kernel, $heap, $s ) = @_[ KERNEL, HEAP, OBJECT ];
 
-    my $Shoze = App::IRC::Bot::Shoze->new;
+    my $Shoze  = App::IRC::Bot::Shoze->new;
     my $Config = App::IRC::Bot::Shoze::Config->new->irc;
-    my $Db = App::IRC::Bot::Shoze::Db->new;
-    
-    my $Network = $Db->Networks->get_by({name => $Config->{servers}->[0]->{network} });
-    croak "Could not find network named " . $Config->{servers}->[0]->{network} . " (check irc.yaml)" 
-        unless $Network;
-     
+    my $Db     = App::IRC::Bot::Shoze::Db->new;
+
+    my $Network =
+      $Db->Networks->get_by( { name => $Config->{servers}->[0]->{network} } );
+    croak "Could not find network named "
+      . $Config->{servers}->[0]->{network}
+      . " (check irc.yaml)"
+      unless $Network;
+
     ###########################################################################
     # Spawn our IRC component
     ###########################################################################
-    LOG("Starting POE::IRC using network " . $Network->name);  
+    LOG( "Starting POE::IRC using network " . $Network->name );
     my $irc = POE::Component::IRC->spawn(
-        nick => $Config->{nick}
-          || $Config->{altnick}
-          || 'shoze',
-        ircname => $Config->{name}
-          || 'shoze',
+                       nick => $Config->{nick} || $Config->{altnick} || 'shoze',
+                       ircname => $Config->{name} || 'shoze',
     ) or croak "Oh noooo! $!";
-    
-    $heap->{irc} = $irc;
-    $s->components->{$irc->session_id} = $irc;
-    $irc->{Network} = $Network;
-    $irc->{Out} = new App::IRC::Bot::Shoze::POE::IRC::Out($s, $irc);
-    $irc->{In} = new App::IRC::Bot::Shoze::POE::IRC::In($s, $irc);
-      
+
+    $heap->{irc}                         = $irc;
+    $s->components->{ $irc->session_id } = $irc;
+    $irc->{Network}                      = $Network;
+    $irc->{Out} = new App::IRC::Bot::Shoze::POE::IRC::Out( $s, $irc );
+    $irc->{In} = new App::IRC::Bot::Shoze::POE::IRC::In( $s, $irc );
+
     ###########################################################################
     # Loading our plugin System
-    ########################################################################### 
+    ###########################################################################
     $irc->plugin_add( 'IRC_Core_BotCmdPlus',
-        new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus($s) );
+                      new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus($s) );
     $irc->plugin_add(
-        'IRC_Core_PluginsManagement',
-        new
-          App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::PluginsManagement(
-            $s
-          )
+              'IRC_Core_PluginsManagement',
+              new App::IRC::Bot::Shoze::POE::IRC::BotCmdPlus::PluginsManagement(
+                                                                              $s
+              )
     );
 
     ###########################################################################
     # Autojoin Plugin
-    ########################################################################### 
+    ###########################################################################
     my %channels;
     for ( $Db->NetworkChannels->list($Network) ) {
         LOG( "[IRC] Autojoin " . $_->_usable_name );
         $channels{ $_->_usable_name } = $_->wanted_password;
     }
     $irc->plugin_add(
-        'AutoJoin',
-        POE::Component::IRC::Plugin::AutoJoin->new(
-            Channels          => \%channels,
-            RejoinOnKick      => 1,
-            Rejoin_delay      => 1,
-            Retry_when_banned => 5,
-        )
+                      'AutoJoin',
+                      POE::Component::IRC::Plugin::AutoJoin->new(
+                                                         Channels => \%channels,
+                                                         RejoinOnKick      => 1,
+                                                         Rejoin_delay      => 1,
+                                                         Retry_when_banned => 5,
+                      )
+    );
+    ###########################################################################
+    # ISupport Plugin
+    ###########################################################################
+    $irc->plugin_add(
+                   'ISupport',
+                   POE::Component::IRC::Plugin::ISupport->new
     );
     ###########################################################################
     # Connecting our server
     ###########################################################################
     my $server =
-        $Config->{servers}->[0]->{host} . ":"
-      . $Config->{servers}->[0]->{port};
+      $Config->{servers}->[0]->{host} . ":" . $Config->{servers}->[0]->{port};
     LOG("* IRC server: $server");
     $irc->yield( register => 'all' );
-    $irc->yield( connect =>
-          { Server => $Config->{servers}->[0]->{host} } );
-    
+    $irc->yield( connect => { Server => $Config->{servers}->[0]->{host} } );
+
     ###########################################################################
     # AutoReconnection feature
     ###########################################################################
     $heap->{connector} = POE::Component::IRC::Plugin::Connector->new();
     $irc->plugin_add( 'Connector' => $heap->{connector} );
-  
+
     $kernel->delay( 'lag_o_meter' => 60 );
-    
+
     return;
 }
 
@@ -199,8 +207,7 @@ sub _default {
     for my $arg (@$args) {
         if ( ref $arg eq 'ARRAY' ) {
             push( @output, '[' . join( ', ', @$arg ) . ']' );
-        }
-        else {
+        } else {
             push( @output, "'$arg'" ) if defined $arg;
         }
     }

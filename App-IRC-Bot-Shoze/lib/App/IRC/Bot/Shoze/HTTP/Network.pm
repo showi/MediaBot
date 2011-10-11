@@ -93,19 +93,51 @@ sub give {
     return $r;
 }
 
+=item give
+
+=cut
+
+sub give_networks {
+    my ( $s, $request, $paths, $n, $N ) = @_;
+    my $r  = HTTP::Response->new(200);
+    my $db = App::IRC::Bot::Shoze::Db->new;
+
+    my @CL = $db->Networks->list($N);
+    my @NCL;
+    for my $network (@CL) {
+        my $hash;
+        for my $k ( keys %{$network} ) {
+            next if $k =~ /^_/;
+            $hash->{$k} = $network->{$k};
+        }
+        push @NCL, $hash;
+    }
+    print Dump @NCL;
+
+    $r->push_header( 'Content-type', 'text/html' );
+    $r->content( Dump( \@NCL ) );
+    return $r;
+}
+
 =item request
 
 =cut
 
 sub request {
     my ( $s, $request, $paths, $n ) = @_;
-    if ( $request->uri->path eq '/' ) {
-        return $s->give_root($request);
-    }
-    unless ($paths) {
-        my @paths = split( m#/+#, $request->uri->path );
-        $paths = \@paths;
-        $n     = 1;
+    LOG("Request in " . __PACKAGE__);
+#    if ( $request->uri->path eq '/' ) {
+#        return $s->give_root($request);
+#    }
+#    unless ($paths) {
+#        my @paths = split( m#/+#, $request->uri->path );
+#        $paths = \@paths;
+#        $n     = 1;
+#    }
+
+    unless($paths->[$n]) {
+        LOG("Listing networks");
+        return $s->give_networks($request, $paths, $n);
     }
     LOG("Checking path: " . $paths->[$n]);
     my $Network = $s->is_valid_ressource( $paths, $n );

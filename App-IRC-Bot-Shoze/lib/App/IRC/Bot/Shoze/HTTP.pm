@@ -85,7 +85,9 @@ sub is_valid_ressource {
 
 sub request {
     my ( $s, $request, $paths, $n ) = @_;
-
+    
+    LOG("Request in " . __PACKAGE__);
+    print("Request in " . __PACKAGE__);
     unless ($paths) {
         my @paths = split( m#/+#, $request->uri->path );
         $paths = \@paths;

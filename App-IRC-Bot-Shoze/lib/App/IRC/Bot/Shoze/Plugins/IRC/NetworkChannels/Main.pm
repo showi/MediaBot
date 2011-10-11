@@ -17,6 +17,9 @@ use warnings;
 
 use Carp;
 
+our $VERSION = '0.0.1';
+our $MAINCOMPATIBILITY = '0.0.8';
+
 use POE::Component::IRC::Plugin qw(:ALL);
 use IRC::Utils qw(:ALL);
 
@@ -641,7 +644,7 @@ sub op {
         return PCI_EAT_NONE;
     }
 
-    $s->_modes( $irc, '+', 'o', $Channel, @nicks );
+    $s->_modes( $irc, $Session, '+', 'o', $Channel, @nicks );
 }
 
 =item deop
@@ -681,7 +684,7 @@ sub deop {
         return PCI_EAT_NONE;
     }
 
-    $s->_modes( $irc, '-', 'o', $Channel, @nicks );
+    $s->_modes( $irc, $Session, '-', 'o', $Channel, @nicks );
     return PCI_EAT_ALL;
 }
 
@@ -721,7 +724,7 @@ sub voice {
               . '\'' );
         return PCI_EAT_NONE;
     }
-    $s->_modes( $irc, '+', 'v', $Channel, @nicks );
+    $s->_modes( $irc, $Session, '+', 'v', $Channel, @nicks );
     return PCI_EAT_ALL;
 }
 
@@ -761,29 +764,10 @@ sub devoice {
               . '\'' );
         return PCI_EAT_NONE;
     }
-    $s->_modes( $irc, '-', 'v', $Channel, @nicks );
+    $s->_modes( $irc, $Session, '-', 'v', $Channel, @nicks );
     return PCI_EAT_ALL;
 }
 
-=item deop_who_on
-
-=cut
-
-sub deop_who_on {
-    my $s = shift;
-    my ( $irc, $nick, $channel ) = @_;
-    $irc->yield( 'mode', "$channel -o $nick" );
-}
-
-=item op_who_on
-
-=cut
-
-sub op_who_on {
-    my $s = shift;
-    my ( $irc, $nick, $channel ) = @_;
-    $irc->yield( 'mode', "$channel +o $nick" );
-}
 
 =back
 

@@ -110,7 +110,7 @@ sub _init_poe () {
 
             ClientInput => sub {
                 my ( $kernel, $heap, $request ) = @_[ KERNEL, HEAP, ARG0 ];
-                LOG("[WS] Get request!");
+                LOG("[WS] Get request ...!");
 
                 # Filter::HTTPD sometimes generates HTTP::Response objects.
                 # They indicate (and contain the response for) errors that occur

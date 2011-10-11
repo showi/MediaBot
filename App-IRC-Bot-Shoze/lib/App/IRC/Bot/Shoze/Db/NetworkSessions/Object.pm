@@ -44,6 +44,7 @@ our %fields = (
 
     _object_name => undef,
     _object_db   => undef,
+    _lh          => undef,
 );
 
 =head1 SUBROUTINES/METHODS
@@ -56,16 +57,16 @@ our %fields = (
 
 sub new {
     my ( $proto, $object_db ) = @_;
-    DEBUG( "Creating new " . __PACKAGE__ , 8);
+    DEBUG( "Creating new " . __PACKAGE__, 8 );
     croak "No database object passed as first parameter"
       unless ref($object_db);
     my $class = ref($proto) || $proto;
     my $s = {
-        _permitted => \%fields,
-        %fields,
+              _permitted => \%fields,
+              %fields,
     };
     bless( $s, $class );
-    $s->_init_fields;            # DIRTY HACK
+    $s->_init_fields;    # DIRTY HACK
     $s->_object_name('network_sessions');
     $s->_object_db($object_db);
     return $s;
@@ -80,7 +81,9 @@ sub get_hostmask {
     return $s->nick . '!' . $s->user . '@' . $s->hostname;
 }
 
-
+sub set_language_handle {
+    $_[0]->_lh(App::IRC::Bot::Shoze::i18n->get_handle($_[0]->user_lang || 'en'));
+}
 =back
 
 =head1 LICENSE AND COPYRIGHT

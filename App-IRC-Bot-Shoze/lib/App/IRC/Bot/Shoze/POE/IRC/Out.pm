@@ -72,6 +72,31 @@ sub send_msg {
     $s->_irc->yield( $type => $dest => $msg );
 }
 
+sub respond_user {
+    my ($s, $Session, $msg) = @_;
+    my $nick;
+    my $method = 'notice';
+    if (ref($Session)) {
+        $nick = $Session->nick;
+        if (defined $Session->user_output_method) {
+            $method = $Session->user_output_method;
+        }
+    } else {
+        $nick = $Session;
+    }
+    $s->_irc->yield($method => $nick => $msg);
+}
+
+=item respond_user_lines
+
+=cut
+sub respond_user_lines {
+    my ( $s, $Session, @lines) = @_;
+    for(@lines) {
+        $s->respond_user($Session, $_);
+    }
+}
+
 =item notice
 
 =cut

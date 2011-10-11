@@ -93,6 +93,7 @@ sub give {
 
 sub request {
     my ( $s, $request, $paths, $n ) = @_;
+    LOG("Request in " . __PACKAGE__);
     if ( $request->uri->path eq '/' ) {
         return $s->give_root($request);
     }

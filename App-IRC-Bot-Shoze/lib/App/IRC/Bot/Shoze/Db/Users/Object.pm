@@ -34,6 +34,9 @@ our %fields = (
     name           => undef,
     password       => undef,
     is_bot         => undef,
+    output_method  => undef,
+    lang           => undef,
+    
     updated_on     => undef,
     created_on     => undef,
 
